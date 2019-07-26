@@ -1,0 +1,13 @@
+From: Felipe Sateler <fsateler@debian.org>
+Subject: Disable autospawn by default
+--- a/src/pulse/client-conf.c
++++ b/src/pulse/client-conf.c
+@@ -63,7 +63,7 @@
+     .cookie_from_x11_valid = false,
+     .cookie_file_from_application = NULL,
+     .cookie_file_from_client_conf = NULL,
+-    .autospawn = true,
++    .autospawn = false,
+     .disable_shm = false,
+     .disable_memfd = false,
+     .shm_size = 0,

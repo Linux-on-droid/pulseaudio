@@ -46,6 +46,7 @@ Homepage: https://www.pulseaudio.org
 Package: pulseaudio
 Architecture: any
 Multi-Arch: foreign
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
   lsb-base (>= 3.2-13),
   libasound2-plugins [linux-any],

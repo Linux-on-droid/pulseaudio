@@ -1,3 +1,4 @@
 qpaeq-Drop-unused-imports.patch
 qpaeq-use-python3-instead-of-python-2.patch
 daemon-conf-disable-flat-volumes-by-default.patch
+disable-autospawn.patch
