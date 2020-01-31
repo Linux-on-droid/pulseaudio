@@ -1,3 +1,48 @@
+pulseaudio (13.0-4) unstable; urgency=medium
+
+  [ Steve Langasek ]
+  * Make autopkgtests cross-test-friendly.
+    In Ubuntu, we are in the process of moving the i386 architecture to a
+    compatibility-only layer on amd64, and therefore we are also moving our
+    autopkgtest infrastructure to test i386 binaries in a cross-environment.
+    This requires changes to some tests so that they are cross-aware and can do
+    the right thing.
+    The pulseaudio tests currently fail in this environment, because they are
+    build tests that do not invoke the toolchain in a cross-aware manner.  I've
+    verified that the attached patch lets the tests successfully build (and run)
+    i386 tests on an amd64 host.
+    Note that upstream autopkgtest doesn't currently set DEB_HOST_ARCH so this
+    is a complete no-op in Debian for the moment.  Support for cross-testing in
+    autopkgtest is currently awaiting review at
+    https://salsa.debian.org/ci-team/autopkgtest/merge_requests/69 and once
+    landed, will still have no effect unless autopkgtest is invoked with a '-a'
+    option.  So this change should be safe to land in your package despite this
+    not being upstream in autopkgtest. (Closes: #946375)
+
+  [ Felipe Sateler ]
+  * Enable autospawn automatically on sysvinit systems.
+    Instead of having a default configuration, make pulseaudio default to
+    disabled, and then have a sysvinit service to reenable the autospawn
+    setting
+    (Closes: #923203)
+  * Allow installing pulseaudio with elogind.
+    Because we now autospawn with non-systemd, we can use the weaker guarantees
+    provided by elogind
+    (Closes: #923201)
+  * Drop postinst snippet dealing with old upgrades.
+    5.0 is already in oldoldstable so no need to carry it anymore
+  * Set upstream metadata fields: Name (from ./configure), Repository,
+    Repository-Browse.
+    Fixes: lintian: upstream-metadata-file-is-missing
+    See-also: https://lintian.debian.org/tags/upstream-metadata-file-is-missing.html
+  * Bump Standards-Version.
+    No changes needed
+  * Enable the systemd user units dynamically, not statically.
+    Now that there is support for systemd --user in debhelper, lets use that to
+    enable the user units instead of having a global link (Closes: #943999)
+
+ -- Felipe Sateler <fsateler@debian.org>  Fri, 31 Jan 2020 09:24:15 -0300
+
 pulseaudio (13.0-3) unstable; urgency=medium
 
   * qpaeq: migrate to python3.
