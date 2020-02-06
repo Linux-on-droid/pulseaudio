@@ -1,3 +1,12 @@
+pulseaudio (13.0-5) unstable; urgency=medium
+
+  * Fix removal of 00-disable-autospawn.conf.
+    The autoremoval script was wrongly put into the pulseaudio package, while
+    it should have been in the libpulse0 package. Moreover, the version specified
+    was wrong (set at 12.2 instead of 13.0) (Closes: #950413)
+
+ -- Felipe Sateler <fsateler@debian.org>  Wed, 05 Feb 2020 23:06:41 -0300
+
 pulseaudio (13.0-4) unstable; urgency=medium
 
   [ Steve Langasek ]
