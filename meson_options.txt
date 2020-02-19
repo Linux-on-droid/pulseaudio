@@ -56,10 +56,10 @@ option('udevrulesdir',
        description : 'Directory for udev rules (defaults to /lib/udev/rules.d)')
 option('bashcompletiondir',
        type : 'string',
-       description : 'Directory for bash completion files')
+       description : 'Directory for bash completion scripts ["no" disables]')
 option('zshcompletiondir',
        type : 'string',
-       description : 'Zsh completions directory')
+       description : 'Directory for zsh completion scripts ["no" disables]')
 
 # Optional features
 
@@ -93,6 +93,9 @@ option('glib',
 option('gsettings',
        type : 'feature', value : 'auto',
        description : 'Optional GSettings support')
+option('gstreamer',
+       type : 'feature', value : 'auto',
+       description : 'Optional GStreamer dependency for media-related functionality')
 option('gtk',
        type : 'feature', value : 'auto',
        description : 'Optional Gtk+ 3 support')

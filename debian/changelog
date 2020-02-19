@@ -1,3 +1,19 @@
+pulseaudio (13.99.1-1) UNRELEASED; urgency=medium
+
+  * New upstream rc version, including those changes:
+    - default sink selection for a better user experience, ALSA UCM support,
+      disabling flat volumes by default, stream rescue moving to core,
+      GStreamer-based RTP support, and qpaeq moving to Python 3.
+  * debian/control:
+    - B-D on libgstreamer1.0-dev and libgstreamer-plugins-base1.0-dev,
+      needed to enable the gstreamer based RTP support
+  * debian/patches/qpaeq-Drop-unused-imports.patch,
+    debian/patches/qpaeq-use-python3-instead-of-python-2.patch,
+    debian/patches/daemon-conf-disable-flat-volumes-by-default.patch:
+    - dropped the changes included in the new version
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 19 Feb 2020 18:34:48 +0100
+
 pulseaudio (13.0-5) unstable; urgency=medium
 
   * Fix removal of 00-disable-autospawn.conf.

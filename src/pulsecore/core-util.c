@@ -784,11 +784,15 @@ void pa_reset_priority(void) {
 #endif
 }
 
+/* Check whenever any substring in v matches the provided regex. */
 int pa_match(const char *expr, const char *v) {
 #if defined(HAVE_REGEX_H) || defined(HAVE_PCREPOSIX_H)
     int k;
     regex_t re;
     int r;
+
+    pa_assert(expr);
+    pa_assert(v);
 
     if (regcomp(&re, expr, REG_NOSUB|REG_EXTENDED) != 0) {
         errno = EINVAL;
@@ -811,6 +815,22 @@ int pa_match(const char *expr, const char *v) {
 #else
     errno = ENOSYS;
     return -1;
+#endif
+}
+
+/* Check whenever the provided regex pattern is valid. */
+bool pa_is_regex_valid(const char *expr) {
+#if defined(HAVE_REGEX_H) || defined(HAVE_PCREPOSIX_H)
+    regex_t re;
+
+    if (expr == NULL || regcomp(&re, expr, REG_NOSUB|REG_EXTENDED) != 0) {
+        return false;
+    }
+
+    regfree(&re);
+    return true;
+#else
+    return false;
 #endif
 }
 
@@ -859,7 +879,7 @@ int pa_parse_volume(const char *v, pa_volume_t *volume) {
 
     len = strlen(v);
 
-    if (len >= 64)
+    if (len <= 0 || len >= 64)
         return -1;
 
     memcpy(str, v, len + 1);
@@ -1428,7 +1448,7 @@ static int check_ours(const char *p) {
         return -errno;
 
 #ifdef HAVE_GETUID
-    if (st.st_uid != getuid())
+    if (st.st_uid != getuid() && st.st_uid != 0)
         return -EACCES;
 #endif
 
@@ -2871,6 +2891,32 @@ bool pa_str_in_list_spaces(const char *haystack, const char *needle) {
     }
 
     return false;
+}
+
+char* pa_str_strip_suffix(const char *str, const char *suffix) {
+    size_t str_l, suf_l, prefix;
+    char *ret;
+
+    pa_assert(str);
+    pa_assert(suffix);
+
+    str_l = strlen(str);
+    suf_l = strlen(suffix);
+
+    if (str_l < suf_l)
+        return NULL;
+
+    prefix = str_l - suf_l;
+
+    if (!pa_streq(&str[prefix], suffix))
+        return NULL;
+
+    ret = pa_xmalloc(prefix + 1);
+
+    strncpy(ret, str, prefix);
+    ret[prefix] = '\0';
+
+    return ret;
 }
 
 char *pa_get_user_name_malloc(void) {

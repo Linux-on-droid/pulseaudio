@@ -175,12 +175,12 @@ static pa_hook_result_t sink_put_hook_callback(pa_core *c, pa_sink *sink, struct
         if (si->sink == sink)
             continue;
 
-        if (si->save_sink)
-            continue;
-
         /* Skip this if it is already in the process of being moved
          * anyway */
         if (!si->sink)
+            continue;
+
+        if (pa_safe_streq(si->sink->name, si->preferred_sink))
             continue;
 
         /* It might happen that a stream and a sink are set up at the
@@ -222,15 +222,15 @@ static pa_hook_result_t source_put_hook_callback(pa_core *c, pa_source *source, 
         if (so->source == source)
             continue;
 
-        if (so->save_source)
-            continue;
-
         if (so->direct_on_input)
             continue;
 
         /* Skip this if it is already in the process of being moved
          * anyway */
         if (!so->source)
+            continue;
+
+        if (pa_safe_streq(so->source->name, so->preferred_source))
             continue;
 
         /* It might happen that a stream and a source are set up at the
@@ -398,7 +398,7 @@ int pa__init(pa_module*m) {
     }
 
     if (on_rescue) {
-        /* A little bit later than module-stream-restore, a little bit earlier than module-rescue-streams, ... */
+        /* A little bit later than module-stream-restore, ... */
         u->sink_unlink_hook_slot = pa_hook_connect(&m->core->hooks[PA_CORE_HOOK_SINK_UNLINK], PA_HOOK_LATE+10, (pa_hook_cb_t) sink_unlink_hook_callback, u);
         u->source_unlink_hook_slot = pa_hook_connect(&m->core->hooks[PA_CORE_HOOK_SOURCE_UNLINK], PA_HOOK_LATE+10, (pa_hook_cb_t) source_unlink_hook_callback, u);
     }

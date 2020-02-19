@@ -210,6 +210,9 @@
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
 
+/* Have GStreamer? */
+#undef HAVE_GSTREAMER
+
 /* Have GTK? */
 #undef HAVE_GTK
 

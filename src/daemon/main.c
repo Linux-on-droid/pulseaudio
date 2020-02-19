@@ -1056,11 +1056,13 @@ int main(int argc, char *argv[]) {
     c->avoid_resampling = conf->avoid_resampling;
     c->disable_remixing = conf->disable_remixing;
     c->remixing_use_all_sink_channels = conf->remixing_use_all_sink_channels;
-    c->disable_lfe_remixing = conf->disable_lfe_remixing;
+    c->remixing_produce_lfe = conf->remixing_produce_lfe;
+    c->remixing_consume_lfe = conf->remixing_consume_lfe;
     c->deferred_volume = conf->deferred_volume;
     c->running_as_daemon = conf->daemonize;
     c->disallow_exit = conf->disallow_exit;
     c->flat_volumes = conf->flat_volumes;
+    c->rescue_streams = conf->rescue_streams;
 #ifdef HAVE_DBUS
     c->server_type = conf->local_server_type;
 #endif

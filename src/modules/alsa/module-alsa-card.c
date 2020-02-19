@@ -111,9 +111,8 @@ struct userdata {
     char *device_id;
     int alsa_card_index;
 
-    snd_mixer_t *mixer_handle;
+    pa_hashmap *mixers;
     pa_hashmap *jacks;
-    pa_alsa_fdlist *mixer_fdl;
 
     pa_card *card;
 
@@ -241,7 +240,7 @@ static int card_set_profile(pa_card *c, pa_card_profile *new_profile) {
 
     /* if UCM is available for this card then update the verb */
     if (u->use_ucm) {
-        if (pa_alsa_ucm_set_profile(&u->ucm, nd->profile ? nd->profile->name : NULL,
+        if (pa_alsa_ucm_set_profile(&u->ucm, c, nd->profile ? nd->profile->name : NULL,
                     od->profile ? od->profile->name : NULL) < 0) {
             ret = -1;
             goto finish;
@@ -294,7 +293,7 @@ static void init_profile(struct userdata *u) {
 
     if (d->profile && u->use_ucm) {
         /* Set initial verb */
-        if (pa_alsa_ucm_set_profile(ucm, d->profile->name, NULL) < 0) {
+        if (pa_alsa_ucm_set_profile(ucm, u->card, d->profile->name, NULL) < 0) {
             pa_log("Failed to set ucm profile %s", d->profile->name);
             return;
         }
@@ -513,15 +512,24 @@ static int report_jack_state(snd_mixer_elem_t *melem, unsigned int mask) {
     return 0;
 }
 
-static pa_device_port* find_port_with_eld_device(pa_hashmap *ports, int device) {
+static pa_device_port* find_port_with_eld_device(struct userdata *u, int device) {
     void *state;
     pa_device_port *p;
 
-    PA_HASHMAP_FOREACH(p, ports, state) {
-        pa_alsa_port_data *data = PA_DEVICE_PORT_DATA(p);
-        pa_assert(data->path);
-        if (device == data->path->eld_device)
-            return p;
+    if (u->use_ucm) {
+        PA_HASHMAP_FOREACH(p, u->card->ports, state) {
+            pa_alsa_ucm_port_data *data = PA_DEVICE_PORT_DATA(p);
+            pa_assert(data->eld_mixer_device_name);
+            if (device == data->eld_device)
+                return p;
+        }
+    } else {
+        PA_HASHMAP_FOREACH(p, u->card->ports, state) {
+            pa_alsa_port_data *data = PA_DEVICE_PORT_DATA(p);
+            pa_assert(data->path);
+            if (device == data->path->eld_device)
+                return p;
+        }
     }
     return NULL;
 }
@@ -538,7 +546,7 @@ static int hdmi_eld_changed(snd_mixer_elem_t *melem, unsigned int mask) {
     if (mask == SND_CTL_EVENT_MASK_REMOVE)
         return 0;
 
-    p = find_port_with_eld_device(u->card->ports, device);
+    p = find_port_with_eld_device(u, device);
     if (p == NULL) {
         pa_log_error("Invalid device changed in ALSA: %d", device);
         return 0;
@@ -566,33 +574,46 @@ static void init_eld_ctls(struct userdata *u) {
     void *state;
     pa_device_port *port;
 
-    if (!u->mixer_handle)
-        return;
-
     /* The code in this function expects ports to have a pa_alsa_port_data
      * struct as their data, but in UCM mode ports don't have any data. Hence,
      * the ELD controls can't currently be used in UCM mode. */
-    if (u->use_ucm)
-        return;
-
     PA_HASHMAP_FOREACH(port, u->card->ports, state) {
-        pa_alsa_port_data *data = PA_DEVICE_PORT_DATA(port);
+        snd_mixer_t *mixer_handle;
         snd_mixer_elem_t* melem;
         int device;
 
-        pa_assert(data->path);
-        device = data->path->eld_device;
-        if (device < 0)
+        if (u->use_ucm) {
+            pa_alsa_ucm_port_data *data = PA_DEVICE_PORT_DATA(port);
+            device = data->eld_device;
+            if (device < 0 || !data->eld_mixer_device_name)
+                continue;
+
+            mixer_handle = pa_alsa_open_mixer_by_name(u->mixers, data->eld_mixer_device_name, true);
+        } else {
+            pa_alsa_port_data *data = PA_DEVICE_PORT_DATA(port);
+
+            pa_assert(data->path);
+
+            device = data->path->eld_device;
+            if (device < 0)
+                continue;
+
+            mixer_handle = pa_alsa_open_mixer(u->mixers, u->alsa_card_index, true);
+        }
+
+        if (!mixer_handle)
             continue;
 
-        melem = pa_alsa_mixer_find(u->mixer_handle, "ELD", device);
+        melem = pa_alsa_mixer_find_pcm(mixer_handle, "ELD", device);
         if (melem) {
+            pa_alsa_mixer_set_fdlist(u->mixers, mixer_handle, u->core->mainloop);
             snd_mixer_elem_set_callback(melem, hdmi_eld_changed);
             snd_mixer_elem_set_callback_private(melem, u);
             hdmi_eld_changed(melem, 0);
+            pa_log_info("ELD device found for port %s (%d).", port->name, device);
         }
         else
-            pa_log_debug("No ELD device found for port %s.", port->name);
+            pa_log_debug("No ELD device found for port %s (%d).", port->name, device);
     }
 }
 
@@ -627,25 +648,31 @@ static void init_jacks(struct userdata *u) {
     if (pa_hashmap_size(u->jacks) == 0)
         return;
 
-    u->mixer_fdl = pa_alsa_fdlist_new();
-
-    u->mixer_handle = pa_alsa_open_mixer(u->alsa_card_index, NULL);
-    if (u->mixer_handle && pa_alsa_fdlist_set_handle(u->mixer_fdl, u->mixer_handle, NULL, u->core->mainloop) >= 0) {
-        PA_HASHMAP_FOREACH(jack, u->jacks, state) {
-            jack->melem = pa_alsa_mixer_find(u->mixer_handle, jack->alsa_name, 0);
-            if (!jack->melem) {
-                pa_log_warn("Jack '%s' seems to have disappeared.", jack->alsa_name);
-                pa_alsa_jack_set_has_control(jack, false);
-                continue;
+    PA_HASHMAP_FOREACH(jack, u->jacks, state) {
+        if (!jack->mixer_device_name) {
+            jack->mixer_handle = pa_alsa_open_mixer(u->mixers, u->alsa_card_index, false);
+            if (!jack->mixer_handle) {
+               pa_log("Failed to open mixer for card %d for jack detection", u->alsa_card_index);
+               continue;
             }
-            snd_mixer_elem_set_callback(jack->melem, report_jack_state);
-            snd_mixer_elem_set_callback_private(jack->melem, u);
-            report_jack_state(jack->melem, 0);
+        } else {
+            jack->mixer_handle = pa_alsa_open_mixer_by_name(u->mixers, jack->mixer_device_name, false);
+            if (!jack->mixer_handle) {
+               pa_log("Failed to open mixer '%s' for jack detection", jack->mixer_device_name);
+              continue;
+            }
         }
-
-    } else
-        pa_log("Failed to open mixer for jack detection");
-
+        pa_alsa_mixer_set_fdlist(u->mixers, jack->mixer_handle, u->core->mainloop);
+        jack->melem = pa_alsa_mixer_find_card(jack->mixer_handle, jack->alsa_name, 0);
+        if (!jack->melem) {
+            pa_log_warn("Jack '%s' seems to have disappeared.", jack->alsa_name);
+            pa_alsa_jack_set_has_control(jack, false);
+            continue;
+        }
+        snd_mixer_elem_set_callback(jack->melem, report_jack_state);
+        snd_mixer_elem_set_callback_private(jack->melem, u);
+        report_jack_state(jack->melem, 0);
+    }
 }
 
 static void set_card_name(pa_card_new_data *data, pa_modargs *ma, const char *device_id) {
@@ -769,6 +796,10 @@ int pa__init(pa_module *m) {
     u->use_ucm = true;
     u->ucm.core = m->core;
 
+    u->mixers = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func,
+                                    pa_xfree, (pa_free_cb_t) pa_alsa_mixer_free);
+    u->ucm.mixers = u->mixers; /* alias */
+
     if (!(u->modargs = pa_modargs_new(m->argument, valid_modargs))) {
         pa_log("Failed to parse module arguments.");
         goto fail;
@@ -849,7 +880,7 @@ int pa__init(pa_module *m) {
 
     u->profile_set->ignore_dB = ignore_dB;
 
-    pa_alsa_profile_set_probe(u->profile_set, u->device_id, &m->core->default_sample_spec, m->core->default_n_fragments, m->core->default_fragment_size_msec);
+    pa_alsa_profile_set_probe(u->profile_set, u->mixers, u->device_id, &m->core->default_sample_spec, m->core->default_n_fragments, m->core->default_fragment_size_msec);
     pa_alsa_profile_set_dump(u->profile_set);
 
     pa_card_new_data_init(&data);
@@ -900,7 +931,8 @@ int pa__init(pa_module *m) {
      * results in an infinite loop of "fill buffer, handle underrun". To work
      * around this issue, the suspend_when_unavailable flag is used to stop
      * playback when the HDMI cable is unplugged. */
-    if (pa_safe_streq(pa_proplist_gets(data.proplist, "alsa.driver_name"), "snd_hdmi_lpe_audio")) {
+    if (!u->use_ucm &&
+        pa_safe_streq(pa_proplist_gets(data.proplist, "alsa.driver_name"), "snd_hdmi_lpe_audio")) {
         pa_device_port *port;
         void *state;
 
@@ -947,6 +979,16 @@ int pa__init(pa_module *m) {
 
     init_profile(u);
     init_eld_ctls(u);
+
+    /* Remove all probe only mixers */
+    if (u->mixers) {
+       const char *devname;
+       pa_alsa_mixer *pm;
+       void *state;
+       PA_HASHMAP_FOREACH_KV(devname, pm, u->mixers, state)
+           if (pm->used_for_probe_only)
+               pa_hashmap_remove_and_free(u->mixers, devname);
+    }
 
     if (reserve)
         pa_reserve_wrapper_unref(reserve);
@@ -998,10 +1040,8 @@ void pa__done(pa_module*m) {
     if (!(u = m->userdata))
         goto finish;
 
-    if (u->mixer_fdl)
-        pa_alsa_fdlist_free(u->mixer_fdl);
-    if (u->mixer_handle)
-        snd_mixer_close(u->mixer_handle);
+    if (u->mixers)
+        pa_hashmap_free(u->mixers);
     if (u->jacks)
         pa_hashmap_free(u->jacks);
 

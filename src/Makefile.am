@@ -1176,13 +1176,21 @@ libprotocol_esound_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libp
 endif
 
 librtp_la_SOURCES = \
-		modules/rtp/rtp.c modules/rtp/rtp.h \
+		modules/rtp/rtp-common.c modules/rtp/rtp.h \
 		modules/rtp/sdp.c modules/rtp/sdp.h \
 		modules/rtp/sap.c modules/rtp/sap.h \
 		modules/rtp/rtsp_client.c modules/rtp/rtsp_client.h \
 		modules/rtp/headerlist.c modules/rtp/headerlist.h
+librtp_la_CFLAGS = $(AM_CFLAGS)
 librtp_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 librtp_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
+if HAVE_GSTREAMER
+librtp_la_SOURCES += modules/rtp/rtp-gstreamer.c
+librtp_la_CFLAGS += $(GSTREAMER_CFLAGS)
+librtp_la_LIBADD += $(GSTREAMER_LIBS)
+else
+librtp_la_SOURCES += modules/rtp/rtp-native.c
+endif
 
 libraop_la_SOURCES = \
         modules/raop/raop-util.c modules/raop/raop-util.h \
@@ -1345,8 +1353,8 @@ dist_alsaprofilesets_DATA = \
 		modules/alsa/mixer/profile-sets/native-instruments-korecontroller.conf \
 		modules/alsa/mixer/profile-sets/kinect-audio.conf \
 		modules/alsa/mixer/profile-sets/sb-omni-surround-5.1.conf \
-		modules/alsa/mixer/profile-sets/steelseries-arctis-5-usb-audio.conf \
-		modules/alsa/mixer/profile-sets/steelseries-arctis-7-usb-audio.conf \
+		modules/alsa/mixer/profile-sets/steelseries-arctis-common-usb-audio.conf \
+		modules/alsa/mixer/profile-sets/usb-gaming-headset.conf \
 		modules/alsa/mixer/profile-sets/dell-dock-tb16-usb-audio.conf \
 		modules/alsa/mixer/profile-sets/cmedia-high-speed-true-hdaudio.conf
 
@@ -1391,11 +1399,11 @@ dist_alsapaths_DATA = \
 		modules/alsa/mixer/paths/hdmi-output-5.conf \
 		modules/alsa/mixer/paths/hdmi-output-6.conf \
 		modules/alsa/mixer/paths/hdmi-output-7.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-5-output-chat.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-5-output-game.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-7-input.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-7-output-mono.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-7-output-stereo.conf
+		modules/alsa/mixer/paths/steelseries-arctis-output-chat-common.conf \
+		modules/alsa/mixer/paths/steelseries-arctis-output-game-common.conf \
+		modules/alsa/mixer/paths/usb-gaming-headset-input.conf \
+		modules/alsa/mixer/paths/usb-gaming-headset-output-mono.conf \
+		modules/alsa/mixer/paths/usb-gaming-headset-output-stereo.conf
 
 endif
 
@@ -1734,9 +1742,9 @@ module_tunnel_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_tunnel_sink_la_LIBADD = $(MODULE_LIBADD) $(X11_LIBS)
 
 module_tunnel_source_la_SOURCES = modules/module-tunnel.c
-module_tunnel_source_la_LDFLAGS = $(MODULE_LDFLAGS) $(X11_CFLAGS)
+module_tunnel_source_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_tunnel_source_la_LIBADD = $(MODULE_LIBADD) $(X11_LIBS)
-module_tunnel_source_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_tunnel_source
+module_tunnel_source_la_CFLAGS = $(AM_CFLAGS) $(X11_CFLAGS) -DPA_MODULE_NAME=module_tunnel_source
 
 module_loopback_la_SOURCES = modules/module-loopback.c
 module_loopback_la_LDFLAGS = $(MODULE_LDFLAGS)
@@ -2049,12 +2057,12 @@ endif
 module_rtp_send_la_SOURCES = modules/rtp/module-rtp-send.c
 module_rtp_send_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_rtp_send_la_LIBADD = $(MODULE_LIBADD) librtp.la
-module_rtp_send_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_rtp_send
+module_rtp_send_la_CFLAGS = $(AM_CFLAGS) $(GSTREAMER_CFLAGS) -DPA_MODULE_NAME=module_rtp_send
 
 module_rtp_recv_la_SOURCES = modules/rtp/module-rtp-recv.c
 module_rtp_recv_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_rtp_recv_la_LIBADD = $(MODULE_LIBADD) librtp.la
-module_rtp_recv_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_rtp_recv
+module_rtp_recv_la_CFLAGS = $(AM_CFLAGS) $(GSTREAMER_CFLAGS) -DPA_MODULE_NAME=module_rtp_recv
 
 # JACK
 

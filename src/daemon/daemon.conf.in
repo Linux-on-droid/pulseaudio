@@ -57,10 +57,13 @@ ifelse(@HAVE_DBUS@, 1, [dnl
 ; avoid-resampling = false
 ; enable-remixing = yes
 ; remixing-use-all-sink-channels = yes
-; enable-lfe-remixing = no
+; remixing-produce-lfe = no
+; remixing-consume-lfe = no
 ; lfe-crossover-freq = 0
 
-; flat-volumes = yes
+; flat-volumes = no
+
+; rescue-streams = yes
 
 ifelse(@HAVE_SYS_RESOURCE_H@, 1, [dnl
 ; rlimit-fsize = -1

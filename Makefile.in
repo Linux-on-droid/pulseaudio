@@ -240,7 +240,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in \
 	$(top_srcdir)/build-aux/missing \
 	$(top_srcdir)/src/pulse/version.h.in ABOUT-NLS NEWS README \
 	build-aux/compile build-aux/config.guess \
-	build-aux/config.rpath build-aux/config.sub \
+	build-aux/config.rpath build-aux/config.sub build-aux/depcomp \
 	build-aux/install-sh build-aux/ltmain.sh build-aux/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
@@ -342,6 +342,8 @@ GREP = @GREP@
 GSETTINGS_CFLAGS = @GSETTINGS_CFLAGS@
 GSETTINGS_DISABLE_SCHEMAS_COMPILE = @GSETTINGS_DISABLE_SCHEMAS_COMPILE@
 GSETTINGS_LIBS = @GSETTINGS_LIBS@
+GSTREAMER_CFLAGS = @GSTREAMER_CFLAGS@
+GSTREAMER_LIBS = @GSTREAMER_LIBS@
 GTK30_CFLAGS = @GTK30_CFLAGS@
 GTK30_LIBS = @GTK30_LIBS@
 HAVE_AF_UNIX = @HAVE_AF_UNIX@
@@ -552,7 +554,6 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
 pulseconfdir = @pulseconfdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -582,7 +583,6 @@ EXTRA_DIST = \
 	README \
 	CODE_OF_CONDUCT.md \
 	scripts/benchmark_memory_usage.sh \
-	scripts/Dockerfile \
 	scripts/plot_memory_usage.gp \
 	scripts/benchmarks/README \
 	todo \
@@ -608,7 +608,7 @@ EXTRA_DIST = \
 	src/modules/bluetooth/meson.build \
 	src/modules/echo-cancel/meson.build \
 	src/modules/gsettings/meson.build \
-	src/modules/gsettings/post-install.sh \
+	src/modules/gsettings/meson_post_install.py \
 	src/modules/meson.build \
 	src/modules/oss/meson.build \
 	src/modules/raop/meson.build \

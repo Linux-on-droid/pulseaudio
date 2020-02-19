@@ -288,122 +288,126 @@ bin_PROGRAMS = pulseaudio$(EXEEXT) pacat$(EXEEXT) pactl$(EXEEXT) \
 
 @HAVE_DBUS_TRUE@am__append_82 = $(DBUS_CFLAGS)
 @HAVE_DBUS_TRUE@am__append_83 = $(DBUS_LIBS)
+@HAVE_GSTREAMER_TRUE@am__append_84 = modules/rtp/rtp-gstreamer.c
+@HAVE_GSTREAMER_TRUE@am__append_85 = $(GSTREAMER_CFLAGS)
+@HAVE_GSTREAMER_TRUE@am__append_86 = $(GSTREAMER_LIBS)
+@HAVE_GSTREAMER_FALSE@am__append_87 = modules/rtp/rtp-native.c
 
 ###################################
 #        Plug-in libraries        #
 ###################################
 
 # Serveral module (e.g. libalsa-util.la)
-@HAVE_DBUS_TRUE@am__append_84 = \
+@HAVE_DBUS_TRUE@am__append_88 = \
 @HAVE_DBUS_TRUE@		module-console-kit.la
 
-@HAVE_ESOUND_TRUE@am__append_85 = \
+@HAVE_ESOUND_TRUE@am__append_89 = \
 @HAVE_ESOUND_TRUE@		module-esound-protocol-tcp.la \
 @HAVE_ESOUND_TRUE@		module-esound-sink.la
 
 
 # See comment at librtp.la above
-@OS_IS_WIN32_FALSE@am__append_86 = \
+@OS_IS_WIN32_FALSE@am__append_90 = \
 @OS_IS_WIN32_FALSE@		module-rtp-send.la \
 @OS_IS_WIN32_FALSE@		module-rtp-recv.la
 
-@HAVE_AF_UNIX_TRUE@am__append_87 = \
+@HAVE_AF_UNIX_TRUE@am__append_91 = \
 @HAVE_AF_UNIX_TRUE@		module-cli-protocol-unix.la \
 @HAVE_AF_UNIX_TRUE@		module-simple-protocol-unix.la \
 @HAVE_AF_UNIX_TRUE@		module-http-protocol-unix.la \
 @HAVE_AF_UNIX_TRUE@		module-native-protocol-unix.la
 
-@HAVE_AF_UNIX_TRUE@@HAVE_ESOUND_TRUE@am__append_88 = \
+@HAVE_AF_UNIX_TRUE@@HAVE_ESOUND_TRUE@am__append_92 = \
 @HAVE_AF_UNIX_TRUE@@HAVE_ESOUND_TRUE@		module-esound-protocol-unix.la
 
-@HAVE_MKFIFO_TRUE@am__append_89 = \
+@HAVE_MKFIFO_TRUE@am__append_93 = \
 @HAVE_MKFIFO_TRUE@		module-pipe-sink.la \
 @HAVE_MKFIFO_TRUE@		module-pipe-source.la
 
-@HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@am__append_90 = \
+@HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@am__append_94 = \
 @HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@		module-esound-compat-spawnfd.la \
 @HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@		module-esound-compat-spawnpid.la
 
-@HAVE_REGEX_TRUE@am__append_91 = \
+@HAVE_REGEX_TRUE@am__append_95 = \
 @HAVE_REGEX_TRUE@		module-match.la
 
-@HAVE_X11_TRUE@am__append_92 = \
+@HAVE_X11_TRUE@am__append_96 = \
 @HAVE_X11_TRUE@		module-x11-bell.la \
 @HAVE_X11_TRUE@		module-x11-publish.la \
 @HAVE_X11_TRUE@		module-x11-xsmp.la \
 @HAVE_X11_TRUE@		module-x11-cork-request.la
 
-@HAVE_OSS_OUTPUT_TRUE@am__append_93 = \
+@HAVE_OSS_OUTPUT_TRUE@am__append_97 = \
 @HAVE_OSS_OUTPUT_TRUE@		liboss-util.la \
 @HAVE_OSS_OUTPUT_TRUE@		module-oss.la
 
-@HAVE_COREAUDIO_TRUE@am__append_94 = \
+@HAVE_COREAUDIO_TRUE@am__append_98 = \
 @HAVE_COREAUDIO_TRUE@		module-coreaudio-detect.la \
 @HAVE_COREAUDIO_TRUE@		module-coreaudio-device.la
 
 pulselibexec_PROGRAMS = $(am__EXEEXT_16) $(am__EXEEXT_17)
-@HAVE_ALSA_TRUE@am__append_95 = \
+@HAVE_ALSA_TRUE@am__append_99 = \
 @HAVE_ALSA_TRUE@		libalsa-util.la \
 @HAVE_ALSA_TRUE@		module-alsa-sink.la \
 @HAVE_ALSA_TRUE@		module-alsa-source.la \
 @HAVE_ALSA_TRUE@		module-alsa-card.la
 
-@HAVE_SOLARIS_TRUE@am__append_96 = \
+@HAVE_SOLARIS_TRUE@am__append_100 = \
 @HAVE_SOLARIS_TRUE@		module-solaris.la
 
-@HAVE_AVAHI_TRUE@am__append_97 = \
+@HAVE_AVAHI_TRUE@am__append_101 = \
 @HAVE_AVAHI_TRUE@		module-zeroconf-publish.la \
 @HAVE_AVAHI_TRUE@		module-zeroconf-discover.la
 
-@HAVE_BONJOUR_TRUE@am__append_98 = \
+@HAVE_BONJOUR_TRUE@am__append_102 = \
 @HAVE_BONJOUR_TRUE@		module-bonjour-publish.la
 
-@HAVE_LIRC_TRUE@am__append_99 = \
+@HAVE_LIRC_TRUE@am__append_103 = \
 @HAVE_LIRC_TRUE@		module-lirc.la
 
-@HAVE_EVDEV_TRUE@am__append_100 = \
+@HAVE_EVDEV_TRUE@am__append_104 = \
 @HAVE_EVDEV_TRUE@		module-mmkbd-evdev.la
 
-@HAVE_JACK_TRUE@am__append_101 = \
+@HAVE_JACK_TRUE@am__append_105 = \
 @HAVE_JACK_TRUE@		module-jack-sink.la \
 @HAVE_JACK_TRUE@		module-jack-source.la
 
-@HAVE_DBUS_TRUE@@HAVE_JACK_TRUE@am__append_102 = \
+@HAVE_DBUS_TRUE@@HAVE_JACK_TRUE@am__append_106 = \
 @HAVE_DBUS_TRUE@@HAVE_JACK_TRUE@		module-jackdbus-detect.la
 
-@HAVE_GCONF_TRUE@am__append_103 = \
+@HAVE_GCONF_TRUE@am__append_107 = \
 @HAVE_GCONF_TRUE@		module-gconf.la
 
-@HAVE_GCONF_TRUE@am__append_104 = \
+@HAVE_GCONF_TRUE@am__append_108 = \
 @HAVE_GCONF_TRUE@		gconf-helper
 
-@HAVE_GSETTINGS_TRUE@am__append_105 = \
+@HAVE_GSETTINGS_TRUE@am__append_109 = \
 @HAVE_GSETTINGS_TRUE@		module-gsettings.la
 
-@HAVE_GSETTINGS_TRUE@am__append_106 = \
+@HAVE_GSETTINGS_TRUE@am__append_110 = \
 @HAVE_GSETTINGS_TRUE@		gsettings-helper
 
-@HAVE_WAVEOUT_TRUE@am__append_107 = \
+@HAVE_WAVEOUT_TRUE@am__append_111 = \
 @HAVE_WAVEOUT_TRUE@		module-waveout.la
 
-@HAVE_HAL_COMPAT_TRUE@am__append_108 = \
+@HAVE_HAL_COMPAT_TRUE@am__append_112 = \
 @HAVE_HAL_COMPAT_TRUE@		module-hal-detect.la
 
-@HAVE_UDEV_TRUE@am__append_109 = \
+@HAVE_UDEV_TRUE@am__append_113 = \
 @HAVE_UDEV_TRUE@		module-udev-detect.la
 
-@HAVE_SYSTEMD_LOGIN_TRUE@am__append_110 = \
+@HAVE_SYSTEMD_LOGIN_TRUE@am__append_114 = \
 @HAVE_SYSTEMD_LOGIN_TRUE@		module-systemd-login.la
 
-@HAVE_DBUS_TRUE@am__append_111 = \
+@HAVE_DBUS_TRUE@am__append_115 = \
 @HAVE_DBUS_TRUE@		module-rygel-media-server.la \
 @HAVE_DBUS_TRUE@		module-dbus-protocol.la
 
-@HAVE_BLUEZ_TRUE@am__append_112 = \
+@HAVE_BLUEZ_TRUE@am__append_116 = \
 @HAVE_BLUEZ_TRUE@		module-bluetooth-discover.la \
 @HAVE_BLUEZ_TRUE@		module-bluetooth-policy.la
 
-@HAVE_BLUEZ_5_TRUE@am__append_113 = \
+@HAVE_BLUEZ_5_TRUE@am__append_117 = \
 @HAVE_BLUEZ_5_TRUE@		libbluez5-util.la \
 @HAVE_BLUEZ_5_TRUE@		module-bluez5-discover.la \
 @HAVE_BLUEZ_5_TRUE@		module-bluez5-device.la
@@ -411,46 +415,46 @@ pulselibexec_PROGRAMS = $(am__EXEEXT_16) $(am__EXEEXT_17)
 
 # RAOP depends on RTP, and we don't support RTP on Windows, see comment at
 # librtp.la above.
-@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_114 = \
+@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_118 = \
 @HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@		libraop.la \
 @HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@		module-raop-sink.la
 
-@HAVE_AVAHI_TRUE@@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_115 = \
+@HAVE_AVAHI_TRUE@@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_119 = \
 @HAVE_AVAHI_TRUE@@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@		module-raop-discover.la
 
-@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_116 = \
+@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_120 = \
 @HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@		module-equalizer-sink.la
 
-@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_117 = utils/qpaeq
-@HAVE_DBUS_TRUE@am__append_118 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_119 = $(DBUS_LIBS)
-@HAVE_UDEV_TRUE@am__append_120 = modules/udev-util.h modules/udev-util.c
-@HAVE_UDEV_TRUE@am__append_121 = $(UDEV_LIBS)
-@HAVE_UDEV_TRUE@am__append_122 = $(UDEV_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_123 = modules/reserve.h modules/reserve.c modules/reserve-monitor.h modules/reserve-monitor.c
-@HAVE_DBUS_TRUE@am__append_124 = $(DBUS_LIBS)
-@HAVE_DBUS_TRUE@am__append_125 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_126 = $(DBUS_LIBS)
-@HAVE_DBUS_TRUE@am__append_127 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_121 = utils/qpaeq
+@HAVE_DBUS_TRUE@am__append_122 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_123 = $(DBUS_LIBS)
+@HAVE_UDEV_TRUE@am__append_124 = modules/udev-util.h modules/udev-util.c
+@HAVE_UDEV_TRUE@am__append_125 = $(UDEV_LIBS)
+@HAVE_UDEV_TRUE@am__append_126 = $(UDEV_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_127 = modules/reserve.h modules/reserve.c modules/reserve-monitor.h modules/reserve-monitor.c
 @HAVE_DBUS_TRUE@am__append_128 = $(DBUS_LIBS)
 @HAVE_DBUS_TRUE@am__append_129 = $(DBUS_CFLAGS)
-@HAVE_ADRIAN_EC_TRUE@am__append_130 = \
+@HAVE_DBUS_TRUE@am__append_130 = $(DBUS_LIBS)
+@HAVE_DBUS_TRUE@am__append_131 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_132 = $(DBUS_LIBS)
+@HAVE_DBUS_TRUE@am__append_133 = $(DBUS_CFLAGS)
+@HAVE_ADRIAN_EC_TRUE@am__append_134 = \
 @HAVE_ADRIAN_EC_TRUE@		modules/echo-cancel/adrian-aec.c modules/echo-cancel/adrian-aec.h \
 @HAVE_ADRIAN_EC_TRUE@		modules/echo-cancel/adrian.c modules/echo-cancel/adrian.h
 
-@HAVE_ADRIAN_EC_TRUE@am__append_131 = -DHAVE_ADRIAN_EC=1
-@HAVE_ADRIAN_EC_TRUE@am__append_132 = modules/echo-cancel/adrian-aec
-@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_133 = $(ORC_LIBS)
-@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_134 = $(ORC_CFLAGS) -I$(top_builddir)/src/modules/echo-cancel
-@HAVE_SPEEX_TRUE@am__append_135 = modules/echo-cancel/speex.c
-@HAVE_SPEEX_TRUE@am__append_136 = $(LIBSPEEX_CFLAGS)
-@HAVE_SPEEX_TRUE@am__append_137 = $(LIBSPEEX_LIBS)
-@HAVE_WEBRTC_TRUE@am__append_138 = -DHAVE_WEBRTC=1
-@HAVE_WEBRTC_TRUE@am__append_139 = libwebrtc-util.la
-@HAVE_BLUEZ_5_OFONO_HEADSET_TRUE@am__append_140 = \
+@HAVE_ADRIAN_EC_TRUE@am__append_135 = -DHAVE_ADRIAN_EC=1
+@HAVE_ADRIAN_EC_TRUE@am__append_136 = modules/echo-cancel/adrian-aec
+@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_137 = $(ORC_LIBS)
+@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_138 = $(ORC_CFLAGS) -I$(top_builddir)/src/modules/echo-cancel
+@HAVE_SPEEX_TRUE@am__append_139 = modules/echo-cancel/speex.c
+@HAVE_SPEEX_TRUE@am__append_140 = $(LIBSPEEX_CFLAGS)
+@HAVE_SPEEX_TRUE@am__append_141 = $(LIBSPEEX_LIBS)
+@HAVE_WEBRTC_TRUE@am__append_142 = -DHAVE_WEBRTC=1
+@HAVE_WEBRTC_TRUE@am__append_143 = libwebrtc-util.la
+@HAVE_BLUEZ_5_OFONO_HEADSET_TRUE@am__append_144 = \
 @HAVE_BLUEZ_5_OFONO_HEADSET_TRUE@		modules/bluetooth/backend-ofono.c
 
-@HAVE_BLUEZ_5_NATIVE_HEADSET_TRUE@am__append_141 = \
+@HAVE_BLUEZ_5_NATIVE_HEADSET_TRUE@am__append_145 = \
 @HAVE_BLUEZ_5_NATIVE_HEADSET_TRUE@		modules/bluetooth/backend-native.c
 
 subdir = src
@@ -1132,16 +1136,30 @@ libraop_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(CFLAGS) $(libraop_la_LDFLAGS) $(LDFLAGS) -o $@
 @HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am_libraop_la_rpath = -rpath \
 @HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@	$(modlibexecdir)
+@HAVE_GSTREAMER_TRUE@am__DEPENDENCIES_13 = $(am__DEPENDENCIES_1)
 librtp_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	libpulsecore-@PA_MAJORMINOR@.la \
-	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
-am_librtp_la_OBJECTS = modules/rtp/rtp.lo modules/rtp/sdp.lo \
-	modules/rtp/sap.lo modules/rtp/rtsp_client.lo \
-	modules/rtp/headerlist.lo
+	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la \
+	$(am__DEPENDENCIES_13)
+am__librtp_la_SOURCES_DIST = modules/rtp/rtp-common.c \
+	modules/rtp/rtp.h modules/rtp/sdp.c modules/rtp/sdp.h \
+	modules/rtp/sap.c modules/rtp/sap.h modules/rtp/rtsp_client.c \
+	modules/rtp/rtsp_client.h modules/rtp/headerlist.c \
+	modules/rtp/headerlist.h modules/rtp/rtp-gstreamer.c \
+	modules/rtp/rtp-native.c
+@HAVE_GSTREAMER_TRUE@am__objects_23 =  \
+@HAVE_GSTREAMER_TRUE@	modules/rtp/librtp_la-rtp-gstreamer.lo
+@HAVE_GSTREAMER_FALSE@am__objects_24 =  \
+@HAVE_GSTREAMER_FALSE@	modules/rtp/librtp_la-rtp-native.lo
+am_librtp_la_OBJECTS = modules/rtp/librtp_la-rtp-common.lo \
+	modules/rtp/librtp_la-sdp.lo modules/rtp/librtp_la-sap.lo \
+	modules/rtp/librtp_la-rtsp_client.lo \
+	modules/rtp/librtp_la-headerlist.lo $(am__objects_23) \
+	$(am__objects_24)
 librtp_la_OBJECTS = $(am_librtp_la_OBJECTS)
 librtp_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(librtp_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(librtp_la_CFLAGS) \
+	$(CFLAGS) $(librtp_la_LDFLAGS) $(LDFLAGS) -o $@
 @OS_IS_WIN32_FALSE@am_librtp_la_rpath = -rpath $(modlibexecdir)
 @HAVE_WEBRTC_TRUE@libwebrtc_util_la_DEPENDENCIES =  \
 @HAVE_WEBRTC_TRUE@	libpulsecore-@PA_MAJORMINOR@.la \
@@ -1412,23 +1430,23 @@ module_device_restore_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(module_device_restore_la_CFLAGS) $(CFLAGS) \
 	$(module_device_restore_la_LDFLAGS) $(LDFLAGS) -o $@
-@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__DEPENDENCIES_13 =  \
+@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__DEPENDENCIES_14 =  \
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@	$(am__DEPENDENCIES_1)
 module_echo_cancel_la_DEPENDENCIES = $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_13) $(am__DEPENDENCIES_10) \
-	$(am__append_139)
+	$(am__DEPENDENCIES_14) $(am__DEPENDENCIES_10) \
+	$(am__append_143)
 am__module_echo_cancel_la_SOURCES_DIST =  \
 	modules/echo-cancel/module-echo-cancel.c \
 	modules/echo-cancel/null.c modules/echo-cancel/echo-cancel.h \
 	modules/echo-cancel/adrian-aec.c \
 	modules/echo-cancel/adrian-aec.h modules/echo-cancel/adrian.c \
 	modules/echo-cancel/adrian.h modules/echo-cancel/speex.c
-@HAVE_ADRIAN_EC_TRUE@am__objects_23 = modules/echo-cancel/module_echo_cancel_la-adrian-aec.lo \
+@HAVE_ADRIAN_EC_TRUE@am__objects_25 = modules/echo-cancel/module_echo_cancel_la-adrian-aec.lo \
 @HAVE_ADRIAN_EC_TRUE@	modules/echo-cancel/module_echo_cancel_la-adrian.lo
-@HAVE_SPEEX_TRUE@am__objects_24 = modules/echo-cancel/module_echo_cancel_la-speex.lo
+@HAVE_SPEEX_TRUE@am__objects_26 = modules/echo-cancel/module_echo_cancel_la-speex.lo
 am_module_echo_cancel_la_OBJECTS = modules/echo-cancel/module_echo_cancel_la-module-echo-cancel.lo \
 	modules/echo-cancel/module_echo_cancel_la-null.lo \
-	$(am__objects_23) $(am__objects_24)
+	$(am__objects_25) $(am__objects_26)
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@nodist_module_echo_cancel_la_OBJECTS = modules/echo-cancel/module_echo_cancel_la-adrian-aec-orc-gen.lo
 module_echo_cancel_la_OBJECTS = $(am_module_echo_cancel_la_OBJECTS) \
 	$(nodist_module_echo_cancel_la_OBJECTS)
@@ -2236,20 +2254,20 @@ am__echo_cancel_test_SOURCES_DIST =  \
 	modules/echo-cancel/adrian-aec.c \
 	modules/echo-cancel/adrian-aec.h modules/echo-cancel/adrian.c \
 	modules/echo-cancel/adrian.h modules/echo-cancel/speex.c
-@HAVE_ADRIAN_EC_TRUE@am__objects_25 = modules/echo-cancel/echo_cancel_test-adrian-aec.$(OBJEXT) \
+@HAVE_ADRIAN_EC_TRUE@am__objects_27 = modules/echo-cancel/echo_cancel_test-adrian-aec.$(OBJEXT) \
 @HAVE_ADRIAN_EC_TRUE@	modules/echo-cancel/echo_cancel_test-adrian.$(OBJEXT)
-@HAVE_SPEEX_TRUE@am__objects_26 = modules/echo-cancel/echo_cancel_test-speex.$(OBJEXT)
-am__objects_27 = modules/echo-cancel/echo_cancel_test-module-echo-cancel.$(OBJEXT) \
+@HAVE_SPEEX_TRUE@am__objects_28 = modules/echo-cancel/echo_cancel_test-speex.$(OBJEXT)
+am__objects_29 = modules/echo-cancel/echo_cancel_test-module-echo-cancel.$(OBJEXT) \
 	modules/echo-cancel/echo_cancel_test-null.$(OBJEXT) \
-	$(am__objects_25) $(am__objects_26)
-am_echo_cancel_test_OBJECTS = $(am__objects_27)
-@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__objects_28 = modules/echo-cancel/echo_cancel_test-adrian-aec-orc-gen.$(OBJEXT)
-nodist_echo_cancel_test_OBJECTS = $(am__objects_28)
+	$(am__objects_27) $(am__objects_28)
+am_echo_cancel_test_OBJECTS = $(am__objects_29)
+@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__objects_30 = modules/echo-cancel/echo_cancel_test-adrian-aec-orc-gen.$(OBJEXT)
+nodist_echo_cancel_test_OBJECTS = $(am__objects_30)
 echo_cancel_test_OBJECTS = $(am_echo_cancel_test_OBJECTS) \
 	$(nodist_echo_cancel_test_OBJECTS)
-am__DEPENDENCIES_14 = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_13) \
-	$(am__DEPENDENCIES_10) $(am__append_139)
-echo_cancel_test_DEPENDENCIES = $(am__DEPENDENCIES_14)
+am__DEPENDENCIES_15 = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_14) \
+	$(am__DEPENDENCIES_10) $(am__append_143)
+echo_cancel_test_DEPENDENCIES = $(am__DEPENDENCIES_15)
 echo_cancel_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(echo_cancel_test_CFLAGS) $(CFLAGS) \
@@ -2385,12 +2403,12 @@ mainloop_test_DEPENDENCIES = $(am__DEPENDENCIES_2) libpulse.la \
 mainloop_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(mainloop_test_CFLAGS) \
 	$(CFLAGS) $(mainloop_test_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_29 = tests/mainloop_test_glib-mainloop-test.$(OBJEXT)
-am_mainloop_test_glib_OBJECTS = $(am__objects_29)
+am__objects_31 = tests/mainloop_test_glib-mainloop-test.$(OBJEXT)
+am_mainloop_test_glib_OBJECTS = $(am__objects_31)
 mainloop_test_glib_OBJECTS = $(am_mainloop_test_glib_OBJECTS)
-am__DEPENDENCIES_15 = $(am__DEPENDENCIES_2) libpulse.la \
+am__DEPENDENCIES_16 = $(am__DEPENDENCIES_2) libpulse.la \
 	libpulsecommon-@PA_MAJORMINOR@.la
-mainloop_test_glib_DEPENDENCIES = $(am__DEPENDENCIES_15) \
+mainloop_test_glib_DEPENDENCIES = $(am__DEPENDENCIES_16) \
 	$(am__DEPENDENCIES_1) libpulse-mainloop-glib.la
 mainloop_test_glib_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
@@ -2521,7 +2539,7 @@ am__pulseaudio_SOURCES_DIST = daemon/caps.c daemon/caps.h \
 	daemon/dumpmodules.c daemon/dumpmodules.h \
 	daemon/ltdl-bind-now.c daemon/ltdl-bind-now.h daemon/main.c \
 	daemon/server-lookup.c daemon/server-lookup.h
-@HAVE_DBUS_TRUE@am__objects_30 =  \
+@HAVE_DBUS_TRUE@am__objects_32 =  \
 @HAVE_DBUS_TRUE@	daemon/pulseaudio-server-lookup.$(OBJEXT)
 am_pulseaudio_OBJECTS = daemon/pulseaudio-caps.$(OBJEXT) \
 	daemon/pulseaudio-cmdline.$(OBJEXT) \
@@ -2529,7 +2547,7 @@ am_pulseaudio_OBJECTS = daemon/pulseaudio-caps.$(OBJEXT) \
 	daemon/pulseaudio-daemon-conf.$(OBJEXT) \
 	daemon/pulseaudio-dumpmodules.$(OBJEXT) \
 	daemon/pulseaudio-ltdl-bind-now.$(OBJEXT) \
-	daemon/pulseaudio-main.$(OBJEXT) $(am__objects_30)
+	daemon/pulseaudio-main.$(OBJEXT) $(am__objects_32)
 pulseaudio_OBJECTS = $(am_pulseaudio_OBJECTS)
 pulseaudio_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(pulseaudio_CFLAGS) \
@@ -2837,12 +2855,15 @@ am__depfiles_remade = daemon/$(DEPDIR)/cpulimit_test-cpulimit.Po \
 	modules/raop/$(DEPDIR)/libraop_la-raop-util.Plo \
 	modules/raop/$(DEPDIR)/module_raop_discover_la-module-raop-discover.Plo \
 	modules/raop/$(DEPDIR)/module_raop_sink_la-module-raop-sink.Plo \
-	modules/rtp/$(DEPDIR)/headerlist.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-headerlist.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-sap.Plo \
+	modules/rtp/$(DEPDIR)/librtp_la-sdp.Plo \
 	modules/rtp/$(DEPDIR)/module_rtp_recv_la-module-rtp-recv.Plo \
 	modules/rtp/$(DEPDIR)/module_rtp_send_la-module-rtp-send.Plo \
-	modules/rtp/$(DEPDIR)/rtp.Plo \
-	modules/rtp/$(DEPDIR)/rtsp_client.Plo \
-	modules/rtp/$(DEPDIR)/sap.Plo modules/rtp/$(DEPDIR)/sdp.Plo \
 	modules/x11/$(DEPDIR)/module_x11_bell_la-module-x11-bell.Plo \
 	modules/x11/$(DEPDIR)/module_x11_cork_request_la-module-x11-cork-request.Plo \
 	modules/x11/$(DEPDIR)/module_x11_publish_la-module-x11-publish.Plo \
@@ -3283,7 +3304,8 @@ DIST_SOURCES = $(am__libalsa_util_la_SOURCES_DIST) \
 	$(am__libpulsecore_remap_neon_la_SOURCES_DIST) \
 	$(am__libpulsecore_sconv_neon_la_SOURCES_DIST) \
 	$(libpulsedsp_la_SOURCES) $(libraop_la_SOURCES) \
-	$(librtp_la_SOURCES) $(am__libwebrtc_util_la_SOURCES_DIST) \
+	$(am__librtp_la_SOURCES_DIST) \
+	$(am__libwebrtc_util_la_SOURCES_DIST) \
 	$(module_allow_passthrough_la_SOURCES) \
 	$(module_alsa_card_la_SOURCES) $(module_alsa_sink_la_SOURCES) \
 	$(module_alsa_source_la_SOURCES) \
@@ -3439,11 +3461,11 @@ am__dist_alsapaths_DATA_DIST =  \
 	modules/alsa/mixer/paths/hdmi-output-5.conf \
 	modules/alsa/mixer/paths/hdmi-output-6.conf \
 	modules/alsa/mixer/paths/hdmi-output-7.conf \
-	modules/alsa/mixer/paths/steelseries-arctis-5-output-chat.conf \
-	modules/alsa/mixer/paths/steelseries-arctis-5-output-game.conf \
-	modules/alsa/mixer/paths/steelseries-arctis-7-input.conf \
-	modules/alsa/mixer/paths/steelseries-arctis-7-output-mono.conf \
-	modules/alsa/mixer/paths/steelseries-arctis-7-output-stereo.conf
+	modules/alsa/mixer/paths/steelseries-arctis-output-chat-common.conf \
+	modules/alsa/mixer/paths/steelseries-arctis-output-game-common.conf \
+	modules/alsa/mixer/paths/usb-gaming-headset-input.conf \
+	modules/alsa/mixer/paths/usb-gaming-headset-output-mono.conf \
+	modules/alsa/mixer/paths/usb-gaming-headset-output-stereo.conf
 am__dist_alsaprofilesets_DATA_DIST =  \
 	modules/alsa/mixer/profile-sets/default.conf \
 	modules/alsa/mixer/profile-sets/force-speaker.conf \
@@ -3458,8 +3480,8 @@ am__dist_alsaprofilesets_DATA_DIST =  \
 	modules/alsa/mixer/profile-sets/native-instruments-korecontroller.conf \
 	modules/alsa/mixer/profile-sets/kinect-audio.conf \
 	modules/alsa/mixer/profile-sets/sb-omni-surround-5.1.conf \
-	modules/alsa/mixer/profile-sets/steelseries-arctis-5-usb-audio.conf \
-	modules/alsa/mixer/profile-sets/steelseries-arctis-7-usb-audio.conf \
+	modules/alsa/mixer/profile-sets/steelseries-arctis-common-usb-audio.conf \
+	modules/alsa/mixer/profile-sets/usb-gaming-headset.conf \
 	modules/alsa/mixer/profile-sets/dell-dock-tb16-usb-audio.conf \
 	modules/alsa/mixer/profile-sets/cmedia-high-speed-true-hdaudio.conf
 am__dist_udevrules_DATA_DIST = modules/alsa/90-pulseaudio.rules
@@ -3744,6 +3766,8 @@ GREP = @GREP@
 GSETTINGS_CFLAGS = @GSETTINGS_CFLAGS@
 GSETTINGS_DISABLE_SCHEMAS_COMPILE = @GSETTINGS_DISABLE_SCHEMAS_COMPILE@
 GSETTINGS_LIBS = @GSETTINGS_LIBS@
+GSTREAMER_CFLAGS = @GSTREAMER_CFLAGS@
+GSTREAMER_LIBS = @GSTREAMER_LIBS@
 GTK30_CFLAGS = @GTK30_CFLAGS@
 GTK30_LIBS = @GTK30_LIBS@
 HAVE_AF_UNIX = @HAVE_AF_UNIX@
@@ -3954,7 +3978,6 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
 pulseconfdir = @pulseconfdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -4049,7 +4072,7 @@ CLEANFILES = $(am__append_7) $(am__append_50) \
 @HAVE_ORC_TRUE@cp_v_gen = $(cp_v_gen_$(V))
 @HAVE_ORC_TRUE@cp_v_gen_ = $(cp_v_gen_$(AM_DEFAULT_VERBOSITY))
 @HAVE_ORC_TRUE@cp_v_gen_0 = @echo "  CP     $@";
-ORC_SOURCE = pulsecore/svolume $(am__append_132)
+ORC_SOURCE = pulsecore/svolume $(am__append_136)
 pulseaudio_SOURCES = daemon/caps.c daemon/caps.h daemon/cmdline.c \
 	daemon/cmdline.h daemon/cpulimit.c daemon/cpulimit.h \
 	daemon/daemon-conf.c daemon/daemon-conf.h daemon/dumpmodules.c \
@@ -4078,7 +4101,7 @@ pulseaudio_DEPENDENCIES = libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJ
 #       Utility programs          #
 ###################################
 bin_SCRIPTS = utils/pa-info $(am__append_13) $(am__append_17) \
-	$(am__append_49) $(am__append_117)
+	$(am__append_49) $(am__append_121)
 pacat_SOURCES = utils/pacat.c
 pacat_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la $(LIBSNDFILE_LIBS)
 pacat_CFLAGS = $(AM_CFLAGS) $(LIBSNDFILE_CFLAGS)
@@ -4622,7 +4645,7 @@ libpulsecore_foreign_la_CFLAGS = $(AM_CFLAGS) $(FOREIGN_CFLAGS)
 modlibexec_LTLIBRARIES = libcli.la libprotocol-cli.la \
 	libprotocol-simple.la libprotocol-http.la \
 	libprotocol-native.la $(am__append_78) $(am__append_79) \
-	$(am__append_80) $(am__append_81) $(am__append_84) \
+	$(am__append_80) $(am__append_81) $(am__append_88) \
 	module-cli.la module-cli-protocol-tcp.la \
 	module-simple-protocol-tcp.la module-null-sink.la \
 	module-null-source.la module-sine-source.la module-detect.la \
@@ -4644,16 +4667,16 @@ modlibexec_LTLIBRARIES = libcli.la libprotocol-cli.la \
 	module-switch-on-connect.la module-switch-on-port-available.la \
 	module-filter-apply.la module-filter-heuristics.la \
 	module-role-ducking.la module-allow-passthrough.la \
-	$(am__append_85) $(am__append_86) $(am__append_87) \
-	$(am__append_88) $(am__append_89) $(am__append_90) \
-	$(am__append_91) $(am__append_92) $(am__append_93) \
-	$(am__append_94) $(am__append_95) $(am__append_96) \
-	$(am__append_97) $(am__append_98) $(am__append_99) \
-	$(am__append_100) $(am__append_101) $(am__append_102) \
-	$(am__append_103) $(am__append_105) $(am__append_107) \
-	$(am__append_108) $(am__append_109) $(am__append_110) \
-	$(am__append_111) $(am__append_112) $(am__append_113) \
-	$(am__append_114) $(am__append_115) $(am__append_116)
+	$(am__append_89) $(am__append_90) $(am__append_91) \
+	$(am__append_92) $(am__append_93) $(am__append_94) \
+	$(am__append_95) $(am__append_96) $(am__append_97) \
+	$(am__append_98) $(am__append_99) $(am__append_100) \
+	$(am__append_101) $(am__append_102) $(am__append_103) \
+	$(am__append_104) $(am__append_105) $(am__append_106) \
+	$(am__append_107) $(am__append_109) $(am__append_111) \
+	$(am__append_112) $(am__append_113) $(am__append_114) \
+	$(am__append_115) $(am__append_116) $(am__append_117) \
+	$(am__append_118) $(am__append_119) $(am__append_120)
 libprotocol_simple_la_SOURCES = pulsecore/protocol-simple.c pulsecore/protocol-simple.h
 libprotocol_simple_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 libprotocol_simple_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
@@ -4676,15 +4699,15 @@ libprotocol_native_la_LIBADD = $(AM_LIBADD) \
 @HAVE_ESOUND_TRUE@libprotocol_esound_la_SOURCES = pulsecore/protocol-esound.c pulsecore/protocol-esound.h pulsecore/esound.h
 @HAVE_ESOUND_TRUE@libprotocol_esound_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 @HAVE_ESOUND_TRUE@libprotocol_esound_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
-librtp_la_SOURCES = \
-		modules/rtp/rtp.c modules/rtp/rtp.h \
-		modules/rtp/sdp.c modules/rtp/sdp.h \
-		modules/rtp/sap.c modules/rtp/sap.h \
-		modules/rtp/rtsp_client.c modules/rtp/rtsp_client.h \
-		modules/rtp/headerlist.c modules/rtp/headerlist.h
-
+librtp_la_SOURCES = modules/rtp/rtp-common.c modules/rtp/rtp.h \
+	modules/rtp/sdp.c modules/rtp/sdp.h modules/rtp/sap.c \
+	modules/rtp/sap.h modules/rtp/rtsp_client.c \
+	modules/rtp/rtsp_client.h modules/rtp/headerlist.c \
+	modules/rtp/headerlist.h $(am__append_84) $(am__append_87)
+librtp_la_CFLAGS = $(AM_CFLAGS) $(am__append_85)
 librtp_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
-librtp_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
+librtp_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la \
+	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la $(am__append_86)
 libraop_la_SOURCES = \
         modules/raop/raop-util.c modules/raop/raop-util.h \
         modules/raop/raop-crypto.c modules/raop/raop-crypto.h \
@@ -4715,8 +4738,8 @@ libavahi_wrap_la_LIBADD = $(AM_LIBADD) $(AVAHI_CFLAGS) libpulsecore-@PA_MAJORMIN
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/native-instruments-korecontroller.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/kinect-audio.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/sb-omni-surround-5.1.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/steelseries-arctis-5-usb-audio.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/steelseries-arctis-7-usb-audio.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/steelseries-arctis-common-usb-audio.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/usb-gaming-headset.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/dell-dock-tb16-usb-audio.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/cmedia-high-speed-true-hdaudio.conf
 
@@ -4759,11 +4782,11 @@ libavahi_wrap_la_LIBADD = $(AM_LIBADD) $(AVAHI_CFLAGS) libpulsecore-@PA_MAJORMIN
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/hdmi-output-5.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/hdmi-output-6.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/hdmi-output-7.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-5-output-chat.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-5-output-game.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-7-input.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-7-output-mono.conf \
-@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-7-output-stereo.conf
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-output-chat-common.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/steelseries-arctis-output-game-common.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/usb-gaming-headset-input.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/usb-gaming-headset-output-mono.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/paths/usb-gaming-headset-output-stereo.conf
 
 @HAVE_GSETTINGS_TRUE@gsettingsdataconvert_DATA = \
 @HAVE_GSETTINGS_TRUE@		modules/gsettings/pulseaudio.convert
@@ -4921,10 +4944,10 @@ module_remap_source_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_remap_sourc
 module_ladspa_sink_la_SOURCES = modules/module-ladspa-sink.c modules/ladspa.h
 module_ladspa_sink_la_CFLAGS = -DLADSPA_PATH="$(libdir)/ladspa:/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/lib64/ladspa" \
 	$(AM_CFLAGS) $(SERVER_CFLAGS) \
-	-DPA_MODULE_NAME=module_ladspa_sink $(am__append_118)
+	-DPA_MODULE_NAME=module_ladspa_sink $(am__append_122)
 module_ladspa_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_ladspa_sink_la_LIBADD = $(MODULE_LIBADD) $(LIBLTDL) \
-	$(am__append_119)
+	$(am__append_123)
 module_equalizer_sink_la_SOURCES = modules/module-equalizer-sink.c
 module_equalizer_sink_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) $(DBUS_CFLAGS) $(FFTW_CFLAGS) -DPA_MODULE_NAME=module_equalizer_sink
 module_equalizer_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
@@ -4946,9 +4969,9 @@ module_tunnel_sink_la_CFLAGS = -DTUNNEL_SINK=1 $(AM_CFLAGS) $(X11_CFLAGS) -DPA_M
 module_tunnel_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_tunnel_sink_la_LIBADD = $(MODULE_LIBADD) $(X11_LIBS)
 module_tunnel_source_la_SOURCES = modules/module-tunnel.c
-module_tunnel_source_la_LDFLAGS = $(MODULE_LDFLAGS) $(X11_CFLAGS)
+module_tunnel_source_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_tunnel_source_la_LIBADD = $(MODULE_LIBADD) $(X11_LIBS)
-module_tunnel_source_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_tunnel_source
+module_tunnel_source_la_CFLAGS = $(AM_CFLAGS) $(X11_CFLAGS) -DPA_MODULE_NAME=module_tunnel_source
 module_loopback_la_SOURCES = modules/module-loopback.c
 module_loopback_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_loopback_la_LIBADD = $(MODULE_LIBADD)
@@ -5016,12 +5039,12 @@ libalsa_util_la_SOURCES = modules/alsa/alsa-util.c \
 	modules/alsa/alsa-mixer.h modules/alsa/alsa-sink.c \
 	modules/alsa/alsa-sink.h modules/alsa/alsa-source.c \
 	modules/alsa/alsa-source.h modules/reserve-wrap.c \
-	modules/reserve-wrap.h $(am__append_120) $(am__append_123)
+	modules/reserve-wrap.h $(am__append_124) $(am__append_127)
 libalsa_util_la_LDFLAGS = -avoid-version
 libalsa_util_la_LIBADD = $(MODULE_LIBADD) $(ASOUNDLIB_LIBS) \
-	$(am__append_121) $(am__append_124)
+	$(am__append_125) $(am__append_128)
 libalsa_util_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
-	$(ASOUNDLIB_CFLAGS) $(am__append_122) $(am__append_125)
+	$(ASOUNDLIB_CFLAGS) $(am__append_126) $(am__append_129)
 module_alsa_sink_la_SOURCES = modules/alsa/module-alsa-sink.c
 module_alsa_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_alsa_sink_la_LIBADD = $(MODULE_LIBADD) $(ASOUNDLIB_LIBS) libalsa-util.la
@@ -5128,17 +5151,17 @@ module_device_manager_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_device_ma
 module_device_restore_la_SOURCES = modules/module-device-restore.c
 module_device_restore_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_device_restore_la_LIBADD = $(MODULE_LIBADD) \
-	libprotocol-native.la $(am__append_126)
+	libprotocol-native.la $(am__append_130)
 module_device_restore_la_CFLAGS = $(AM_CFLAGS) \
-	-DPA_MODULE_NAME=module_device_restore $(am__append_127)
+	-DPA_MODULE_NAME=module_device_restore $(am__append_131)
 
 # Stream volume/muted/device restore module
 module_stream_restore_la_SOURCES = modules/module-stream-restore.c
 module_stream_restore_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_stream_restore_la_LIBADD = $(MODULE_LIBADD) \
-	libprotocol-native.la $(am__append_128)
+	libprotocol-native.la $(am__append_132)
 module_stream_restore_la_CFLAGS = $(AM_CFLAGS) \
-	-DPA_MODULE_NAME=module_stream_restore $(am__append_129)
+	-DPA_MODULE_NAME=module_stream_restore $(am__append_133)
 
 # Card profile restore module
 module_card_restore_la_SOURCES = modules/module-card-restore.c
@@ -5186,13 +5209,13 @@ module_suspend_on_idle_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_suspend_
 module_echo_cancel_la_SOURCES =  \
 	modules/echo-cancel/module-echo-cancel.c \
 	modules/echo-cancel/null.c modules/echo-cancel/echo-cancel.h \
-	$(am__append_130) $(am__append_135)
+	$(am__append_134) $(am__append_139)
 module_echo_cancel_la_LDFLAGS = $(MODULE_LDFLAGS)
-module_echo_cancel_la_LIBADD = $(MODULE_LIBADD) $(am__append_133) \
-	$(am__append_137) $(am__append_139)
+module_echo_cancel_la_LIBADD = $(MODULE_LIBADD) $(am__append_137) \
+	$(am__append_141) $(am__append_143)
 module_echo_cancel_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
-	-DPA_MODULE_NAME=module_echo_cancel $(am__append_131) \
-	$(am__append_134) $(am__append_136) $(am__append_138)
+	-DPA_MODULE_NAME=module_echo_cancel $(am__append_135) \
+	$(am__append_138) $(am__append_140) $(am__append_142)
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@nodist_module_echo_cancel_la_SOURCES = \
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@		modules/echo-cancel/adrian-aec-orc-gen.c \
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@		modules/echo-cancel/adrian-aec-orc-gen.h
@@ -5209,11 +5232,11 @@ module_echo_cancel_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
 module_rtp_send_la_SOURCES = modules/rtp/module-rtp-send.c
 module_rtp_send_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_rtp_send_la_LIBADD = $(MODULE_LIBADD) librtp.la
-module_rtp_send_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_rtp_send
+module_rtp_send_la_CFLAGS = $(AM_CFLAGS) $(GSTREAMER_CFLAGS) -DPA_MODULE_NAME=module_rtp_send
 module_rtp_recv_la_SOURCES = modules/rtp/module-rtp-recv.c
 module_rtp_recv_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_rtp_recv_la_LIBADD = $(MODULE_LIBADD) librtp.la
-module_rtp_recv_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_rtp_recv
+module_rtp_recv_la_CFLAGS = $(AM_CFLAGS) $(GSTREAMER_CFLAGS) -DPA_MODULE_NAME=module_rtp_recv
 
 # JACK
 module_jackdbus_detect_la_SOURCES = modules/jack/module-jackdbus-detect.c
@@ -5291,7 +5314,7 @@ libbluez5_util_la_SOURCES = modules/bluetooth/bluez5-util.c \
 	modules/bluetooth/a2dp-codec-util.c \
 	modules/bluetooth/a2dp-codec-util.h \
 	modules/bluetooth/a2dp-codecs.h modules/bluetooth/rtp.h \
-	$(am__append_140) $(am__append_141) \
+	$(am__append_144) $(am__append_145) \
 	modules/bluetooth/a2dp-codec-sbc.c
 libbluez5_util_la_LDFLAGS = -avoid-version
 libbluez5_util_la_LIBADD = $(MODULE_LIBADD) $(DBUS_LIBS) $(SBC_LIBS)
@@ -6276,15 +6299,19 @@ modules/rtp/$(am__dirstamp):
 modules/rtp/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) modules/rtp/$(DEPDIR)
 	@: > modules/rtp/$(DEPDIR)/$(am__dirstamp)
-modules/rtp/rtp.lo: modules/rtp/$(am__dirstamp) \
+modules/rtp/librtp_la-rtp-common.lo: modules/rtp/$(am__dirstamp) \
 	modules/rtp/$(DEPDIR)/$(am__dirstamp)
-modules/rtp/sdp.lo: modules/rtp/$(am__dirstamp) \
+modules/rtp/librtp_la-sdp.lo: modules/rtp/$(am__dirstamp) \
 	modules/rtp/$(DEPDIR)/$(am__dirstamp)
-modules/rtp/sap.lo: modules/rtp/$(am__dirstamp) \
+modules/rtp/librtp_la-sap.lo: modules/rtp/$(am__dirstamp) \
 	modules/rtp/$(DEPDIR)/$(am__dirstamp)
-modules/rtp/rtsp_client.lo: modules/rtp/$(am__dirstamp) \
+modules/rtp/librtp_la-rtsp_client.lo: modules/rtp/$(am__dirstamp) \
 	modules/rtp/$(DEPDIR)/$(am__dirstamp)
-modules/rtp/headerlist.lo: modules/rtp/$(am__dirstamp) \
+modules/rtp/librtp_la-headerlist.lo: modules/rtp/$(am__dirstamp) \
+	modules/rtp/$(DEPDIR)/$(am__dirstamp)
+modules/rtp/librtp_la-rtp-gstreamer.lo: modules/rtp/$(am__dirstamp) \
+	modules/rtp/$(DEPDIR)/$(am__dirstamp)
+modules/rtp/librtp_la-rtp-native.lo: modules/rtp/$(am__dirstamp) \
 	modules/rtp/$(DEPDIR)/$(am__dirstamp)
 
 librtp.la: $(librtp_la_OBJECTS) $(librtp_la_DEPENDENCIES) $(EXTRA_librtp_la_DEPENDENCIES) 
@@ -7546,13 +7573,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@modules/raop/$(DEPDIR)/libraop_la-raop-util.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/raop/$(DEPDIR)/module_raop_discover_la-module-raop-discover.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/raop/$(DEPDIR)/module_raop_sink_la-module-raop-sink.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/headerlist.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-headerlist.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-sap.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/librtp_la-sdp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/module_rtp_recv_la-module-rtp-recv.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/module_rtp_send_la-module-rtp-send.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/rtp.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/rtsp_client.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/sap.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@modules/rtp/$(DEPDIR)/sdp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/x11/$(DEPDIR)/module_x11_bell_la-module-x11-bell.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/x11/$(DEPDIR)/module_x11_cork_request_la-module-x11-cork-request.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@modules/x11/$(DEPDIR)/module_x11_publish_la-module-x11-publish.Plo@am__quote@ # am--include-marker
@@ -9236,6 +9265,55 @@ modules/raop/libraop_la-raop-sink.lo: modules/raop/raop-sink.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/raop/raop-sink.c' object='modules/raop/libraop_la-raop-sink.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libraop_la_CFLAGS) $(CFLAGS) -c -o modules/raop/libraop_la-raop-sink.lo `test -f 'modules/raop/raop-sink.c' || echo '$(srcdir)/'`modules/raop/raop-sink.c
+
+modules/rtp/librtp_la-rtp-common.lo: modules/rtp/rtp-common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-rtp-common.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Tpo -c -o modules/rtp/librtp_la-rtp-common.lo `test -f 'modules/rtp/rtp-common.c' || echo '$(srcdir)/'`modules/rtp/rtp-common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Tpo modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/rtp-common.c' object='modules/rtp/librtp_la-rtp-common.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-rtp-common.lo `test -f 'modules/rtp/rtp-common.c' || echo '$(srcdir)/'`modules/rtp/rtp-common.c
+
+modules/rtp/librtp_la-sdp.lo: modules/rtp/sdp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-sdp.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-sdp.Tpo -c -o modules/rtp/librtp_la-sdp.lo `test -f 'modules/rtp/sdp.c' || echo '$(srcdir)/'`modules/rtp/sdp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-sdp.Tpo modules/rtp/$(DEPDIR)/librtp_la-sdp.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/sdp.c' object='modules/rtp/librtp_la-sdp.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-sdp.lo `test -f 'modules/rtp/sdp.c' || echo '$(srcdir)/'`modules/rtp/sdp.c
+
+modules/rtp/librtp_la-sap.lo: modules/rtp/sap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-sap.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-sap.Tpo -c -o modules/rtp/librtp_la-sap.lo `test -f 'modules/rtp/sap.c' || echo '$(srcdir)/'`modules/rtp/sap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-sap.Tpo modules/rtp/$(DEPDIR)/librtp_la-sap.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/sap.c' object='modules/rtp/librtp_la-sap.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-sap.lo `test -f 'modules/rtp/sap.c' || echo '$(srcdir)/'`modules/rtp/sap.c
+
+modules/rtp/librtp_la-rtsp_client.lo: modules/rtp/rtsp_client.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-rtsp_client.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Tpo -c -o modules/rtp/librtp_la-rtsp_client.lo `test -f 'modules/rtp/rtsp_client.c' || echo '$(srcdir)/'`modules/rtp/rtsp_client.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Tpo modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/rtsp_client.c' object='modules/rtp/librtp_la-rtsp_client.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-rtsp_client.lo `test -f 'modules/rtp/rtsp_client.c' || echo '$(srcdir)/'`modules/rtp/rtsp_client.c
+
+modules/rtp/librtp_la-headerlist.lo: modules/rtp/headerlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-headerlist.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-headerlist.Tpo -c -o modules/rtp/librtp_la-headerlist.lo `test -f 'modules/rtp/headerlist.c' || echo '$(srcdir)/'`modules/rtp/headerlist.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-headerlist.Tpo modules/rtp/$(DEPDIR)/librtp_la-headerlist.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/headerlist.c' object='modules/rtp/librtp_la-headerlist.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-headerlist.lo `test -f 'modules/rtp/headerlist.c' || echo '$(srcdir)/'`modules/rtp/headerlist.c
+
+modules/rtp/librtp_la-rtp-gstreamer.lo: modules/rtp/rtp-gstreamer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-rtp-gstreamer.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Tpo -c -o modules/rtp/librtp_la-rtp-gstreamer.lo `test -f 'modules/rtp/rtp-gstreamer.c' || echo '$(srcdir)/'`modules/rtp/rtp-gstreamer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Tpo modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/rtp-gstreamer.c' object='modules/rtp/librtp_la-rtp-gstreamer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-rtp-gstreamer.lo `test -f 'modules/rtp/rtp-gstreamer.c' || echo '$(srcdir)/'`modules/rtp/rtp-gstreamer.c
+
+modules/rtp/librtp_la-rtp-native.lo: modules/rtp/rtp-native.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -MT modules/rtp/librtp_la-rtp-native.lo -MD -MP -MF modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Tpo -c -o modules/rtp/librtp_la-rtp-native.lo `test -f 'modules/rtp/rtp-native.c' || echo '$(srcdir)/'`modules/rtp/rtp-native.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Tpo modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='modules/rtp/rtp-native.c' object='modules/rtp/librtp_la-rtp-native.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtp_la_CFLAGS) $(CFLAGS) -c -o modules/rtp/librtp_la-rtp-native.lo `test -f 'modules/rtp/rtp-native.c' || echo '$(srcdir)/'`modules/rtp/rtp-native.c
 
 modules/module_allow_passthrough_la-module-allow-passthrough.lo: modules/module-allow-passthrough.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(module_allow_passthrough_la_CFLAGS) $(CFLAGS) -MT modules/module_allow_passthrough_la-module-allow-passthrough.lo -MD -MP -MF modules/$(DEPDIR)/module_allow_passthrough_la-module-allow-passthrough.Tpo -c -o modules/module_allow_passthrough_la-module-allow-passthrough.lo `test -f 'modules/module-allow-passthrough.c' || echo '$(srcdir)/'`modules/module-allow-passthrough.c
@@ -12121,13 +12199,15 @@ distclean: distclean-am
 	-rm -f modules/raop/$(DEPDIR)/libraop_la-raop-util.Plo
 	-rm -f modules/raop/$(DEPDIR)/module_raop_discover_la-module-raop-discover.Plo
 	-rm -f modules/raop/$(DEPDIR)/module_raop_sink_la-module-raop-sink.Plo
-	-rm -f modules/rtp/$(DEPDIR)/headerlist.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-headerlist.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-sap.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-sdp.Plo
 	-rm -f modules/rtp/$(DEPDIR)/module_rtp_recv_la-module-rtp-recv.Plo
 	-rm -f modules/rtp/$(DEPDIR)/module_rtp_send_la-module-rtp-send.Plo
-	-rm -f modules/rtp/$(DEPDIR)/rtp.Plo
-	-rm -f modules/rtp/$(DEPDIR)/rtsp_client.Plo
-	-rm -f modules/rtp/$(DEPDIR)/sap.Plo
-	-rm -f modules/rtp/$(DEPDIR)/sdp.Plo
 	-rm -f modules/x11/$(DEPDIR)/module_x11_bell_la-module-x11-bell.Plo
 	-rm -f modules/x11/$(DEPDIR)/module_x11_cork_request_la-module-x11-cork-request.Plo
 	-rm -f modules/x11/$(DEPDIR)/module_x11_publish_la-module-x11-publish.Plo
@@ -12580,13 +12660,15 @@ maintainer-clean: maintainer-clean-am
 	-rm -f modules/raop/$(DEPDIR)/libraop_la-raop-util.Plo
 	-rm -f modules/raop/$(DEPDIR)/module_raop_discover_la-module-raop-discover.Plo
 	-rm -f modules/raop/$(DEPDIR)/module_raop_sink_la-module-raop-sink.Plo
-	-rm -f modules/rtp/$(DEPDIR)/headerlist.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-headerlist.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtp-common.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtp-gstreamer.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtp-native.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-rtsp_client.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-sap.Plo
+	-rm -f modules/rtp/$(DEPDIR)/librtp_la-sdp.Plo
 	-rm -f modules/rtp/$(DEPDIR)/module_rtp_recv_la-module-rtp-recv.Plo
 	-rm -f modules/rtp/$(DEPDIR)/module_rtp_send_la-module-rtp-send.Plo
-	-rm -f modules/rtp/$(DEPDIR)/rtp.Plo
-	-rm -f modules/rtp/$(DEPDIR)/rtsp_client.Plo
-	-rm -f modules/rtp/$(DEPDIR)/sap.Plo
-	-rm -f modules/rtp/$(DEPDIR)/sdp.Plo
 	-rm -f modules/x11/$(DEPDIR)/module_x11_bell_la-module-x11-bell.Plo
 	-rm -f modules/x11/$(DEPDIR)/module_x11_cork_request_la-module-x11-cork-request.Plo
 	-rm -f modules/x11/$(DEPDIR)/module_x11_publish_la-module-x11-publish.Plo

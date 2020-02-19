@@ -81,14 +81,14 @@ libpulse = shared_library('pulse',
   link_args : [nodelete_link_args, versioning_link_args],
   install : true,
   install_rpath : privlibdir,
-  dependencies : [libm_dep, thread_dep, libpulsecommon_dep, dbus_dep, dl_dep, iconv_dep],
+  dependencies : [libm_dep, thread_dep, libpulsecommon_dep, dbus_dep, dl_dep, iconv_dep, libintl_dep],
   implicit_include_directories : false)
 
 libpulse_dep = declare_dependency(link_with: libpulse)
 
-install_data(
+install_headers(
   libpulse_headers, 'simple.h',
-  install_dir : join_paths(includedir, 'pulse')
+  subdir : 'pulse'
 )
 
 libpulse_simple = shared_library('pulse-simple',

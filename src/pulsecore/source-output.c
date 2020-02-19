@@ -134,7 +134,10 @@ bool pa_source_output_new_data_set_source(pa_source_output_new_data *data, pa_so
     if (!data->req_formats) {
         /* We're not working with the extended API */
         data->source = s;
-        data->save_source = save;
+        if (save) {
+            pa_xfree(data->preferred_source);
+            data->preferred_source = pa_xstrdup(s->name);
+        }
         data->source_requested_by_application = requested_by_application;
     } else {
         /* Extended API: let's see if this source supports the formats the client would like */
@@ -143,7 +146,10 @@ bool pa_source_output_new_data_set_source(pa_source_output_new_data *data, pa_so
         if (formats && !pa_idxset_isempty(formats)) {
             /* Source supports at least one of the requested formats */
             data->source = s;
-            data->save_source = save;
+            if (save) {
+                pa_xfree(data->preferred_source);
+                data->preferred_source = pa_xstrdup(s->name);
+            }
             data->source_requested_by_application = requested_by_application;
             if (data->nego_formats)
                 pa_idxset_free(data->nego_formats, (pa_free_cb_t) pa_format_info_free);
@@ -170,7 +176,7 @@ bool pa_source_output_new_data_set_formats(pa_source_output_new_data *data, pa_i
 
     if (data->source) {
         /* Trigger format negotiation */
-        return pa_source_output_new_data_set_source(data, data->source, data->save_source,
+        return pa_source_output_new_data_set_source(data, data->source, (data->preferred_source != NULL),
                                                     data->source_requested_by_application);
     }
 
@@ -188,6 +194,9 @@ void pa_source_output_new_data_done(pa_source_output_new_data *data) {
 
     if (data->format)
         pa_format_info_free(data->format);
+
+    if (data->preferred_source)
+        pa_xfree(data->preferred_source);
 
     pa_proplist_free(data->proplist);
 }
@@ -414,7 +423,8 @@ int pa_source_output_new(
                         ((data->flags & PA_SOURCE_OUTPUT_NO_REMAP) ? PA_RESAMPLER_NO_REMAP : 0) |
                         (core->disable_remixing || (data->flags & PA_SOURCE_OUTPUT_NO_REMIX) ? PA_RESAMPLER_NO_REMIX : 0) |
                         (core->remixing_use_all_sink_channels ? 0 : PA_RESAMPLER_NO_FILL_SINK) |
-                        (core->disable_lfe_remixing ? PA_RESAMPLER_NO_LFE : 0)))) {
+                        (core->remixing_produce_lfe ? PA_RESAMPLER_PRODUCE_LFE : 0) |
+                        (core->remixing_consume_lfe ? PA_RESAMPLER_CONSUME_LFE : 0)))) {
                 pa_log_warn("Unsupported resampling operation.");
                 return -PA_ERR_NOTSUPPORTED;
             }
@@ -459,7 +469,7 @@ int pa_source_output_new(
     pa_cvolume_reset(&o->real_ratio, o->sample_spec.channels);
     o->volume_writable = data->volume_writable;
     o->save_volume = data->save_volume;
-    o->save_source = data->save_source;
+    o->preferred_source = pa_xstrdup(data->preferred_source);
     o->save_muted = data->save_muted;
 
     o->muted = data->muted;
@@ -650,6 +660,9 @@ static void source_output_free(pa_object* mo) {
 
     if (o->proplist)
         pa_proplist_free(o->proplist);
+
+    if (o->preferred_source)
+        pa_xfree(o->preferred_source);
 
     pa_xfree(o->driver);
     pa_xfree(o);
@@ -1544,7 +1557,16 @@ int pa_source_output_finish_move(pa_source_output *o, pa_source *dest, bool save
         o->moving(o, dest);
 
     o->source = dest;
-    o->save_source = save;
+    /* save == true, means user is calling the move_to() and want to
+       save the preferred_source */
+    if (save) {
+        pa_xfree(o->preferred_source);
+        if (dest == dest->core->default_source)
+            o->preferred_source = NULL;
+        else
+            o->preferred_source = pa_xstrdup(dest->name);
+    }
+
     pa_idxset_put(o->source->outputs, pa_source_output_ref(o), NULL);
 
     pa_cvolume_remap(&o->volume_factor_source, &o->channel_map, &o->source->channel_map);
@@ -1583,6 +1605,12 @@ void pa_source_output_fail_move(pa_source_output *o) {
     /* Check if someone wants this source output? */
     if (pa_hook_fire(&o->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_MOVE_FAIL], o) == PA_HOOK_STOP)
         return;
+
+    /* Can we move the source output to the default source? */
+    if (o->core->rescue_streams && pa_source_output_may_move_to(o, o->core->default_source)) {
+        if (pa_source_output_finish_move(o, o->core->default_source, false) >= 0)
+            return;
+    }
 
     if (o->moving)
         o->moving(o, NULL);
@@ -1755,7 +1783,8 @@ int pa_source_output_update_resampler(pa_source_output *o) {
                                      ((o->flags & PA_SOURCE_OUTPUT_NO_REMAP) ? PA_RESAMPLER_NO_REMAP : 0) |
                                      (o->core->disable_remixing || (o->flags & PA_SOURCE_OUTPUT_NO_REMIX) ? PA_RESAMPLER_NO_REMIX : 0) |
                                      (o->core->remixing_use_all_sink_channels ? 0 : PA_RESAMPLER_NO_FILL_SINK) |
-                                     (o->core->disable_lfe_remixing ? PA_RESAMPLER_NO_LFE : 0));
+                                     (o->core->remixing_produce_lfe ? PA_RESAMPLER_PRODUCE_LFE : 0) |
+                                     (o->core->remixing_consume_lfe ? PA_RESAMPLER_CONSUME_LFE : 0));
 
         if (!new_resampler) {
             pa_log_warn("Unsupported resampling operation.");
@@ -1866,4 +1895,18 @@ void pa_source_output_set_reference_ratio(pa_source_output *o, const pa_cvolume 
     pa_log_debug("Source output %u reference ratio changed from %s to %s.", o->index,
                  pa_cvolume_snprint_verbose(old_ratio_str, sizeof(old_ratio_str), &old_ratio, &o->channel_map, true),
                  pa_cvolume_snprint_verbose(new_ratio_str, sizeof(new_ratio_str), ratio, &o->channel_map, true));
+}
+
+/* Called from the main thread. */
+void pa_source_output_set_preferred_source(pa_source_output *o, pa_source *s) {
+    pa_assert(o);
+
+    pa_xfree(o->preferred_source);
+    if (s) {
+        o->preferred_source = pa_xstrdup(s->name);
+        pa_source_output_move_to(o, s, false);
+    } else {
+        o->preferred_source = NULL;
+        pa_source_output_move_to(o, o->core->default_source, false);
+    }
 }

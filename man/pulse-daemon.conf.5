@@ -6,12 +6,12 @@ pulse-daemon.conf \- PulseAudio daemon configuration file
 
 \fI~/.config/pulse/daemon.conf.d/*.conf\fB
 
-\fI/usr/local/etc/pulse/daemon.conf\fB
+\fI/home/arun/local/pulseaudio/etc/pulse/daemon.conf\fB
 
-\fI/usr/local/etc/pulse/daemon.conf.d/*.conf\fB
+\fI/home/arun/local/pulseaudio/etc/pulse/daemon.conf.d/*.conf\fB
 \f1
 .SH DESCRIPTION
-The PulseAudio sound server reads configuration directives from a configuration file on startup. If the per-user file \fI~/.config/pulse/daemon.conf\f1 exists, it is used, otherwise the system configuration file \fI/usr/local/etc/pulse/daemon.conf\f1 is used. In addition to those main files, configuration directives can also be put in files under directories \fI~/.config/pulse/daemon.conf.d/\f1 and \fI/usr/local/etc/pulse/daemon.conf.d/\f1. Those files have to have the .conf file name extension, but otherwise the file names can be chosen freely. The files under daemon.conf.d are processed in alphabetical order. In case the same option is set in multiple files, the last file to set an option overrides earlier files. The main daemon.conf file is processed first, so options set in files under daemon.conf.d override the main file.
+The PulseAudio sound server reads configuration directives from a configuration file on startup. If the per-user file \fI~/.config/pulse/daemon.conf\f1 exists, it is used, otherwise the system configuration file \fI/home/arun/local/pulseaudio/etc/pulse/daemon.conf\f1 is used. In addition to those main files, configuration directives can also be put in files under directories \fI~/.config/pulse/daemon.conf.d/\f1 and \fI/home/arun/local/pulseaudio/etc/pulse/daemon.conf.d/\f1. Those files have to have the .conf file name extension, but otherwise the file names can be chosen freely. The files under daemon.conf.d are processed in alphabetical order. In case the same option is set in multiple files, the last file to set an option overrides earlier files. The main daemon.conf file is processed first, so options set in files under daemon.conf.d override the main file.
 
 Please note that the server also reads a configuration script on startup. See \fBdefault.pa(5)\f1.
 
@@ -36,7 +36,11 @@ For the settings that take a boolean argument the values \fBtrue\f1, \fByes\f1, 
 .TP
 \fBremixing-use-all-sink-channels=\f1 If enabled, use all sink channels when remixing. Otherwise, remix to the minimal set of sink channels needed to reproduce all of the source channels. (This has no effect on LFE remixing.) Defaults to \fByes\f1.
 .TP
-\fBenable-lfe-remixing=\f1 If disabled when upmixing or downmixing ignore LFE channels. When this option is disabled the output LFE channel will only get a signal when an input LFE channel is available as well. If no input LFE channel is available the output LFE channel will always be 0. If no output LFE channel is available the signal on the input LFE channel will be ignored. Defaults to \fBno\f1.
+\fBenable-lfe-remixing=\f1 This is a way to set \fBremixing-produce-lfe\f1 and \fBremixing-consume-lfe\f1 to the same value at once. This option only exists for backward compatibility and may be removed in a future version of PulseAudio.
+.TP
+\fBremixing-produce-lfe=\f1 If enabled, and the sink input does not have the LFE channel, synthesize the output LFE channel as a (lowpass-filtered, if \fBlfe-crossover-freq\f1 is not 0) average of all input channels. Also, when \fBlfe-crossover-freq\f1 is not 0, filter out low frequencies from other channels while producing a synthetic LFE output. If disabled, the output LFE channel will only get a signal when an input LFE channel is available as well. Defaults to \fBno\f1.
+.TP
+\fBremixing-consume-lfe=\f1 If enabled, and the sink does not have an LFE channel, redirect the input LFE channel (if any) to other channels. If disabled, the input LFE channel will remain unused unless the sink has the LFE channel as well. Defaults to \fBno\f1.
 .TP
 \fBlfe-crossover-freq=\f1 The crossover frequency (in Hz) for the LFE filter. Set it to 0 to disable the LFE filter. Defaults to 0.
 .TP
@@ -56,7 +60,9 @@ For the settings that take a boolean argument the values \fBtrue\f1, \fByes\f1, 
 .TP
 \fBlock-memory=\f1 Locks the entire PulseAudio process into memory. While this might increase drop-out safety when used in conjunction with real-time scheduling this takes away a lot of memory from other processes and might hence considerably slow down your system. Defaults to \fBno\f1.
 .TP
-\fBflat-volumes=\f1 Enable 'flat' volumes, i.e. where possible let the sink volume equal the maximum of the volumes of the inputs connected to it. Takes a boolean argument, defaults to \fByes\f1.
+\fBflat-volumes=\f1 Enable 'flat' volumes, i.e. where possible let the sink volume equal the maximum of the volumes of the inputs connected to it. Takes a boolean argument, defaults to \fBno\f1.
+.TP
+\fBrescue-streams=\f1 Enable rescuing of streams if the used sink or source becomes unavailable. Takes a boolean argument. If set to \fByes\f1, pulseaudio will try to move the streams from a sink or source that becomes unavailable to the default sink or source. If set to \fBno\f1, streams will be killed if the corresponding sink or source disappears. Defaults to \fByes\f1.
 .SH SCHEDULING
 .TP
 \fBhigh-priority=\f1 Renice the daemon after startup to become a high-priority process. This a good idea if you experience drop-outs during playback. However, this is a certain security issue, since it works when called SUID root only, or RLIMIT_NICE is used. root is dropped immediately after gaining the nice level on startup, thus it is presumably safe. See \fBpulseaudio(1)\f1 for more information. Takes a boolean argument, defaults to \fByes\f1. The \fB--high-priority\f1 command line option takes precedence.
@@ -79,7 +85,7 @@ When PulseAudio runs in the system mode, automatic exit is always disabled, so t
 .TP
 \fBdl-search-path=\f1 The path where to look for dynamic shared objects (DSOs/plugins). You may specify more than one path separated by colons. The default path depends on compile time settings. The \fB--dl-search-path\f1 command line option takes precedence. 
 .TP
-\fBdefault-script-file=\f1 The default configuration script file to load. Specify an empty string for not loading a default script file. The default behaviour is to load \fI~/.config/pulse/default.pa\f1, and if that file does not exist fall back to the system wide installed version \fI/usr/local/etc/pulse/default.pa\f1. If run in system-wide mode the file \fI/usr/local/etc/pulse/system.pa\f1 is used instead. If \fB-n\f1 is passed on the command line or \fBdefault-script-file=\f1 is disabled the default configuration script is ignored.
+\fBdefault-script-file=\f1 The default configuration script file to load. Specify an empty string for not loading a default script file. The default behaviour is to load \fI~/.config/pulse/default.pa\f1, and if that file does not exist fall back to the system wide installed version \fI/home/arun/local/pulseaudio/etc/pulse/default.pa\f1. If run in system-wide mode the file \fI/home/arun/local/pulseaudio/etc/pulse/system.pa\f1 is used instead. If \fB-n\f1 is passed on the command line or \fBdefault-script-file=\f1 is disabled the default configuration script is ignored.
 .TP
 \fBload-default-script-file=\f1 Load the default configuration script file as specified in \fBdefault-script-file=\f1. Defaults to \fByes\f1.
 .SH LOGGING

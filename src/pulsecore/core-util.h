@@ -158,6 +158,7 @@ size_t pa_vsnprintf(char *str, size_t size, const char *format, va_list ap);
 char *pa_truncate_utf8(char *c, size_t l);
 
 int pa_match(const char *expr, const char *v);
+bool pa_is_regex_valid(const char *expr);
 
 char *pa_getcwd(void);
 char *pa_make_path_absolute(const char *p);
@@ -230,6 +231,8 @@ static inline bool pa_safe_streq(const char *a, const char *b) {
 
 bool pa_str_in_list_spaces(const char *needle, const char *haystack);
 bool pa_str_in_list(const char *haystack, const char *delimiters, const char *needle);
+
+char* pa_str_strip_suffix(const char *str, const char *suffix);
 
 char *pa_get_host_name_malloc(void);
 char *pa_get_user_name_malloc(void);

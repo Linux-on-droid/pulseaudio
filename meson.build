@@ -23,7 +23,7 @@ pa_protocol_version = 33
 
 # The stable ABI for client applications, for the version info x:y:z
 # always will hold x=z
-libpulse_version_info = [21, 1, 21]
+libpulse_version_info = [21, 2, 21]
 
 # A simplified, synchronous, ABI-stable interface for client
 # applications, for the version info x:y:z always will hold x=z
@@ -294,6 +294,12 @@ endforeach
 
 if cc.has_function('SYS_memfd_create', prefix : '#include <sys/syscall.h>')
   cdata.set('HAVE_MEMFD', 1)
+endif
+
+if cc.has_function('dgettext')
+  libintl_dep = []
+else
+  libintl_dep = cc.find_library('intl')
 endif
 
 # Symbols
@@ -663,6 +669,15 @@ if webrtc_dep.found()
   cdata.set('HAVE_WEBRTC', 1)
 endif
 
+gst_dep = dependency('gstreamer-1.0', required : get_option('gstreamer'))
+gstapp_dep = dependency('gstreamer-app-1.0', required : get_option('gstreamer'))
+gstrtp_dep = dependency('gstreamer-rtp-1.0', required : get_option('gstreamer'))
+
+have_gstreamer = false
+if gst_dep.found() and gstapp_dep.found() and gstrtp_dep.found()
+  have_gstreamer = true
+endif
+
 # These are required for the CMake file generation
 cdata.set('PA_LIBDIR', libdir)
 cdata.set('PA_INCDIR', includedir)
@@ -809,6 +824,7 @@ summary = [
   'Enable OpenSSL (for Airtunes): @0@'.format(openssl_dep.found()),
   'Enable FFTW:                   @0@'.format(fftw_dep.found()),
   'Enable ORC:                    @0@'.format(have_orcc),
+  'Enable GStreamer:              @0@'.format(have_gstreamer),
   'Enable Adrian echo canceller:  @0@'.format(get_option('adrian-aec')),
   'Enable Speex (resampler, AEC): @0@'.format(speex_dep.found()),
   'Enable SoXR (resampler):       @0@'.format(soxr_dep.found()),
