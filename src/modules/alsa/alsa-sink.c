@@ -1152,7 +1152,7 @@ static void update_size(struct userdata *u, pa_sample_spec *ss) {
 /* Called from IO context */
 static int unsuspend(struct userdata *u, bool recovering) {
     pa_sample_spec ss;
-    int err;
+    int err, i;
     bool b, d;
     snd_pcm_uframes_t period_frames, buffer_frames;
     snd_pcm_uframes_t tsched_frames = 0;
@@ -1172,13 +1172,26 @@ static int unsuspend(struct userdata *u, bool recovering) {
         pa_snprintf(device_name, len, "%s,AES0=6", u->device_name);
     }
 
-    if ((err = snd_pcm_open(&u->pcm_handle, device_name ? device_name : u->device_name, SND_PCM_STREAM_PLAYBACK,
-                            SND_PCM_NONBLOCK|
-                            SND_PCM_NO_AUTO_RESAMPLE|
-                            SND_PCM_NO_AUTO_CHANNELS|
-                            SND_PCM_NO_AUTO_FORMAT)) < 0) {
-        pa_log("Error opening PCM device %s: %s", u->device_name, pa_alsa_strerror(err));
-        goto fail;
+    /*
+     * On some machines, during the system suspend and resume, the thread_func could receive
+     * POLLERR events before the dev nodes in /dev/snd/ are accessible, and thread_func calls
+     * the unsuspend() to try to recover the PCM, this will make the snd_pcm_open() fail, here
+     * we add msleep and retry to make sure those nodes are accessible.
+     */
+    for (i = 0; i < 4; i++) {
+	if ((err = snd_pcm_open(&u->pcm_handle, device_name ? device_name : u->device_name, SND_PCM_STREAM_PLAYBACK,
+				SND_PCM_NONBLOCK|
+				SND_PCM_NO_AUTO_RESAMPLE|
+				SND_PCM_NO_AUTO_CHANNELS|
+				SND_PCM_NO_AUTO_FORMAT)) < 0 && recovering)
+	    pa_msleep(25);
+	else
+	    break;
+    }
+
+    if (err < 0) {
+	pa_log("Error opening PCM device %s: %s", u->device_name, pa_alsa_strerror(err));
+	goto fail;
     }
 
     if (pa_frame_size(&u->sink->sample_spec) != u->frame_size) {
@@ -1654,7 +1667,7 @@ static int sink_set_port_ucm_cb(pa_sink *s, pa_device_port *p) {
     pa_assert(u->ucm_context);
 
     data = PA_DEVICE_PORT_DATA(p);
-    pa_assert_se(u->mixer_path = data->path);
+    u->mixer_path = data->path;
     mixer_volume_init(u);
 
     if (s->flags & PA_SINK_DEFERRED_VOLUME)
@@ -2138,6 +2151,15 @@ static int setup_mixer(struct userdata *u, bool ignore_dB) {
 
     pa_assert(u);
 
+    /* This code is before the u->mixer_handle check, because if the UCM
+     * configuration doesn't specify volume or mute controls, u->mixer_handle
+     * will be NULL, but the UCM device enable sequence will still need to be
+     * executed. */
+    if (u->sink->active_port && u->ucm_context) {
+        if (pa_alsa_ucm_set_port(u->ucm_context, u->sink->active_port, true) < 0)
+            return -1;
+    }
+
     if (!u->mixer_handle)
         return 0;
 
@@ -2154,10 +2176,6 @@ static int setup_mixer(struct userdata *u, bool ignore_dB) {
             pa_alsa_path_select(data->path, data->setting, u->mixer_handle, u->sink->muted);
         } else {
             pa_alsa_ucm_port_data *data;
-
-            /* First activate the port on the UCM side */
-            if (pa_alsa_ucm_set_port(u->ucm_context, u->sink->active_port, true) < 0)
-                return -1;
 
             data = PA_DEVICE_PORT_DATA(u->sink->active_port);
 
@@ -2506,8 +2524,6 @@ pa_sink *pa_alsa_sink_new(pa_module *m, pa_modargs *ma, const char*driver, pa_ca
     /* ALSA might tweak the sample spec, so recalculate the frame size */
     frame_size = pa_frame_size(&ss);
 
-    find_mixer(u, mapping, pa_modargs_get_value(ma, "control", NULL), ignore_dB);
-
     pa_sink_new_data_init(&data);
     data.driver = driver;
     data.module = m;
@@ -2531,7 +2547,7 @@ pa_sink *pa_alsa_sink_new(pa_module *m, pa_modargs *ma, const char*driver, pa_ca
         pa_sink_new_data_done(&data);
         goto fail;
     }
-    data.avoid_resampling = avoid_resampling;
+    pa_sink_new_data_set_avoid_resampling(&data, avoid_resampling);
 
     pa_sink_new_data_set_sample_spec(&data, &ss);
     pa_sink_new_data_set_channel_map(&data, &map);
@@ -2580,6 +2596,19 @@ pa_sink *pa_alsa_sink_new(pa_module *m, pa_modargs *ma, const char*driver, pa_ca
     if (!u->sink) {
         pa_log("Failed to create sink object");
         goto fail;
+    }
+
+    if (u->ucm_context) {
+        pa_device_port *port;
+        void *state;
+        unsigned h_prio = 0;
+        PA_HASHMAP_FOREACH(port, u->sink->ports, state) {
+            if (!h_prio || port->priority > h_prio)
+                h_prio = port->priority;
+        }
+        /* ucm ports prioriy is 100, 200, ..., 900, change it to units digit */
+        h_prio = h_prio / 100;
+        u->sink->priority += h_prio;
     }
 
     if (pa_modargs_get_value_u32(ma, "deferred_volume_safety_margin",

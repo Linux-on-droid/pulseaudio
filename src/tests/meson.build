@@ -30,6 +30,8 @@ default_tests = [
     [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
   [ 'get-binary-name-test', 'get-binary-name-test.c',
     [ check_dep, libpulse_dep, libpulsecommon_dep ] ],
+  [ 'hashmap-test', 'hashmap-test.c',
+    [ check_dep, libpulse_dep, libpulsecommon_dep ] ],
   [ 'hook-list-test', 'hook-list-test.c',
     [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
   [ 'json-test', 'json-test.c',
@@ -155,6 +157,13 @@ if cc.has_header_symbol('signal.h', 'SIGXCPU')
     [ 'cpulimit-test2', [ 'cpulimit-test.c', '../daemon/cpulimit.c', '../daemon/cpulimit.h' ],
       [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ],
       [], ['-DTEST2'] ],
+  ]
+endif
+
+if cc.has_function('pthread_setaffinity_np', dependencies : thread_dep)
+  norun_tests += [
+    [ 'atomic-test', 'atomic-test.c',
+      [ check_dep, libpulsecommon_dep, thread_dep ] ]
   ]
 endif
 

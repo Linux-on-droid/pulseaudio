@@ -2145,7 +2145,7 @@ static void command_delete_stream(pa_pdispatch *pd, uint32_t command, uint32_t t
         case PA_COMMAND_DELETE_PLAYBACK_STREAM: {
             playback_stream *s;
             if (!(s = pa_idxset_get_by_index(c->output_streams, channel)) || !playback_stream_isinstance(s)) {
-                pa_pstream_send_error(c->pstream, tag, PA_ERR_EXIST);
+                pa_pstream_send_error(c->pstream, tag, PA_ERR_NOENTITY);
                 return;
             }
 
@@ -2156,7 +2156,7 @@ static void command_delete_stream(pa_pdispatch *pd, uint32_t command, uint32_t t
         case PA_COMMAND_DELETE_RECORD_STREAM: {
             record_stream *s;
             if (!(s = pa_idxset_get_by_index(c->record_streams, channel))) {
-                pa_pstream_send_error(c->pstream, tag, PA_ERR_EXIST);
+                pa_pstream_send_error(c->pstream, tag, PA_ERR_NOENTITY);
                 return;
             }
 
@@ -2168,7 +2168,7 @@ static void command_delete_stream(pa_pdispatch *pd, uint32_t command, uint32_t t
             upload_stream *s;
 
             if (!(s = pa_idxset_get_by_index(c->output_streams, channel)) || !upload_stream_isinstance(s)) {
-                pa_pstream_send_error(c->pstream, tag, PA_ERR_EXIST);
+                pa_pstream_send_error(c->pstream, tag, PA_ERR_NOENTITY);
                 return;
             }
 
@@ -3205,8 +3205,13 @@ static void sink_fill_tagstruct(pa_native_connection *c, pa_tagstruct *t, pa_sin
             pa_tagstruct_puts(t, p->name);
             pa_tagstruct_puts(t, p->description);
             pa_tagstruct_putu32(t, p->priority);
-            if (c->version >= 24)
+            if (c->version >= 24) {
                 pa_tagstruct_putu32(t, p->available);
+                if (c->version >= 34) {
+                    pa_tagstruct_puts(t, p->availability_group);
+                    pa_tagstruct_putu32(t, p->type);
+                }
+            }
         }
 
         pa_tagstruct_puts(t, sink->active_port ? sink->active_port->name : NULL);
@@ -3275,8 +3280,13 @@ static void source_fill_tagstruct(pa_native_connection *c, pa_tagstruct *t, pa_s
             pa_tagstruct_puts(t, p->name);
             pa_tagstruct_puts(t, p->description);
             pa_tagstruct_putu32(t, p->priority);
-            if (c->version >= 24)
+            if (c->version >= 24) {
                 pa_tagstruct_putu32(t, p->available);
+                if (c->version >= 34) {
+                    pa_tagstruct_puts(t, p->availability_group);
+                    pa_tagstruct_putu32(t, p->type);
+                }
+            }
         }
 
         pa_tagstruct_puts(t, source->active_port ? source->active_port->name : NULL);
@@ -3358,8 +3368,13 @@ static void card_fill_tagstruct(pa_native_connection *c, pa_tagstruct *t, pa_car
         PA_HASHMAP_FOREACH(p, port->profiles, state2)
             pa_tagstruct_puts(t, p->name);
 
-        if (c->version >= 27)
+        if (c->version >= 27) {
             pa_tagstruct_puts64(t, port->latency_offset);
+            if (c->version >= 34) {
+                pa_tagstruct_puts(t, port->availability_group);
+                pa_tagstruct_putu32(t, port->type);
+            }
+        }
     }
 }
 

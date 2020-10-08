@@ -144,7 +144,7 @@ static void add_profiles(struct userdata *u, pa_hashmap *h, pa_hashmap *ports) {
         uint32_t idx;
 
         cp = pa_card_profile_new(ap->name, ap->description, sizeof(struct profile_data));
-        cp->priority = ap->priority;
+        cp->priority = ap->priority ? ap->priority : 1;
         cp->input_name = pa_xstrdup(ap->input_name);
         cp->output_name = pa_xstrdup(ap->output_name);
 
@@ -785,6 +785,7 @@ int pa__init(pa_module *m) {
     const char *profile_str = NULL;
     char *fn = NULL;
     bool namereg_fail = false;
+    int err = -PA_MODULE_ERR_UNSPECIFIED, rval;
 
     pa_alsa_refcnt_inc();
 
@@ -841,7 +842,12 @@ int pa__init(pa_module *m) {
 
     snd_config_update_free_global();
 
-    if (u->use_ucm && !pa_alsa_ucm_query_profiles(&u->ucm, u->alsa_card_index)) {
+    rval = u->use_ucm ? pa_alsa_ucm_query_profiles(&u->ucm, u->alsa_card_index) : -1;
+    if (rval == -PA_ALSA_ERR_UCM_LINKED) {
+        err = -PA_MODULE_ERR_SKIP;
+        goto fail;
+    }
+    if (rval == 0) {
         pa_log_info("Found UCM profiles");
 
         u->profile_set = pa_alsa_ucm_add_profile_set(&u->ucm, &u->core->default_channel_map);
@@ -1009,7 +1015,7 @@ fail:
 
     pa__done(m);
 
-    return -1;
+    return err;
 }
 
 int pa__get_n_used(pa_module *m) {

@@ -159,255 +159,258 @@ bin_PROGRAMS = pulseaudio$(EXEEXT) pacat$(EXEEXT) pactl$(EXEEXT) \
 @OS_IS_WIN32_FALSE@		sigbus-test \
 @OS_IS_WIN32_FALSE@		usergroup-test
 
-@HAVE_SYS_EVENTFD_H_TRUE@am__append_19 = \
+@HAVE_PTHREAD_SETAFFINITY_NP_TRUE@am__append_19 = \
+@HAVE_PTHREAD_SETAFFINITY_NP_TRUE@		atomic-test
+
+@HAVE_SYS_EVENTFD_H_TRUE@am__append_20 = \
 @HAVE_SYS_EVENTFD_H_TRUE@		srbchannel-test
 
-@OS_IS_DARWIN_FALSE@am__append_20 = \
+@OS_IS_DARWIN_FALSE@am__append_21 = \
 @OS_IS_DARWIN_FALSE@		once-test
 
-@HAVE_SIGXCPU_TRUE@am__append_21 = \
+@HAVE_SIGXCPU_TRUE@am__append_22 = \
 @HAVE_SIGXCPU_TRUE@		cpulimit-test \
 @HAVE_SIGXCPU_TRUE@		cpulimit-test2
 
-@HAVE_GLIB20_TRUE@am__append_22 = \
+@HAVE_GLIB20_TRUE@am__append_23 = \
 @HAVE_GLIB20_TRUE@		mainloop-test-glib
 
 
 # gtk-test depends on both glib and gtk
-@HAVE_GLIB20_TRUE@@HAVE_GTK30_TRUE@am__append_23 = \
+@HAVE_GLIB20_TRUE@@HAVE_GTK30_TRUE@am__append_24 = \
 @HAVE_GLIB20_TRUE@@HAVE_GTK30_TRUE@		gtk-test
 
-@HAVE_ALSA_TRUE@am__append_24 = \
+@HAVE_ALSA_TRUE@am__append_25 = \
 @HAVE_ALSA_TRUE@		alsa-time-test
 
-@HAVE_ALSA_TRUE@am__append_25 = \
+@HAVE_ALSA_TRUE@am__append_26 = \
 @HAVE_ALSA_TRUE@		alsa-mixer-path-test
 
 @HAVE_TESTS_TRUE@TESTS = $(am__EXEEXT_9)
 @BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@noinst_PROGRAMS =  \
 @BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_9) \
-@BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_13) \
 @BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_14) \
-@BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_15)
+@BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_15) \
+@BUILD_TESTS_DEFAULT_TRUE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_16)
 @BUILD_TESTS_DEFAULT_FALSE@@HAVE_TESTS_TRUE@check_PROGRAMS =  \
 @BUILD_TESTS_DEFAULT_FALSE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_9) \
-@BUILD_TESTS_DEFAULT_FALSE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_13)
-@OS_IS_WIN32_TRUE@am__append_26 = \
+@BUILD_TESTS_DEFAULT_FALSE@@HAVE_TESTS_TRUE@	$(am__EXEEXT_14)
+@OS_IS_WIN32_TRUE@am__append_27 = \
 @OS_IS_WIN32_TRUE@		pulsecore/poll-win32.c pulsecore/poll.h \
 @OS_IS_WIN32_TRUE@		pulsecore/winerrno.h
 
-@OS_IS_WIN32_FALSE@am__append_27 = pulsecore/poll-posix.c pulsecore/poll.h
-@HAVE_MEMFD_TRUE@am__append_28 = \
+@OS_IS_WIN32_FALSE@am__append_28 = pulsecore/poll-posix.c pulsecore/poll.h
+@HAVE_MEMFD_TRUE@am__append_29 = \
 @HAVE_MEMFD_TRUE@		pulsecore/memfd-wrappers.h
 
-@HAVE_X11_TRUE@am__append_29 = \
+@HAVE_X11_TRUE@am__append_30 = \
 @HAVE_X11_TRUE@		pulse/client-conf-x11.c pulse/client-conf-x11.h \
 @HAVE_X11_TRUE@		pulsecore/x11prop.c pulsecore/x11prop.h
 
-@HAVE_X11_TRUE@am__append_30 = $(X11_CFLAGS)
-@HAVE_X11_TRUE@am__append_31 = $(X11_LIBS)
-@HAVE_SYSTEMD_DAEMON_TRUE@am__append_32 = $(SYSTEMD_FLAGS) $(SYSTEMDDAEMON_FLAGS)
-@HAVE_SYSTEMD_DAEMON_TRUE@am__append_33 = $(SYSTEMD_LIBS) $(SYSTEMDDAEMON_LIBS)
-@HAVE_SYSTEMD_JOURNAL_TRUE@am__append_34 = $(SYSTEMD_FLAGS) $(SYSTEMDJOURNAL_FLAGS)
-@HAVE_SYSTEMD_JOURNAL_TRUE@am__append_35 = $(SYSTEMD_LIBS) $(SYSTEMDJOURNAL_LIBS)
-@OS_IS_WIN32_TRUE@am__append_36 = \
+@HAVE_X11_TRUE@am__append_31 = $(X11_CFLAGS)
+@HAVE_X11_TRUE@am__append_32 = $(X11_LIBS)
+@HAVE_SYSTEMD_DAEMON_TRUE@am__append_33 = $(SYSTEMD_FLAGS) $(SYSTEMDDAEMON_FLAGS)
+@HAVE_SYSTEMD_DAEMON_TRUE@am__append_34 = $(SYSTEMD_LIBS) $(SYSTEMDDAEMON_LIBS)
+@HAVE_SYSTEMD_JOURNAL_TRUE@am__append_35 = $(SYSTEMD_FLAGS) $(SYSTEMDJOURNAL_FLAGS)
+@HAVE_SYSTEMD_JOURNAL_TRUE@am__append_36 = $(SYSTEMD_LIBS) $(SYSTEMDJOURNAL_LIBS)
+@OS_IS_WIN32_TRUE@am__append_37 = \
 @OS_IS_WIN32_TRUE@		pulsecore/mutex-win32.c pulsecore/mutex.h \
 @OS_IS_WIN32_TRUE@		pulsecore/thread-win32.c pulsecore/thread.h \
 @OS_IS_WIN32_TRUE@		pulsecore/semaphore-win32.c pulsecore/semaphore.h
 
-@OS_IS_DARWIN_TRUE@@OS_IS_WIN32_FALSE@am__append_37 = \
+@OS_IS_DARWIN_TRUE@@OS_IS_WIN32_FALSE@am__append_38 = \
 @OS_IS_DARWIN_TRUE@@OS_IS_WIN32_FALSE@		pulsecore/mutex-posix.c pulsecore/mutex.h \
 @OS_IS_DARWIN_TRUE@@OS_IS_WIN32_FALSE@		pulsecore/thread-posix.c pulsecore/thread.h \
 @OS_IS_DARWIN_TRUE@@OS_IS_WIN32_FALSE@		pulsecore/semaphore-osx.c pulsecore/semaphore.h
 
-@OS_IS_DARWIN_FALSE@@OS_IS_WIN32_FALSE@am__append_38 = \
+@OS_IS_DARWIN_FALSE@@OS_IS_WIN32_FALSE@am__append_39 = \
 @OS_IS_DARWIN_FALSE@@OS_IS_WIN32_FALSE@		pulsecore/mutex-posix.c pulsecore/mutex.h \
 @OS_IS_DARWIN_FALSE@@OS_IS_WIN32_FALSE@		pulsecore/thread-posix.c pulsecore/thread.h \
 @OS_IS_DARWIN_FALSE@@OS_IS_WIN32_FALSE@		pulsecore/semaphore-posix.c pulsecore/semaphore.h
 
-@HAVE_LIBASYNCNS_TRUE@am__append_39 = $(LIBASYNCNS_CFLAGS)
-@HAVE_LIBASYNCNS_TRUE@am__append_40 = $(LIBASYNCNS_LIBS)
-@OS_IS_WIN32_TRUE@am__append_41 = pulsecore/dllmain.c
-@HAVE_DBUS_TRUE@am__append_42 = \
+@HAVE_LIBASYNCNS_TRUE@am__append_40 = $(LIBASYNCNS_CFLAGS)
+@HAVE_LIBASYNCNS_TRUE@am__append_41 = $(LIBASYNCNS_LIBS)
+@OS_IS_WIN32_TRUE@am__append_42 = pulsecore/dllmain.c
+@HAVE_DBUS_TRUE@am__append_43 = \
 @HAVE_DBUS_TRUE@		pulsecore/dbus-util.c pulsecore/dbus-util.h \
 @HAVE_DBUS_TRUE@		pulsecore/rtkit.c pulsecore/rtkit.h
 
-@HAVE_DBUS_TRUE@am__append_43 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_44 = $(DBUS_LIBS)
-@HAVE_GLIB20_TRUE@am__append_45 = \
+@HAVE_DBUS_TRUE@am__append_44 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_45 = $(DBUS_LIBS)
+@HAVE_GLIB20_TRUE@am__append_46 = \
 @HAVE_GLIB20_TRUE@		pulse/glib-mainloop.h
 
-@HAVE_GLIB20_TRUE@am__append_46 = \
+@HAVE_GLIB20_TRUE@am__append_47 = \
 @HAVE_GLIB20_TRUE@		libpulse-mainloop-glib.la
 
-@HAVE_DBUS_TRUE@am__append_47 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_48 = $(DBUS_LIBS)
-@HAVE_OSS_WRAPPER_TRUE@am__append_49 = padsp
+@HAVE_DBUS_TRUE@am__append_48 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_49 = $(DBUS_LIBS)
 @HAVE_OSS_WRAPPER_TRUE@am__append_50 = padsp
-@HAVE_NEON_TRUE@am__append_51 = libpulsecore_sconv_neon.la libpulsecore_mix_neon.la libpulsecore_remap_neon.la
+@HAVE_OSS_WRAPPER_TRUE@am__append_51 = padsp
 @HAVE_NEON_TRUE@am__append_52 = libpulsecore_sconv_neon.la libpulsecore_mix_neon.la libpulsecore_remap_neon.la
-@HAVE_ORC_TRUE@am__append_53 = pulsecore/svolume_orc.c
-@HAVE_ORC_TRUE@am__append_54 = $(ORC_CFLAGS)
-@HAVE_ORC_TRUE@am__append_55 = $(ORC_LIBS)
-@HAVE_X11_TRUE@am__append_56 = pulsecore/x11wrap.c pulsecore/x11wrap.h
-@HAVE_X11_TRUE@am__append_57 = $(X11_CFLAGS)
-@HAVE_X11_TRUE@am__append_58 = $(X11_LIBS)
-@HAVE_DBUS_TRUE@am__append_59 = \
+@HAVE_NEON_TRUE@am__append_53 = libpulsecore_sconv_neon.la libpulsecore_mix_neon.la libpulsecore_remap_neon.la
+@HAVE_ORC_TRUE@am__append_54 = pulsecore/svolume_orc.c
+@HAVE_ORC_TRUE@am__append_55 = $(ORC_CFLAGS)
+@HAVE_ORC_TRUE@am__append_56 = $(ORC_LIBS)
+@HAVE_X11_TRUE@am__append_57 = pulsecore/x11wrap.c pulsecore/x11wrap.h
+@HAVE_X11_TRUE@am__append_58 = $(X11_CFLAGS)
+@HAVE_X11_TRUE@am__append_59 = $(X11_LIBS)
+@HAVE_DBUS_TRUE@am__append_60 = \
 @HAVE_DBUS_TRUE@		pulsecore/dbus-shared.c pulsecore/dbus-shared.h \
 @HAVE_DBUS_TRUE@		pulsecore/protocol-dbus.c pulsecore/protocol-dbus.h
 
-@HAVE_DBUS_TRUE@am__append_60 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_61 = $(DBUS_LIBS)
-@HAVE_GDBM_TRUE@am__append_62 = pulsecore/database-gdbm.c
-@HAVE_GDBM_TRUE@am__append_63 = $(GDBM_CFLAGS)
-@HAVE_GDBM_TRUE@am__append_64 = $(GDBM_LIBS)
-@HAVE_TDB_TRUE@am__append_65 = pulsecore/database-tdb.c
-@HAVE_TDB_TRUE@am__append_66 = $(TDB_CFLAGS)
-@HAVE_TDB_TRUE@am__append_67 = $(TDB_LIBS)
-@HAVE_SIMPLEDB_TRUE@am__append_68 = pulsecore/database-simple.c
-@HAVE_SPEEX_TRUE@am__append_69 = pulsecore/resampler/speex.c
-@HAVE_SPEEX_TRUE@am__append_70 = $(LIBSPEEX_CFLAGS)
-@HAVE_SPEEX_TRUE@am__append_71 = $(LIBSPEEX_LIBS)
-@HAVE_SOXR_TRUE@am__append_72 = pulsecore/resampler/soxr.c
-@HAVE_SOXR_TRUE@am__append_73 = $(LIBSOXR_CFLAGS)
-@HAVE_SOXR_TRUE@am__append_74 = $(LIBSOXR_LIBS)
-@HAVE_LIBSAMPLERATE_TRUE@am__append_75 = pulsecore/resampler/libsamplerate.c
-@HAVE_LIBSAMPLERATE_TRUE@am__append_76 = $(LIBSAMPLERATE_CFLAGS)
-@HAVE_LIBSAMPLERATE_TRUE@am__append_77 = $(LIBSAMPLERATE_LIBS)
-@HAVE_WEBRTC_TRUE@am__append_78 = libwebrtc-util.la
-@HAVE_ESOUND_TRUE@am__append_79 = \
+@HAVE_DBUS_TRUE@am__append_61 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_62 = $(DBUS_LIBS)
+@HAVE_GDBM_TRUE@am__append_63 = pulsecore/database-gdbm.c
+@HAVE_GDBM_TRUE@am__append_64 = $(GDBM_CFLAGS)
+@HAVE_GDBM_TRUE@am__append_65 = $(GDBM_LIBS)
+@HAVE_TDB_TRUE@am__append_66 = pulsecore/database-tdb.c
+@HAVE_TDB_TRUE@am__append_67 = $(TDB_CFLAGS)
+@HAVE_TDB_TRUE@am__append_68 = $(TDB_LIBS)
+@HAVE_SIMPLEDB_TRUE@am__append_69 = pulsecore/database-simple.c
+@HAVE_SPEEX_TRUE@am__append_70 = pulsecore/resampler/speex.c
+@HAVE_SPEEX_TRUE@am__append_71 = $(LIBSPEEX_CFLAGS)
+@HAVE_SPEEX_TRUE@am__append_72 = $(LIBSPEEX_LIBS)
+@HAVE_SOXR_TRUE@am__append_73 = pulsecore/resampler/soxr.c
+@HAVE_SOXR_TRUE@am__append_74 = $(LIBSOXR_CFLAGS)
+@HAVE_SOXR_TRUE@am__append_75 = $(LIBSOXR_LIBS)
+@HAVE_LIBSAMPLERATE_TRUE@am__append_76 = pulsecore/resampler/libsamplerate.c
+@HAVE_LIBSAMPLERATE_TRUE@am__append_77 = $(LIBSAMPLERATE_CFLAGS)
+@HAVE_LIBSAMPLERATE_TRUE@am__append_78 = $(LIBSAMPLERATE_LIBS)
+@HAVE_WEBRTC_TRUE@am__append_79 = libwebrtc-util.la
+@HAVE_ESOUND_TRUE@am__append_80 = \
 @HAVE_ESOUND_TRUE@		libprotocol-esound.la
 
 
 # We need to emulate sendmsg/recvmsg to support this on Win32
-@OS_IS_WIN32_FALSE@am__append_80 = \
+@OS_IS_WIN32_FALSE@am__append_81 = \
 @OS_IS_WIN32_FALSE@		librtp.la
 
-@HAVE_AVAHI_TRUE@am__append_81 = \
+@HAVE_AVAHI_TRUE@am__append_82 = \
 @HAVE_AVAHI_TRUE@		libavahi-wrap.la
 
-@HAVE_DBUS_TRUE@am__append_82 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_83 = $(DBUS_LIBS)
-@HAVE_GSTREAMER_TRUE@am__append_84 = modules/rtp/rtp-gstreamer.c
-@HAVE_GSTREAMER_TRUE@am__append_85 = $(GSTREAMER_CFLAGS)
-@HAVE_GSTREAMER_TRUE@am__append_86 = $(GSTREAMER_LIBS)
-@HAVE_GSTREAMER_FALSE@am__append_87 = modules/rtp/rtp-native.c
+@HAVE_DBUS_TRUE@am__append_83 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_84 = $(DBUS_LIBS)
+@HAVE_GSTREAMER_TRUE@am__append_85 = modules/rtp/rtp-gstreamer.c
+@HAVE_GSTREAMER_TRUE@am__append_86 = $(GSTREAMER_CFLAGS)
+@HAVE_GSTREAMER_TRUE@am__append_87 = $(GSTREAMER_LIBS)
+@HAVE_GSTREAMER_FALSE@am__append_88 = modules/rtp/rtp-native.c
 
 ###################################
 #        Plug-in libraries        #
 ###################################
 
 # Serveral module (e.g. libalsa-util.la)
-@HAVE_DBUS_TRUE@am__append_88 = \
+@HAVE_DBUS_TRUE@am__append_89 = \
 @HAVE_DBUS_TRUE@		module-console-kit.la
 
-@HAVE_ESOUND_TRUE@am__append_89 = \
+@HAVE_ESOUND_TRUE@am__append_90 = \
 @HAVE_ESOUND_TRUE@		module-esound-protocol-tcp.la \
 @HAVE_ESOUND_TRUE@		module-esound-sink.la
 
 
 # See comment at librtp.la above
-@OS_IS_WIN32_FALSE@am__append_90 = \
+@OS_IS_WIN32_FALSE@am__append_91 = \
 @OS_IS_WIN32_FALSE@		module-rtp-send.la \
 @OS_IS_WIN32_FALSE@		module-rtp-recv.la
 
-@HAVE_AF_UNIX_TRUE@am__append_91 = \
+@HAVE_AF_UNIX_TRUE@am__append_92 = \
 @HAVE_AF_UNIX_TRUE@		module-cli-protocol-unix.la \
 @HAVE_AF_UNIX_TRUE@		module-simple-protocol-unix.la \
 @HAVE_AF_UNIX_TRUE@		module-http-protocol-unix.la \
 @HAVE_AF_UNIX_TRUE@		module-native-protocol-unix.la
 
-@HAVE_AF_UNIX_TRUE@@HAVE_ESOUND_TRUE@am__append_92 = \
+@HAVE_AF_UNIX_TRUE@@HAVE_ESOUND_TRUE@am__append_93 = \
 @HAVE_AF_UNIX_TRUE@@HAVE_ESOUND_TRUE@		module-esound-protocol-unix.la
 
-@HAVE_MKFIFO_TRUE@am__append_93 = \
+@HAVE_MKFIFO_TRUE@am__append_94 = \
 @HAVE_MKFIFO_TRUE@		module-pipe-sink.la \
 @HAVE_MKFIFO_TRUE@		module-pipe-source.la
 
-@HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@am__append_94 = \
+@HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@am__append_95 = \
 @HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@		module-esound-compat-spawnfd.la \
 @HAVE_ESOUND_TRUE@@OS_IS_WIN32_FALSE@		module-esound-compat-spawnpid.la
 
-@HAVE_REGEX_TRUE@am__append_95 = \
+@HAVE_REGEX_TRUE@am__append_96 = \
 @HAVE_REGEX_TRUE@		module-match.la
 
-@HAVE_X11_TRUE@am__append_96 = \
+@HAVE_X11_TRUE@am__append_97 = \
 @HAVE_X11_TRUE@		module-x11-bell.la \
 @HAVE_X11_TRUE@		module-x11-publish.la \
 @HAVE_X11_TRUE@		module-x11-xsmp.la \
 @HAVE_X11_TRUE@		module-x11-cork-request.la
 
-@HAVE_OSS_OUTPUT_TRUE@am__append_97 = \
+@HAVE_OSS_OUTPUT_TRUE@am__append_98 = \
 @HAVE_OSS_OUTPUT_TRUE@		liboss-util.la \
 @HAVE_OSS_OUTPUT_TRUE@		module-oss.la
 
-@HAVE_COREAUDIO_TRUE@am__append_98 = \
+@HAVE_COREAUDIO_TRUE@am__append_99 = \
 @HAVE_COREAUDIO_TRUE@		module-coreaudio-detect.la \
 @HAVE_COREAUDIO_TRUE@		module-coreaudio-device.la
 
-pulselibexec_PROGRAMS = $(am__EXEEXT_16) $(am__EXEEXT_17)
-@HAVE_ALSA_TRUE@am__append_99 = \
+pulselibexec_PROGRAMS = $(am__EXEEXT_17) $(am__EXEEXT_18)
+@HAVE_ALSA_TRUE@am__append_100 = \
 @HAVE_ALSA_TRUE@		libalsa-util.la \
 @HAVE_ALSA_TRUE@		module-alsa-sink.la \
 @HAVE_ALSA_TRUE@		module-alsa-source.la \
 @HAVE_ALSA_TRUE@		module-alsa-card.la
 
-@HAVE_SOLARIS_TRUE@am__append_100 = \
+@HAVE_SOLARIS_TRUE@am__append_101 = \
 @HAVE_SOLARIS_TRUE@		module-solaris.la
 
-@HAVE_AVAHI_TRUE@am__append_101 = \
+@HAVE_AVAHI_TRUE@am__append_102 = \
 @HAVE_AVAHI_TRUE@		module-zeroconf-publish.la \
 @HAVE_AVAHI_TRUE@		module-zeroconf-discover.la
 
-@HAVE_BONJOUR_TRUE@am__append_102 = \
+@HAVE_BONJOUR_TRUE@am__append_103 = \
 @HAVE_BONJOUR_TRUE@		module-bonjour-publish.la
 
-@HAVE_LIRC_TRUE@am__append_103 = \
+@HAVE_LIRC_TRUE@am__append_104 = \
 @HAVE_LIRC_TRUE@		module-lirc.la
 
-@HAVE_EVDEV_TRUE@am__append_104 = \
+@HAVE_EVDEV_TRUE@am__append_105 = \
 @HAVE_EVDEV_TRUE@		module-mmkbd-evdev.la
 
-@HAVE_JACK_TRUE@am__append_105 = \
+@HAVE_JACK_TRUE@am__append_106 = \
 @HAVE_JACK_TRUE@		module-jack-sink.la \
 @HAVE_JACK_TRUE@		module-jack-source.la
 
-@HAVE_DBUS_TRUE@@HAVE_JACK_TRUE@am__append_106 = \
+@HAVE_DBUS_TRUE@@HAVE_JACK_TRUE@am__append_107 = \
 @HAVE_DBUS_TRUE@@HAVE_JACK_TRUE@		module-jackdbus-detect.la
 
-@HAVE_GCONF_TRUE@am__append_107 = \
+@HAVE_GCONF_TRUE@am__append_108 = \
 @HAVE_GCONF_TRUE@		module-gconf.la
 
-@HAVE_GCONF_TRUE@am__append_108 = \
+@HAVE_GCONF_TRUE@am__append_109 = \
 @HAVE_GCONF_TRUE@		gconf-helper
 
-@HAVE_GSETTINGS_TRUE@am__append_109 = \
+@HAVE_GSETTINGS_TRUE@am__append_110 = \
 @HAVE_GSETTINGS_TRUE@		module-gsettings.la
 
-@HAVE_GSETTINGS_TRUE@am__append_110 = \
+@HAVE_GSETTINGS_TRUE@am__append_111 = \
 @HAVE_GSETTINGS_TRUE@		gsettings-helper
 
-@HAVE_WAVEOUT_TRUE@am__append_111 = \
+@HAVE_WAVEOUT_TRUE@am__append_112 = \
 @HAVE_WAVEOUT_TRUE@		module-waveout.la
 
-@HAVE_HAL_COMPAT_TRUE@am__append_112 = \
+@HAVE_HAL_COMPAT_TRUE@am__append_113 = \
 @HAVE_HAL_COMPAT_TRUE@		module-hal-detect.la
 
-@HAVE_UDEV_TRUE@am__append_113 = \
+@HAVE_UDEV_TRUE@am__append_114 = \
 @HAVE_UDEV_TRUE@		module-udev-detect.la
 
-@HAVE_SYSTEMD_LOGIN_TRUE@am__append_114 = \
+@HAVE_SYSTEMD_LOGIN_TRUE@am__append_115 = \
 @HAVE_SYSTEMD_LOGIN_TRUE@		module-systemd-login.la
 
-@HAVE_DBUS_TRUE@am__append_115 = \
+@HAVE_DBUS_TRUE@am__append_116 = \
 @HAVE_DBUS_TRUE@		module-rygel-media-server.la \
 @HAVE_DBUS_TRUE@		module-dbus-protocol.la
 
-@HAVE_BLUEZ_TRUE@am__append_116 = \
+@HAVE_BLUEZ_TRUE@am__append_117 = \
 @HAVE_BLUEZ_TRUE@		module-bluetooth-discover.la \
 @HAVE_BLUEZ_TRUE@		module-bluetooth-policy.la
 
-@HAVE_BLUEZ_5_TRUE@am__append_117 = \
+@HAVE_BLUEZ_5_TRUE@am__append_118 = \
 @HAVE_BLUEZ_5_TRUE@		libbluez5-util.la \
 @HAVE_BLUEZ_5_TRUE@		module-bluez5-discover.la \
 @HAVE_BLUEZ_5_TRUE@		module-bluez5-device.la
@@ -415,46 +418,46 @@ pulselibexec_PROGRAMS = $(am__EXEEXT_16) $(am__EXEEXT_17)
 
 # RAOP depends on RTP, and we don't support RTP on Windows, see comment at
 # librtp.la above.
-@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_118 = \
+@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_119 = \
 @HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@		libraop.la \
 @HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@		module-raop-sink.la
 
-@HAVE_AVAHI_TRUE@@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_119 = \
+@HAVE_AVAHI_TRUE@@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@am__append_120 = \
 @HAVE_AVAHI_TRUE@@HAVE_OPENSSL_TRUE@@OS_IS_WIN32_FALSE@		module-raop-discover.la
 
-@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_120 = \
+@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_121 = \
 @HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@		module-equalizer-sink.la
 
-@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_121 = utils/qpaeq
-@HAVE_DBUS_TRUE@am__append_122 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_123 = $(DBUS_LIBS)
-@HAVE_UDEV_TRUE@am__append_124 = modules/udev-util.h modules/udev-util.c
-@HAVE_UDEV_TRUE@am__append_125 = $(UDEV_LIBS)
-@HAVE_UDEV_TRUE@am__append_126 = $(UDEV_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_127 = modules/reserve.h modules/reserve.c modules/reserve-monitor.h modules/reserve-monitor.c
-@HAVE_DBUS_TRUE@am__append_128 = $(DBUS_LIBS)
-@HAVE_DBUS_TRUE@am__append_129 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_130 = $(DBUS_LIBS)
-@HAVE_DBUS_TRUE@am__append_131 = $(DBUS_CFLAGS)
-@HAVE_DBUS_TRUE@am__append_132 = $(DBUS_LIBS)
-@HAVE_DBUS_TRUE@am__append_133 = $(DBUS_CFLAGS)
-@HAVE_ADRIAN_EC_TRUE@am__append_134 = \
+@HAVE_DBUS_TRUE@@HAVE_FFTW_TRUE@am__append_122 = utils/qpaeq
+@HAVE_DBUS_TRUE@am__append_123 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_124 = $(DBUS_LIBS)
+@HAVE_UDEV_TRUE@am__append_125 = modules/udev-util.h modules/udev-util.c
+@HAVE_UDEV_TRUE@am__append_126 = $(UDEV_LIBS)
+@HAVE_UDEV_TRUE@am__append_127 = $(UDEV_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_128 = modules/reserve.h modules/reserve.c modules/reserve-monitor.h modules/reserve-monitor.c
+@HAVE_DBUS_TRUE@am__append_129 = $(DBUS_LIBS)
+@HAVE_DBUS_TRUE@am__append_130 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_131 = $(DBUS_LIBS)
+@HAVE_DBUS_TRUE@am__append_132 = $(DBUS_CFLAGS)
+@HAVE_DBUS_TRUE@am__append_133 = $(DBUS_LIBS)
+@HAVE_DBUS_TRUE@am__append_134 = $(DBUS_CFLAGS)
+@HAVE_ADRIAN_EC_TRUE@am__append_135 = \
 @HAVE_ADRIAN_EC_TRUE@		modules/echo-cancel/adrian-aec.c modules/echo-cancel/adrian-aec.h \
 @HAVE_ADRIAN_EC_TRUE@		modules/echo-cancel/adrian.c modules/echo-cancel/adrian.h
 
-@HAVE_ADRIAN_EC_TRUE@am__append_135 = -DHAVE_ADRIAN_EC=1
-@HAVE_ADRIAN_EC_TRUE@am__append_136 = modules/echo-cancel/adrian-aec
-@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_137 = $(ORC_LIBS)
-@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_138 = $(ORC_CFLAGS) -I$(top_builddir)/src/modules/echo-cancel
-@HAVE_SPEEX_TRUE@am__append_139 = modules/echo-cancel/speex.c
-@HAVE_SPEEX_TRUE@am__append_140 = $(LIBSPEEX_CFLAGS)
-@HAVE_SPEEX_TRUE@am__append_141 = $(LIBSPEEX_LIBS)
-@HAVE_WEBRTC_TRUE@am__append_142 = -DHAVE_WEBRTC=1
-@HAVE_WEBRTC_TRUE@am__append_143 = libwebrtc-util.la
-@HAVE_BLUEZ_5_OFONO_HEADSET_TRUE@am__append_144 = \
+@HAVE_ADRIAN_EC_TRUE@am__append_136 = -DHAVE_ADRIAN_EC=1
+@HAVE_ADRIAN_EC_TRUE@am__append_137 = modules/echo-cancel/adrian-aec
+@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_138 = $(ORC_LIBS)
+@HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@am__append_139 = $(ORC_CFLAGS) -I$(top_builddir)/src/modules/echo-cancel
+@HAVE_SPEEX_TRUE@am__append_140 = modules/echo-cancel/speex.c
+@HAVE_SPEEX_TRUE@am__append_141 = $(LIBSPEEX_CFLAGS)
+@HAVE_SPEEX_TRUE@am__append_142 = $(LIBSPEEX_LIBS)
+@HAVE_WEBRTC_TRUE@am__append_143 = -DHAVE_WEBRTC=1
+@HAVE_WEBRTC_TRUE@am__append_144 = libwebrtc-util.la
+@HAVE_BLUEZ_5_OFONO_HEADSET_TRUE@am__append_145 = \
 @HAVE_BLUEZ_5_OFONO_HEADSET_TRUE@		modules/bluetooth/backend-ofono.c
 
-@HAVE_BLUEZ_5_NATIVE_HEADSET_TRUE@am__append_145 = \
+@HAVE_BLUEZ_5_NATIVE_HEADSET_TRUE@am__append_146 = \
 @HAVE_BLUEZ_5_NATIVE_HEADSET_TRUE@		modules/bluetooth/backend-native.c
 
 subdir = src
@@ -503,38 +506,41 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pulselibexecdir)" \
 @OS_IS_DARWIN_FALSE@am__EXEEXT_6 = once-test$(EXEEXT)
 @HAVE_GLIB20_TRUE@am__EXEEXT_7 = mainloop-test-glib$(EXEEXT)
 @HAVE_ALSA_TRUE@am__EXEEXT_8 = alsa-mixer-path-test$(EXEEXT)
-am__EXEEXT_9 = core-util-test$(EXEEXT) mainloop-test$(EXEEXT) \
-	strlist-test$(EXEEXT) close-test$(EXEEXT) \
-	memblockq-test$(EXEEXT) channelmap-test$(EXEEXT) \
-	thread-mainloop-test$(EXEEXT) utf8-test$(EXEEXT) \
-	format-test$(EXEEXT) json-test$(EXEEXT) \
-	get-binary-name-test$(EXEEXT) hook-list-test$(EXEEXT) \
-	memblock-test$(EXEEXT) asyncq-test$(EXEEXT) \
-	asyncmsgq-test$(EXEEXT) queue-test$(EXEEXT) \
-	rtpoll-test$(EXEEXT) resampler-test$(EXEEXT) \
-	smoother-test$(EXEEXT) thread-test$(EXEEXT) \
-	volume-test$(EXEEXT) mix-test$(EXEEXT) proplist-test$(EXEEXT) \
-	cpu-mix-test$(EXEEXT) cpu-remap-test$(EXEEXT) \
-	cpu-sconv-test$(EXEEXT) cpu-volume-test$(EXEEXT) \
-	lock-autospawn-test$(EXEEXT) mult-s16-test$(EXEEXT) \
-	lfe-filter-test$(EXEEXT) $(am__EXEEXT_4) $(am__EXEEXT_5) \
-	$(am__EXEEXT_6) $(am__EXEEXT_7) $(am__EXEEXT_8)
-@HAVE_SIGXCPU_TRUE@am__EXEEXT_10 = cpulimit-test$(EXEEXT) \
+am__EXEEXT_9 = asyncmsgq-test$(EXEEXT) asyncq-test$(EXEEXT) \
+	channelmap-test$(EXEEXT) close-test$(EXEEXT) \
+	core-util-test$(EXEEXT) cpu-mix-test$(EXEEXT) \
+	cpu-remap-test$(EXEEXT) cpu-sconv-test$(EXEEXT) \
+	cpu-volume-test$(EXEEXT) format-test$(EXEEXT) \
+	get-binary-name-test$(EXEEXT) hashmap-test$(EXEEXT) \
+	hook-list-test$(EXEEXT) json-test$(EXEEXT) \
+	lfe-filter-test$(EXEEXT) lock-autospawn-test$(EXEEXT) \
+	mainloop-test$(EXEEXT) memblock-test$(EXEEXT) \
+	memblockq-test$(EXEEXT) mix-test$(EXEEXT) \
+	mult-s16-test$(EXEEXT) proplist-test$(EXEEXT) \
+	queue-test$(EXEEXT) resampler-test$(EXEEXT) \
+	rtpoll-test$(EXEEXT) smoother-test$(EXEEXT) \
+	strlist-test$(EXEEXT) thread-mainloop-test$(EXEEXT) \
+	thread-test$(EXEEXT) utf8-test$(EXEEXT) volume-test$(EXEEXT) \
+	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
+	$(am__EXEEXT_7) $(am__EXEEXT_8)
+@HAVE_PTHREAD_SETAFFINITY_NP_TRUE@am__EXEEXT_10 =  \
+@HAVE_PTHREAD_SETAFFINITY_NP_TRUE@	atomic-test$(EXEEXT)
+@HAVE_SIGXCPU_TRUE@am__EXEEXT_11 = cpulimit-test$(EXEEXT) \
 @HAVE_SIGXCPU_TRUE@	cpulimit-test2$(EXEEXT)
-@HAVE_GLIB20_TRUE@@HAVE_GTK30_TRUE@am__EXEEXT_11 = gtk-test$(EXEEXT)
-@HAVE_ALSA_TRUE@am__EXEEXT_12 = alsa-time-test$(EXEEXT)
-am__EXEEXT_13 = ipacl-test$(EXEEXT) mcalign-test$(EXEEXT) \
+@HAVE_GLIB20_TRUE@@HAVE_GTK30_TRUE@am__EXEEXT_12 = gtk-test$(EXEEXT)
+@HAVE_ALSA_TRUE@am__EXEEXT_13 = alsa-time-test$(EXEEXT)
+am__EXEEXT_14 = ipacl-test$(EXEEXT) mcalign-test$(EXEEXT) \
 	pacat-simple$(EXEEXT) parec-simple$(EXEEXT) \
 	flist-test$(EXEEXT) remix-test$(EXEEXT) rtstutter$(EXEEXT) \
 	sig2str-test$(EXEEXT) stripnul$(EXEEXT) \
 	echo-cancel-test$(EXEEXT) lo-latency-test$(EXEEXT) \
-	atomic-test$(EXEEXT) $(am__EXEEXT_10) $(am__EXEEXT_11) \
-	$(am__EXEEXT_12)
-am__EXEEXT_14 = extended-test$(EXEEXT) passthrough-test$(EXEEXT) \
+	$(am__EXEEXT_10) $(am__EXEEXT_11) $(am__EXEEXT_12) \
+	$(am__EXEEXT_13)
+am__EXEEXT_15 = extended-test$(EXEEXT) passthrough-test$(EXEEXT) \
 	sync-playback$(EXEEXT)
-am__EXEEXT_15 = connect-stress$(EXEEXT) interpol-test$(EXEEXT)
-@HAVE_GCONF_TRUE@am__EXEEXT_16 = gconf-helper$(EXEEXT)
-@HAVE_GSETTINGS_TRUE@am__EXEEXT_17 = gsettings-helper$(EXEEXT)
+am__EXEEXT_16 = connect-stress$(EXEEXT) interpol-test$(EXEEXT)
+@HAVE_GCONF_TRUE@am__EXEEXT_17 = gconf-helper$(EXEEXT)
+@HAVE_GSETTINGS_TRUE@am__EXEEXT_18 = gsettings-helper$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS) $(pulselibexec_PROGRAMS)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -939,7 +945,7 @@ libpulsecore_@PA_MAJORMINOR@_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la \
-	libpulsecore-foreign.la $(am__append_52) $(am__DEPENDENCIES_7) \
+	libpulsecore-foreign.la $(am__append_53) $(am__DEPENDENCIES_7) \
 	$(am__DEPENDENCIES_5) $(am__DEPENDENCIES_8) \
 	$(am__DEPENDENCIES_9) $(am__DEPENDENCIES_10) \
 	$(am__DEPENDENCIES_11) $(am__DEPENDENCIES_12)
@@ -1434,7 +1440,7 @@ module_device_restore_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@	$(am__DEPENDENCIES_1)
 module_echo_cancel_la_DEPENDENCIES = $(am__DEPENDENCIES_3) \
 	$(am__DEPENDENCIES_14) $(am__DEPENDENCIES_10) \
-	$(am__append_143)
+	$(am__append_144)
 am__module_echo_cancel_la_SOURCES_DIST =  \
 	modules/echo-cancel/module-echo-cancel.c \
 	modules/echo-cancel/null.c modules/echo-cancel/echo-cancel.h \
@@ -2266,7 +2272,7 @@ nodist_echo_cancel_test_OBJECTS = $(am__objects_30)
 echo_cancel_test_OBJECTS = $(am_echo_cancel_test_OBJECTS) \
 	$(nodist_echo_cancel_test_OBJECTS)
 am__DEPENDENCIES_15 = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_14) \
-	$(am__DEPENDENCIES_10) $(am__append_143)
+	$(am__DEPENDENCIES_10) $(am__append_144)
 echo_cancel_test_DEPENDENCIES = $(am__DEPENDENCIES_15)
 echo_cancel_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
@@ -2332,6 +2338,13 @@ gtk_test_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
 gtk_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(gtk_test_CFLAGS) \
 	$(CFLAGS) $(gtk_test_LDFLAGS) $(LDFLAGS) -o $@
+am_hashmap_test_OBJECTS = tests/hashmap_test-hashmap-test.$(OBJEXT)
+hashmap_test_OBJECTS = $(am_hashmap_test_OBJECTS)
+hashmap_test_DEPENDENCIES = $(am__DEPENDENCIES_2) libpulse.la \
+	libpulsecommon-@PA_MAJORMINOR@.la
+hashmap_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hashmap_test_CFLAGS) \
+	$(CFLAGS) $(hashmap_test_LDFLAGS) $(LDFLAGS) -o $@
 am_hook_list_test_OBJECTS =  \
 	tests/hook_list_test-hook-list-test.$(OBJEXT)
 hook_list_test_OBJECTS = $(am_hook_list_test_OBJECTS)
@@ -3074,6 +3087,7 @@ am__depfiles_remade = daemon/$(DEPDIR)/cpulimit_test-cpulimit.Po \
 	tests/$(DEPDIR)/format_test-format-test.Po \
 	tests/$(DEPDIR)/get_binary_name_test-get-binary-name-test.Po \
 	tests/$(DEPDIR)/gtk_test-gtk-test.Po \
+	tests/$(DEPDIR)/hashmap_test-hashmap-test.Po \
 	tests/$(DEPDIR)/hook_list_test-hook-list-test.Po \
 	tests/$(DEPDIR)/interpol_test-interpol-test.Po \
 	tests/$(DEPDIR)/ipacl_test-ipacl-test.Po \
@@ -3266,26 +3280,27 @@ SOURCES = $(libalsa_util_la_SOURCES) $(libavahi_wrap_la_SOURCES) \
 	$(flist_test_SOURCES) $(format_test_SOURCES) \
 	$(gconf_helper_SOURCES) $(get_binary_name_test_SOURCES) \
 	$(gsettings_helper_SOURCES) $(gtk_test_SOURCES) \
-	$(hook_list_test_SOURCES) $(interpol_test_SOURCES) \
-	$(ipacl_test_SOURCES) $(json_test_SOURCES) \
-	$(lfe_filter_test_SOURCES) $(lo_latency_test_SOURCES) \
-	$(lock_autospawn_test_SOURCES) $(mainloop_test_SOURCES) \
-	$(mainloop_test_glib_SOURCES) $(mcalign_test_SOURCES) \
-	$(memblock_test_SOURCES) $(memblockq_test_SOURCES) \
-	$(mix_test_SOURCES) $(mult_s16_test_SOURCES) \
-	$(once_test_SOURCES) $(pacat_SOURCES) $(pacat_simple_SOURCES) \
-	$(pacmd_SOURCES) $(pactl_SOURCES) $(parec_simple_SOURCES) \
-	$(passthrough_test_SOURCES) $(pasuspender_SOURCES) \
-	$(pax11publish_SOURCES) $(proplist_test_SOURCES) \
-	$(pulseaudio_SOURCES) $(queue_test_SOURCES) \
-	$(remix_test_SOURCES) $(resampler_test_SOURCES) \
-	$(rtpoll_test_SOURCES) $(rtstutter_SOURCES) \
-	$(sig2str_test_SOURCES) $(sigbus_test_SOURCES) \
-	$(smoother_test_SOURCES) $(srbchannel_test_SOURCES) \
-	$(stripnul_SOURCES) $(strlist_test_SOURCES) \
-	$(sync_playback_SOURCES) $(thread_mainloop_test_SOURCES) \
-	$(thread_test_SOURCES) $(usergroup_test_SOURCES) \
-	$(utf8_test_SOURCES) $(volume_test_SOURCES)
+	$(hashmap_test_SOURCES) $(hook_list_test_SOURCES) \
+	$(interpol_test_SOURCES) $(ipacl_test_SOURCES) \
+	$(json_test_SOURCES) $(lfe_filter_test_SOURCES) \
+	$(lo_latency_test_SOURCES) $(lock_autospawn_test_SOURCES) \
+	$(mainloop_test_SOURCES) $(mainloop_test_glib_SOURCES) \
+	$(mcalign_test_SOURCES) $(memblock_test_SOURCES) \
+	$(memblockq_test_SOURCES) $(mix_test_SOURCES) \
+	$(mult_s16_test_SOURCES) $(once_test_SOURCES) $(pacat_SOURCES) \
+	$(pacat_simple_SOURCES) $(pacmd_SOURCES) $(pactl_SOURCES) \
+	$(parec_simple_SOURCES) $(passthrough_test_SOURCES) \
+	$(pasuspender_SOURCES) $(pax11publish_SOURCES) \
+	$(proplist_test_SOURCES) $(pulseaudio_SOURCES) \
+	$(queue_test_SOURCES) $(remix_test_SOURCES) \
+	$(resampler_test_SOURCES) $(rtpoll_test_SOURCES) \
+	$(rtstutter_SOURCES) $(sig2str_test_SOURCES) \
+	$(sigbus_test_SOURCES) $(smoother_test_SOURCES) \
+	$(srbchannel_test_SOURCES) $(stripnul_SOURCES) \
+	$(strlist_test_SOURCES) $(sync_playback_SOURCES) \
+	$(thread_mainloop_test_SOURCES) $(thread_test_SOURCES) \
+	$(usergroup_test_SOURCES) $(utf8_test_SOURCES) \
+	$(volume_test_SOURCES)
 DIST_SOURCES = $(am__libalsa_util_la_SOURCES_DIST) \
 	$(libavahi_wrap_la_SOURCES) \
 	$(am__libbluez5_util_la_SOURCES_DIST) $(libcli_la_SOURCES) \
@@ -3399,27 +3414,27 @@ DIST_SOURCES = $(am__libalsa_util_la_SOURCES_DIST) \
 	$(extended_test_SOURCES) $(flist_test_SOURCES) \
 	$(format_test_SOURCES) $(gconf_helper_SOURCES) \
 	$(get_binary_name_test_SOURCES) $(gsettings_helper_SOURCES) \
-	$(gtk_test_SOURCES) $(hook_list_test_SOURCES) \
-	$(interpol_test_SOURCES) $(ipacl_test_SOURCES) \
-	$(json_test_SOURCES) $(lfe_filter_test_SOURCES) \
-	$(lo_latency_test_SOURCES) $(lock_autospawn_test_SOURCES) \
-	$(mainloop_test_SOURCES) $(mainloop_test_glib_SOURCES) \
-	$(mcalign_test_SOURCES) $(memblock_test_SOURCES) \
-	$(memblockq_test_SOURCES) $(mix_test_SOURCES) \
-	$(mult_s16_test_SOURCES) $(once_test_SOURCES) $(pacat_SOURCES) \
-	$(pacat_simple_SOURCES) $(pacmd_SOURCES) $(pactl_SOURCES) \
-	$(parec_simple_SOURCES) $(passthrough_test_SOURCES) \
-	$(pasuspender_SOURCES) $(pax11publish_SOURCES) \
-	$(proplist_test_SOURCES) $(am__pulseaudio_SOURCES_DIST) \
-	$(queue_test_SOURCES) $(remix_test_SOURCES) \
-	$(resampler_test_SOURCES) $(rtpoll_test_SOURCES) \
-	$(rtstutter_SOURCES) $(sig2str_test_SOURCES) \
-	$(sigbus_test_SOURCES) $(smoother_test_SOURCES) \
-	$(srbchannel_test_SOURCES) $(stripnul_SOURCES) \
-	$(strlist_test_SOURCES) $(sync_playback_SOURCES) \
-	$(thread_mainloop_test_SOURCES) $(thread_test_SOURCES) \
-	$(usergroup_test_SOURCES) $(utf8_test_SOURCES) \
-	$(volume_test_SOURCES)
+	$(gtk_test_SOURCES) $(hashmap_test_SOURCES) \
+	$(hook_list_test_SOURCES) $(interpol_test_SOURCES) \
+	$(ipacl_test_SOURCES) $(json_test_SOURCES) \
+	$(lfe_filter_test_SOURCES) $(lo_latency_test_SOURCES) \
+	$(lock_autospawn_test_SOURCES) $(mainloop_test_SOURCES) \
+	$(mainloop_test_glib_SOURCES) $(mcalign_test_SOURCES) \
+	$(memblock_test_SOURCES) $(memblockq_test_SOURCES) \
+	$(mix_test_SOURCES) $(mult_s16_test_SOURCES) \
+	$(once_test_SOURCES) $(pacat_SOURCES) $(pacat_simple_SOURCES) \
+	$(pacmd_SOURCES) $(pactl_SOURCES) $(parec_simple_SOURCES) \
+	$(passthrough_test_SOURCES) $(pasuspender_SOURCES) \
+	$(pax11publish_SOURCES) $(proplist_test_SOURCES) \
+	$(am__pulseaudio_SOURCES_DIST) $(queue_test_SOURCES) \
+	$(remix_test_SOURCES) $(resampler_test_SOURCES) \
+	$(rtpoll_test_SOURCES) $(rtstutter_SOURCES) \
+	$(sig2str_test_SOURCES) $(sigbus_test_SOURCES) \
+	$(smoother_test_SOURCES) $(srbchannel_test_SOURCES) \
+	$(stripnul_SOURCES) $(strlist_test_SOURCES) \
+	$(sync_playback_SOURCES) $(thread_mainloop_test_SOURCES) \
+	$(thread_test_SOURCES) $(usergroup_test_SOURCES) \
+	$(utf8_test_SOURCES) $(volume_test_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -3470,6 +3485,7 @@ am__dist_alsaprofilesets_DATA_DIST =  \
 	modules/alsa/mixer/profile-sets/default.conf \
 	modules/alsa/mixer/profile-sets/force-speaker.conf \
 	modules/alsa/mixer/profile-sets/force-speaker-and-int-mic.conf \
+	modules/alsa/mixer/profile-sets/audigy.conf \
 	modules/alsa/mixer/profile-sets/maudio-fasttrack-pro.conf \
 	modules/alsa/mixer/profile-sets/native-instruments-audio4dj.conf \
 	modules/alsa/mixer/profile-sets/native-instruments-audio8dj.conf \
@@ -3739,6 +3755,7 @@ DBUS_LIBS = @DBUS_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOXYGEN_OUTPUT_DIRECTORY = @DOXYGEN_OUTPUT_DIRECTORY@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
@@ -3936,6 +3953,7 @@ ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+alsadatadir = @alsadatadir@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -3993,8 +4011,8 @@ pulseincludedir = $(includedir)/pulse
 pulsecoreincludedir = $(includedir)/pulsecore
 pulselibexecdir = $(libexecdir)/pulse
 @HAVE_X11_TRUE@xdgautostartdir = $(sysconfdir)/xdg/autostart
-@HAVE_ALSA_TRUE@alsaprofilesetsdir = $(datadir)/pulseaudio/alsa-mixer/profile-sets
-@HAVE_ALSA_TRUE@alsapathsdir = $(datadir)/pulseaudio/alsa-mixer/paths
+@HAVE_ALSA_TRUE@alsaprofilesetsdir = $(alsadatadir)/profile-sets
+@HAVE_ALSA_TRUE@alsapathsdir = $(alsadatadir)/paths
 @HAVE_DBUS_TRUE@dbuspolicydir = $(sysconfdir)/dbus-1/system.d
 @HAVE_GSETTINGS_TRUE@gsettingsdataconvertdir = $(datadir)/GConf/gsettings
 
@@ -4062,7 +4080,7 @@ BUILT_SOURCES = $(am__append_6)
 ###################################
 #        Some minor stuff         #
 ###################################
-CLEANFILES = $(am__append_7) $(am__append_50) \
+CLEANFILES = $(am__append_7) $(am__append_51) \
 	daemon/pulseaudio.desktop
 @HAVE_ORC_TRUE@ORC_BUILT_SOURCE = $(addsuffix -orc-gen.c,$(ORC_SOURCE))
 @HAVE_ORC_TRUE@ORC_BUILT_HEADER = $(addsuffix -orc-gen.h,$(ORC_SOURCE))
@@ -4072,7 +4090,7 @@ CLEANFILES = $(am__append_7) $(am__append_50) \
 @HAVE_ORC_TRUE@cp_v_gen = $(cp_v_gen_$(V))
 @HAVE_ORC_TRUE@cp_v_gen_ = $(cp_v_gen_$(AM_DEFAULT_VERBOSITY))
 @HAVE_ORC_TRUE@cp_v_gen_0 = @echo "  CP     $@";
-ORC_SOURCE = pulsecore/svolume $(am__append_136)
+ORC_SOURCE = pulsecore/svolume $(am__append_137)
 pulseaudio_SOURCES = daemon/caps.c daemon/caps.h daemon/cmdline.c \
 	daemon/cmdline.h daemon/cpulimit.c daemon/cpulimit.h \
 	daemon/daemon-conf.c daemon/daemon-conf.h daemon/dumpmodules.c \
@@ -4101,7 +4119,7 @@ pulseaudio_DEPENDENCIES = libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJ
 #       Utility programs          #
 ###################################
 bin_SCRIPTS = utils/pa-info $(am__append_13) $(am__append_17) \
-	$(am__append_49) $(am__append_121)
+	$(am__append_50) $(am__append_122)
 pacat_SOURCES = utils/pacat.c
 pacat_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la $(LIBSNDFILE_LIBS)
 pacat_CFLAGS = $(AM_CFLAGS) $(LIBSNDFILE_CFLAGS)
@@ -4132,22 +4150,22 @@ pax11publish_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS)
 ###################################
 
 # We split the foreign code off to not be annoyed by warnings we don't care about
-noinst_LTLIBRARIES = liblo-test-util.la $(am__append_51) \
+noinst_LTLIBRARIES = liblo-test-util.la $(am__append_52) \
 	libpulsecore-foreign.la
-TESTS_default = core-util-test mainloop-test strlist-test close-test \
-	memblockq-test channelmap-test thread-mainloop-test utf8-test \
-	format-test json-test get-binary-name-test hook-list-test \
-	memblock-test asyncq-test asyncmsgq-test queue-test \
-	rtpoll-test resampler-test smoother-test thread-test \
-	volume-test mix-test proplist-test cpu-mix-test cpu-remap-test \
-	cpu-sconv-test cpu-volume-test lock-autospawn-test \
-	mult-s16-test lfe-filter-test $(am__append_18) \
-	$(am__append_19) $(am__append_20) $(am__append_22) \
-	$(am__append_25)
+TESTS_default = asyncmsgq-test asyncq-test channelmap-test close-test \
+	core-util-test cpu-mix-test cpu-remap-test cpu-sconv-test \
+	cpu-volume-test format-test get-binary-name-test hashmap-test \
+	hook-list-test json-test lfe-filter-test lock-autospawn-test \
+	mainloop-test memblock-test memblockq-test mix-test \
+	mult-s16-test proplist-test queue-test resampler-test \
+	rtpoll-test smoother-test strlist-test thread-mainloop-test \
+	thread-test utf8-test volume-test $(am__append_18) \
+	$(am__append_20) $(am__append_21) $(am__append_23) \
+	$(am__append_26)
 TESTS_norun = ipacl-test mcalign-test pacat-simple parec-simple \
 	flist-test remix-test rtstutter sig2str-test stripnul \
-	echo-cancel-test lo-latency-test atomic-test $(am__append_21) \
-	$(am__append_23) $(am__append_24)
+	echo-cancel-test lo-latency-test $(am__append_19) \
+	$(am__append_22) $(am__append_24) $(am__append_25)
 
 # These tests need a running pulseaudio daemon
 TESTS_daemon = \
@@ -4167,6 +4185,10 @@ core_util_test_SOURCES = tests/core-util-test.c
 core_util_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
 core_util_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
 core_util_test_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS) $(LIBCHECK_LIBS)
+hashmap_test_SOURCES = tests/hashmap-test.c
+hashmap_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
+hashmap_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
+hashmap_test_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS) $(LIBCHECK_LIBS)
 mainloop_test_SOURCES = tests/mainloop-test.c
 mainloop_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
 mainloop_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
@@ -4462,22 +4484,22 @@ libpulsecommon_@PA_MAJORMINOR@_la_SOURCES = pulse/client-conf.c \
 	pulsecore/time-smoother.h pulsecore/tokenizer.c \
 	pulsecore/tokenizer.h pulsecore/usergroup.c \
 	pulsecore/usergroup.h pulsecore/sndfile-util.c \
-	pulsecore/sndfile-util.h pulsecore/socket.h $(am__append_26) \
-	$(am__append_27) $(am__append_28) $(am__append_29) \
-	$(am__append_36) $(am__append_37) $(am__append_38) \
-	$(am__append_41) $(am__append_42)
+	pulsecore/sndfile-util.h pulsecore/socket.h $(am__append_27) \
+	$(am__append_28) $(am__append_29) $(am__append_30) \
+	$(am__append_37) $(am__append_38) $(am__append_39) \
+	$(am__append_42) $(am__append_43)
 
 # proplist-util.h uses these header files, but not the library itself!
 libpulsecommon_@PA_MAJORMINOR@_la_CFLAGS = $(AM_CFLAGS) \
-	$(LIBSNDFILE_CFLAGS) $(am__append_30) $(am__append_32) \
-	$(am__append_34) $(GLIB20_CFLAGS) $(GTK30_CFLAGS) \
-	$(am__append_39) $(am__append_43)
+	$(LIBSNDFILE_CFLAGS) $(am__append_31) $(am__append_33) \
+	$(am__append_35) $(GLIB20_CFLAGS) $(GTK30_CFLAGS) \
+	$(am__append_40) $(am__append_44)
 libpulsecommon_@PA_MAJORMINOR@_la_LDFLAGS = $(AM_LDFLAGS) \
-	$(AM_LIBLDFLAGS) -avoid-version $(am__append_31) \
-	$(am__append_33) $(am__append_35)
+	$(AM_LIBLDFLAGS) -avoid-version $(am__append_32) \
+	$(am__append_34) $(am__append_36)
 libpulsecommon_@PA_MAJORMINOR@_la_LIBADD = $(AM_LIBADD) \
 	$(LIBWRAP_LIBS) $(WINSOCK_LIBS) $(LTLIBICONV) \
-	$(LIBSNDFILE_LIBS) $(am__append_40) $(am__append_44)
+	$(LIBSNDFILE_LIBS) $(am__append_41) $(am__append_45)
 
 ###################################
 #         Client library          #
@@ -4492,8 +4514,8 @@ pulseinclude_HEADERS = pulse/cdecl.h pulse/channelmap.h \
 	pulse/sample.h pulse/scache.h pulse/simple.h pulse/stream.h \
 	pulse/subscribe.h pulse/thread-mainloop.h pulse/timeval.h \
 	pulse/utf8.h pulse/util.h pulse/version.h pulse/volume.h \
-	pulse/xmalloc.h $(am__append_45)
-lib_LTLIBRARIES = libpulse.la libpulse-simple.la $(am__append_46)
+	pulse/xmalloc.h $(am__append_46)
+lib_LTLIBRARIES = libpulse.la libpulse-simple.la $(am__append_47)
 
 # Public interface
 libpulse_la_SOURCES = \
@@ -4528,9 +4550,9 @@ libpulse_la_SOURCES = \
 		pulse/volume.c pulse/volume.h \
 		pulse/xmalloc.c pulse/xmalloc.h
 
-libpulse_la_CFLAGS = $(AM_CFLAGS) $(am__append_47)
+libpulse_la_CFLAGS = $(AM_CFLAGS) $(am__append_48)
 libpulse_la_LIBADD = $(AM_LIBADD) $(WINSOCK_LIBS) $(LTLIBICONV) \
-	libpulsecommon-@PA_MAJORMINOR@.la $(am__append_48)
+	libpulsecommon-@PA_MAJORMINOR@.la $(am__append_49)
 libpulse_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) $(VERSIONING_LDFLAGS) -version-info $(LIBPULSE_VERSION_INFO)
 libpulse_simple_la_SOURCES = pulse/simple.c pulse/simple.h
 libpulse_simple_la_CFLAGS = $(AM_CFLAGS)
@@ -4605,23 +4627,23 @@ libpulsecore_@PA_MAJORMINOR@_la_SOURCES =  \
 	pulsecore/source-output.c pulsecore/source-output.h \
 	pulsecore/source.c pulsecore/source.h pulsecore/start-child.c \
 	pulsecore/start-child.h pulsecore/thread-mq.c \
-	pulsecore/thread-mq.h pulsecore/database.h $(am__append_53) \
-	$(am__append_56) $(am__append_59) $(am__append_62) \
-	$(am__append_65) $(am__append_68) $(am__append_69) \
-	$(am__append_72) $(am__append_75)
-libpulsecore_@PA_MAJORMINOR@_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
-	$(LIBSNDFILE_CFLAGS) $(WINSOCK_CFLAGS) $(am__append_54) \
+	pulsecore/thread-mq.h pulsecore/database.h $(am__append_54) \
 	$(am__append_57) $(am__append_60) $(am__append_63) \
-	$(am__append_66) $(am__append_70) $(am__append_73) \
-	$(am__append_76)
+	$(am__append_66) $(am__append_69) $(am__append_70) \
+	$(am__append_73) $(am__append_76)
+libpulsecore_@PA_MAJORMINOR@_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
+	$(LIBSNDFILE_CFLAGS) $(WINSOCK_CFLAGS) $(am__append_55) \
+	$(am__append_58) $(am__append_61) $(am__append_64) \
+	$(am__append_67) $(am__append_71) $(am__append_74) \
+	$(am__append_77)
 libpulsecore_@PA_MAJORMINOR@_la_LDFLAGS = $(AM_LDFLAGS) \
-	$(AM_LIBLDFLAGS) -avoid-version $(am__append_58)
+	$(AM_LIBLDFLAGS) -avoid-version $(am__append_59)
 libpulsecore_@PA_MAJORMINOR@_la_LIBADD = $(AM_LIBADD) $(LIBLTDL) \
 	$(LIBSNDFILE_LIBS) $(WINSOCK_LIBS) $(LTLIBICONV) \
 	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la \
-	libpulsecore-foreign.la $(am__append_52) $(am__append_55) \
-	$(am__append_61) $(am__append_64) $(am__append_67) \
-	$(am__append_71) $(am__append_74) $(am__append_77)
+	libpulsecore-foreign.la $(am__append_53) $(am__append_56) \
+	$(am__append_62) $(am__append_65) $(am__append_68) \
+	$(am__append_72) $(am__append_75) $(am__append_78)
 @HAVE_NEON_TRUE@libpulsecore_sconv_neon_la_SOURCES = pulsecore/sconv_neon.c
 @HAVE_NEON_TRUE@libpulsecore_sconv_neon_la_CFLAGS = $(AM_CFLAGS) $(NEON_CFLAGS)
 @HAVE_NEON_TRUE@libpulsecore_mix_neon_la_SOURCES = pulsecore/mix_neon.c
@@ -4644,8 +4666,8 @@ libpulsecore_foreign_la_CFLAGS = $(AM_CFLAGS) $(FOREIGN_CFLAGS)
 ### the head, and not the other way!
 modlibexec_LTLIBRARIES = libcli.la libprotocol-cli.la \
 	libprotocol-simple.la libprotocol-http.la \
-	libprotocol-native.la $(am__append_78) $(am__append_79) \
-	$(am__append_80) $(am__append_81) $(am__append_88) \
+	libprotocol-native.la $(am__append_79) $(am__append_80) \
+	$(am__append_81) $(am__append_82) $(am__append_89) \
 	module-cli.la module-cli-protocol-tcp.la \
 	module-simple-protocol-tcp.la module-null-sink.la \
 	module-null-source.la module-sine-source.la module-detect.la \
@@ -4667,16 +4689,16 @@ modlibexec_LTLIBRARIES = libcli.la libprotocol-cli.la \
 	module-switch-on-connect.la module-switch-on-port-available.la \
 	module-filter-apply.la module-filter-heuristics.la \
 	module-role-ducking.la module-allow-passthrough.la \
-	$(am__append_89) $(am__append_90) $(am__append_91) \
-	$(am__append_92) $(am__append_93) $(am__append_94) \
-	$(am__append_95) $(am__append_96) $(am__append_97) \
-	$(am__append_98) $(am__append_99) $(am__append_100) \
-	$(am__append_101) $(am__append_102) $(am__append_103) \
-	$(am__append_104) $(am__append_105) $(am__append_106) \
-	$(am__append_107) $(am__append_109) $(am__append_111) \
-	$(am__append_112) $(am__append_113) $(am__append_114) \
-	$(am__append_115) $(am__append_116) $(am__append_117) \
-	$(am__append_118) $(am__append_119) $(am__append_120)
+	$(am__append_90) $(am__append_91) $(am__append_92) \
+	$(am__append_93) $(am__append_94) $(am__append_95) \
+	$(am__append_96) $(am__append_97) $(am__append_98) \
+	$(am__append_99) $(am__append_100) $(am__append_101) \
+	$(am__append_102) $(am__append_103) $(am__append_104) \
+	$(am__append_105) $(am__append_106) $(am__append_107) \
+	$(am__append_108) $(am__append_110) $(am__append_112) \
+	$(am__append_113) $(am__append_114) $(am__append_115) \
+	$(am__append_116) $(am__append_117) $(am__append_118) \
+	$(am__append_119) $(am__append_120) $(am__append_121)
 libprotocol_simple_la_SOURCES = pulsecore/protocol-simple.c pulsecore/protocol-simple.h
 libprotocol_simple_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 libprotocol_simple_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
@@ -4691,11 +4713,11 @@ libprotocol_http_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 libprotocol_http_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
 libprotocol_native_la_SOURCES = pulsecore/protocol-native.c pulsecore/protocol-native.h pulsecore/native-common.h
 libprotocol_native_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
-	$(am__append_82)
+	$(am__append_83)
 libprotocol_native_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 libprotocol_native_la_LIBADD = $(AM_LIBADD) \
 	libpulsecore-@PA_MAJORMINOR@.la \
-	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la $(am__append_83)
+	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la $(am__append_84)
 @HAVE_ESOUND_TRUE@libprotocol_esound_la_SOURCES = pulsecore/protocol-esound.c pulsecore/protocol-esound.h pulsecore/esound.h
 @HAVE_ESOUND_TRUE@libprotocol_esound_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 @HAVE_ESOUND_TRUE@libprotocol_esound_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
@@ -4703,11 +4725,11 @@ librtp_la_SOURCES = modules/rtp/rtp-common.c modules/rtp/rtp.h \
 	modules/rtp/sdp.c modules/rtp/sdp.h modules/rtp/sap.c \
 	modules/rtp/sap.h modules/rtp/rtsp_client.c \
 	modules/rtp/rtsp_client.h modules/rtp/headerlist.c \
-	modules/rtp/headerlist.h $(am__append_84) $(am__append_87)
-librtp_la_CFLAGS = $(AM_CFLAGS) $(am__append_85)
+	modules/rtp/headerlist.h $(am__append_85) $(am__append_88)
+librtp_la_CFLAGS = $(AM_CFLAGS) $(am__append_86)
 librtp_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 librtp_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la \
-	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la $(am__append_86)
+	libpulsecommon-@PA_MAJORMINOR@.la libpulse.la $(am__append_87)
 libraop_la_SOURCES = \
         modules/raop/raop-util.c modules/raop/raop-util.h \
         modules/raop/raop-crypto.c modules/raop/raop-crypto.h \
@@ -4728,6 +4750,7 @@ libavahi_wrap_la_LIBADD = $(AM_LIBADD) $(AVAHI_CFLAGS) libpulsecore-@PA_MAJORMIN
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/default.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/force-speaker.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/force-speaker-and-int-mic.conf \
+@HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/audigy.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/maudio-fasttrack-pro.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/native-instruments-audio4dj.conf \
 @HAVE_ALSA_TRUE@		modules/alsa/mixer/profile-sets/native-instruments-audio8dj.conf \
@@ -4944,10 +4967,10 @@ module_remap_source_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_remap_sourc
 module_ladspa_sink_la_SOURCES = modules/module-ladspa-sink.c modules/ladspa.h
 module_ladspa_sink_la_CFLAGS = -DLADSPA_PATH="$(libdir)/ladspa:/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/lib64/ladspa" \
 	$(AM_CFLAGS) $(SERVER_CFLAGS) \
-	-DPA_MODULE_NAME=module_ladspa_sink $(am__append_122)
+	-DPA_MODULE_NAME=module_ladspa_sink $(am__append_123)
 module_ladspa_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_ladspa_sink_la_LIBADD = $(MODULE_LIBADD) $(LIBLTDL) \
-	$(am__append_123)
+	$(am__append_124)
 module_equalizer_sink_la_SOURCES = modules/module-equalizer-sink.c
 module_equalizer_sink_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) $(DBUS_CFLAGS) $(FFTW_CFLAGS) -DPA_MODULE_NAME=module_equalizer_sink
 module_equalizer_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
@@ -5039,12 +5062,12 @@ libalsa_util_la_SOURCES = modules/alsa/alsa-util.c \
 	modules/alsa/alsa-mixer.h modules/alsa/alsa-sink.c \
 	modules/alsa/alsa-sink.h modules/alsa/alsa-source.c \
 	modules/alsa/alsa-source.h modules/reserve-wrap.c \
-	modules/reserve-wrap.h $(am__append_124) $(am__append_127)
+	modules/reserve-wrap.h $(am__append_125) $(am__append_128)
 libalsa_util_la_LDFLAGS = -avoid-version
 libalsa_util_la_LIBADD = $(MODULE_LIBADD) $(ASOUNDLIB_LIBS) \
-	$(am__append_125) $(am__append_128)
+	$(am__append_126) $(am__append_129)
 libalsa_util_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
-	$(ASOUNDLIB_CFLAGS) $(am__append_126) $(am__append_129)
+	$(ASOUNDLIB_CFLAGS) $(am__append_127) $(am__append_130)
 module_alsa_sink_la_SOURCES = modules/alsa/module-alsa-sink.c
 module_alsa_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_alsa_sink_la_LIBADD = $(MODULE_LIBADD) $(ASOUNDLIB_LIBS) libalsa-util.la
@@ -5151,17 +5174,17 @@ module_device_manager_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_device_ma
 module_device_restore_la_SOURCES = modules/module-device-restore.c
 module_device_restore_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_device_restore_la_LIBADD = $(MODULE_LIBADD) \
-	libprotocol-native.la $(am__append_130)
+	libprotocol-native.la $(am__append_131)
 module_device_restore_la_CFLAGS = $(AM_CFLAGS) \
-	-DPA_MODULE_NAME=module_device_restore $(am__append_131)
+	-DPA_MODULE_NAME=module_device_restore $(am__append_132)
 
 # Stream volume/muted/device restore module
 module_stream_restore_la_SOURCES = modules/module-stream-restore.c
 module_stream_restore_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_stream_restore_la_LIBADD = $(MODULE_LIBADD) \
-	libprotocol-native.la $(am__append_132)
+	libprotocol-native.la $(am__append_133)
 module_stream_restore_la_CFLAGS = $(AM_CFLAGS) \
-	-DPA_MODULE_NAME=module_stream_restore $(am__append_133)
+	-DPA_MODULE_NAME=module_stream_restore $(am__append_134)
 
 # Card profile restore module
 module_card_restore_la_SOURCES = modules/module-card-restore.c
@@ -5209,13 +5232,13 @@ module_suspend_on_idle_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_suspend_
 module_echo_cancel_la_SOURCES =  \
 	modules/echo-cancel/module-echo-cancel.c \
 	modules/echo-cancel/null.c modules/echo-cancel/echo-cancel.h \
-	$(am__append_134) $(am__append_139)
+	$(am__append_135) $(am__append_140)
 module_echo_cancel_la_LDFLAGS = $(MODULE_LDFLAGS)
-module_echo_cancel_la_LIBADD = $(MODULE_LIBADD) $(am__append_137) \
-	$(am__append_141) $(am__append_143)
+module_echo_cancel_la_LIBADD = $(MODULE_LIBADD) $(am__append_138) \
+	$(am__append_142) $(am__append_144)
 module_echo_cancel_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
-	-DPA_MODULE_NAME=module_echo_cancel $(am__append_135) \
-	$(am__append_138) $(am__append_140) $(am__append_142)
+	-DPA_MODULE_NAME=module_echo_cancel $(am__append_136) \
+	$(am__append_139) $(am__append_141) $(am__append_143)
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@nodist_module_echo_cancel_la_SOURCES = \
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@		modules/echo-cancel/adrian-aec-orc-gen.c \
 @HAVE_ADRIAN_EC_TRUE@@HAVE_ORC_TRUE@		modules/echo-cancel/adrian-aec-orc-gen.h
@@ -5314,7 +5337,7 @@ libbluez5_util_la_SOURCES = modules/bluetooth/bluez5-util.c \
 	modules/bluetooth/a2dp-codec-util.c \
 	modules/bluetooth/a2dp-codec-util.h \
 	modules/bluetooth/a2dp-codecs.h modules/bluetooth/rtp.h \
-	$(am__append_144) $(am__append_145) \
+	$(am__append_145) $(am__append_146) \
 	modules/bluetooth/a2dp-codec-sbc.c
 libbluez5_util_la_LDFLAGS = -avoid-version
 libbluez5_util_la_LIBADD = $(MODULE_LIBADD) $(DBUS_LIBS) $(SBC_LIBS)
@@ -7078,6 +7101,12 @@ tests/gtk_test-gtk-test.$(OBJEXT): tests/$(am__dirstamp) \
 gtk-test$(EXEEXT): $(gtk_test_OBJECTS) $(gtk_test_DEPENDENCIES) $(EXTRA_gtk_test_DEPENDENCIES) 
 	@rm -f gtk-test$(EXEEXT)
 	$(AM_V_CCLD)$(gtk_test_LINK) $(gtk_test_OBJECTS) $(gtk_test_LDADD) $(LIBS)
+tests/hashmap_test-hashmap-test.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+hashmap-test$(EXEEXT): $(hashmap_test_OBJECTS) $(hashmap_test_DEPENDENCIES) $(EXTRA_hashmap_test_DEPENDENCIES) 
+	@rm -f hashmap-test$(EXEEXT)
+	$(AM_V_CCLD)$(hashmap_test_LINK) $(hashmap_test_OBJECTS) $(hashmap_test_LDADD) $(LIBS)
 tests/hook_list_test-hook-list-test.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -7792,6 +7821,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/format_test-format-test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/get_binary_name_test-get-binary-name-test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/gtk_test-gtk-test.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/hashmap_test-hashmap-test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/hook_list_test-hook-list-test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/interpol_test-interpol-test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/ipacl_test-ipacl-test.Po@am__quote@ # am--include-marker
@@ -10526,6 +10556,20 @@ tests/gtk_test-gtk-test.obj: tests/gtk-test.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gtk_test_CFLAGS) $(CFLAGS) -c -o tests/gtk_test-gtk-test.obj `if test -f 'tests/gtk-test.c'; then $(CYGPATH_W) 'tests/gtk-test.c'; else $(CYGPATH_W) '$(srcdir)/tests/gtk-test.c'; fi`
 
+tests/hashmap_test-hashmap-test.o: tests/hashmap-test.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hashmap_test_CFLAGS) $(CFLAGS) -MT tests/hashmap_test-hashmap-test.o -MD -MP -MF tests/$(DEPDIR)/hashmap_test-hashmap-test.Tpo -c -o tests/hashmap_test-hashmap-test.o `test -f 'tests/hashmap-test.c' || echo '$(srcdir)/'`tests/hashmap-test.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/hashmap_test-hashmap-test.Tpo tests/$(DEPDIR)/hashmap_test-hashmap-test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/hashmap-test.c' object='tests/hashmap_test-hashmap-test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hashmap_test_CFLAGS) $(CFLAGS) -c -o tests/hashmap_test-hashmap-test.o `test -f 'tests/hashmap-test.c' || echo '$(srcdir)/'`tests/hashmap-test.c
+
+tests/hashmap_test-hashmap-test.obj: tests/hashmap-test.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hashmap_test_CFLAGS) $(CFLAGS) -MT tests/hashmap_test-hashmap-test.obj -MD -MP -MF tests/$(DEPDIR)/hashmap_test-hashmap-test.Tpo -c -o tests/hashmap_test-hashmap-test.obj `if test -f 'tests/hashmap-test.c'; then $(CYGPATH_W) 'tests/hashmap-test.c'; else $(CYGPATH_W) '$(srcdir)/tests/hashmap-test.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/hashmap_test-hashmap-test.Tpo tests/$(DEPDIR)/hashmap_test-hashmap-test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/hashmap-test.c' object='tests/hashmap_test-hashmap-test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hashmap_test_CFLAGS) $(CFLAGS) -c -o tests/hashmap_test-hashmap-test.obj `if test -f 'tests/hashmap-test.c'; then $(CYGPATH_W) 'tests/hashmap-test.c'; else $(CYGPATH_W) '$(srcdir)/tests/hashmap-test.c'; fi`
+
 tests/hook_list_test-hook-list-test.o: tests/hook-list-test.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hook_list_test_CFLAGS) $(CFLAGS) -MT tests/hook_list_test-hook-list-test.o -MD -MP -MF tests/$(DEPDIR)/hook_list_test-hook-list-test.Tpo -c -o tests/hook_list_test-hook-list-test.o `test -f 'tests/hook-list-test.c' || echo '$(srcdir)/'`tests/hook-list-test.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/hook_list_test-hook-list-test.Tpo tests/$(DEPDIR)/hook_list_test-hook-list-test.Po
@@ -11651,93 +11695,9 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-core-util-test.log: core-util-test$(EXEEXT)
-	@p='core-util-test$(EXEEXT)'; \
-	b='core-util-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mainloop-test.log: mainloop-test$(EXEEXT)
-	@p='mainloop-test$(EXEEXT)'; \
-	b='mainloop-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-strlist-test.log: strlist-test$(EXEEXT)
-	@p='strlist-test$(EXEEXT)'; \
-	b='strlist-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-close-test.log: close-test$(EXEEXT)
-	@p='close-test$(EXEEXT)'; \
-	b='close-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-memblockq-test.log: memblockq-test$(EXEEXT)
-	@p='memblockq-test$(EXEEXT)'; \
-	b='memblockq-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-channelmap-test.log: channelmap-test$(EXEEXT)
-	@p='channelmap-test$(EXEEXT)'; \
-	b='channelmap-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-thread-mainloop-test.log: thread-mainloop-test$(EXEEXT)
-	@p='thread-mainloop-test$(EXEEXT)'; \
-	b='thread-mainloop-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-utf8-test.log: utf8-test$(EXEEXT)
-	@p='utf8-test$(EXEEXT)'; \
-	b='utf8-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-format-test.log: format-test$(EXEEXT)
-	@p='format-test$(EXEEXT)'; \
-	b='format-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-json-test.log: json-test$(EXEEXT)
-	@p='json-test$(EXEEXT)'; \
-	b='json-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-get-binary-name-test.log: get-binary-name-test$(EXEEXT)
-	@p='get-binary-name-test$(EXEEXT)'; \
-	b='get-binary-name-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-hook-list-test.log: hook-list-test$(EXEEXT)
-	@p='hook-list-test$(EXEEXT)'; \
-	b='hook-list-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-memblock-test.log: memblock-test$(EXEEXT)
-	@p='memblock-test$(EXEEXT)'; \
-	b='memblock-test'; \
+asyncmsgq-test.log: asyncmsgq-test$(EXEEXT)
+	@p='asyncmsgq-test$(EXEEXT)'; \
+	b='asyncmsgq-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -11749,65 +11709,23 @@ asyncq-test.log: asyncq-test$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-asyncmsgq-test.log: asyncmsgq-test$(EXEEXT)
-	@p='asyncmsgq-test$(EXEEXT)'; \
-	b='asyncmsgq-test'; \
+channelmap-test.log: channelmap-test$(EXEEXT)
+	@p='channelmap-test$(EXEEXT)'; \
+	b='channelmap-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-queue-test.log: queue-test$(EXEEXT)
-	@p='queue-test$(EXEEXT)'; \
-	b='queue-test'; \
+close-test.log: close-test$(EXEEXT)
+	@p='close-test$(EXEEXT)'; \
+	b='close-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rtpoll-test.log: rtpoll-test$(EXEEXT)
-	@p='rtpoll-test$(EXEEXT)'; \
-	b='rtpoll-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-resampler-test.log: resampler-test$(EXEEXT)
-	@p='resampler-test$(EXEEXT)'; \
-	b='resampler-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-smoother-test.log: smoother-test$(EXEEXT)
-	@p='smoother-test$(EXEEXT)'; \
-	b='smoother-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-thread-test.log: thread-test$(EXEEXT)
-	@p='thread-test$(EXEEXT)'; \
-	b='thread-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-volume-test.log: volume-test$(EXEEXT)
-	@p='volume-test$(EXEEXT)'; \
-	b='volume-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mix-test.log: mix-test$(EXEEXT)
-	@p='mix-test$(EXEEXT)'; \
-	b='mix-test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-proplist-test.log: proplist-test$(EXEEXT)
-	@p='proplist-test$(EXEEXT)'; \
-	b='proplist-test'; \
+core-util-test.log: core-util-test$(EXEEXT)
+	@p='core-util-test$(EXEEXT)'; \
+	b='core-util-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -11840,9 +11758,79 @@ cpu-volume-test.log: cpu-volume-test$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+format-test.log: format-test$(EXEEXT)
+	@p='format-test$(EXEEXT)'; \
+	b='format-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+get-binary-name-test.log: get-binary-name-test$(EXEEXT)
+	@p='get-binary-name-test$(EXEEXT)'; \
+	b='get-binary-name-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hashmap-test.log: hashmap-test$(EXEEXT)
+	@p='hashmap-test$(EXEEXT)'; \
+	b='hashmap-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hook-list-test.log: hook-list-test$(EXEEXT)
+	@p='hook-list-test$(EXEEXT)'; \
+	b='hook-list-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+json-test.log: json-test$(EXEEXT)
+	@p='json-test$(EXEEXT)'; \
+	b='json-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+lfe-filter-test.log: lfe-filter-test$(EXEEXT)
+	@p='lfe-filter-test$(EXEEXT)'; \
+	b='lfe-filter-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 lock-autospawn-test.log: lock-autospawn-test$(EXEEXT)
 	@p='lock-autospawn-test$(EXEEXT)'; \
 	b='lock-autospawn-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mainloop-test.log: mainloop-test$(EXEEXT)
+	@p='mainloop-test$(EXEEXT)'; \
+	b='mainloop-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+memblock-test.log: memblock-test$(EXEEXT)
+	@p='memblock-test$(EXEEXT)'; \
+	b='memblock-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+memblockq-test.log: memblockq-test$(EXEEXT)
+	@p='memblockq-test$(EXEEXT)'; \
+	b='memblockq-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mix-test.log: mix-test$(EXEEXT)
+	@p='mix-test$(EXEEXT)'; \
+	b='mix-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -11854,9 +11842,72 @@ mult-s16-test.log: mult-s16-test$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-lfe-filter-test.log: lfe-filter-test$(EXEEXT)
-	@p='lfe-filter-test$(EXEEXT)'; \
-	b='lfe-filter-test'; \
+proplist-test.log: proplist-test$(EXEEXT)
+	@p='proplist-test$(EXEEXT)'; \
+	b='proplist-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+queue-test.log: queue-test$(EXEEXT)
+	@p='queue-test$(EXEEXT)'; \
+	b='queue-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+resampler-test.log: resampler-test$(EXEEXT)
+	@p='resampler-test$(EXEEXT)'; \
+	b='resampler-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rtpoll-test.log: rtpoll-test$(EXEEXT)
+	@p='rtpoll-test$(EXEEXT)'; \
+	b='rtpoll-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+smoother-test.log: smoother-test$(EXEEXT)
+	@p='smoother-test$(EXEEXT)'; \
+	b='smoother-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+strlist-test.log: strlist-test$(EXEEXT)
+	@p='strlist-test$(EXEEXT)'; \
+	b='strlist-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+thread-mainloop-test.log: thread-mainloop-test$(EXEEXT)
+	@p='thread-mainloop-test$(EXEEXT)'; \
+	b='thread-mainloop-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+thread-test.log: thread-test$(EXEEXT)
+	@p='thread-test$(EXEEXT)'; \
+	b='thread-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+utf8-test.log: utf8-test$(EXEEXT)
+	@p='utf8-test$(EXEEXT)'; \
+	b='utf8-test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+volume-test.log: volume-test$(EXEEXT)
+	@p='volume-test$(EXEEXT)'; \
+	b='volume-test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -12418,6 +12469,7 @@ distclean: distclean-am
 	-rm -f tests/$(DEPDIR)/format_test-format-test.Po
 	-rm -f tests/$(DEPDIR)/get_binary_name_test-get-binary-name-test.Po
 	-rm -f tests/$(DEPDIR)/gtk_test-gtk-test.Po
+	-rm -f tests/$(DEPDIR)/hashmap_test-hashmap-test.Po
 	-rm -f tests/$(DEPDIR)/hook_list_test-hook-list-test.Po
 	-rm -f tests/$(DEPDIR)/interpol_test-interpol-test.Po
 	-rm -f tests/$(DEPDIR)/ipacl_test-ipacl-test.Po
@@ -12879,6 +12931,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f tests/$(DEPDIR)/format_test-format-test.Po
 	-rm -f tests/$(DEPDIR)/get_binary_name_test-get-binary-name-test.Po
 	-rm -f tests/$(DEPDIR)/gtk_test-gtk-test.Po
+	-rm -f tests/$(DEPDIR)/hashmap_test-hashmap-test.Po
 	-rm -f tests/$(DEPDIR)/hook_list_test-hook-list-test.Po
 	-rm -f tests/$(DEPDIR)/interpol_test-interpol-test.Po
 	-rm -f tests/$(DEPDIR)/ipacl_test-ipacl-test.Po

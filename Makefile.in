@@ -240,7 +240,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in \
 	$(top_srcdir)/build-aux/missing \
 	$(top_srcdir)/src/pulse/version.h.in ABOUT-NLS NEWS README \
 	build-aux/compile build-aux/config.guess \
-	build-aux/config.rpath build-aux/config.sub build-aux/depcomp \
+	build-aux/config.rpath build-aux/config.sub \
 	build-aux/install-sh build-aux/ltmain.sh build-aux/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
@@ -315,6 +315,7 @@ DBUS_LIBS = @DBUS_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOXYGEN_OUTPUT_DIRECTORY = @DOXYGEN_OUTPUT_DIRECTORY@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
@@ -512,6 +513,7 @@ ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+alsadatadir = @alsadatadir@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -597,6 +599,7 @@ EXTRA_DIST = \
 	src/pulse/.gitignore \
 	meson.build \
 	meson_options.txt \
+	doxygen/meson.build \
 	man/meson.build \
 	po/meson.build \
 	shell-completion/bash/meson.build \

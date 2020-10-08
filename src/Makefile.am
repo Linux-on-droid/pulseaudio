@@ -28,8 +28,8 @@ if HAVE_X11
 xdgautostartdir=$(sysconfdir)/xdg/autostart
 endif
 if HAVE_ALSA
-alsaprofilesetsdir=$(datadir)/pulseaudio/alsa-mixer/profile-sets
-alsapathsdir=$(datadir)/pulseaudio/alsa-mixer/paths
+alsaprofilesetsdir=$(alsadatadir)/profile-sets
+alsapathsdir=$(alsadatadir)/paths
 endif
 if HAVE_DBUS
 dbuspolicydir=$(sysconfdir)/dbus-1/system.d
@@ -253,36 +253,37 @@ endif
 noinst_LTLIBRARIES =
 
 TESTS_default = \
-		core-util-test \
-		mainloop-test \
-		strlist-test \
-		close-test \
-		memblockq-test \
-		channelmap-test \
-		thread-mainloop-test \
-		utf8-test \
-		format-test \
-		json-test \
-		get-binary-name-test \
-		hook-list-test \
-		memblock-test \
-		asyncq-test \
-		asyncmsgq-test \
-		queue-test \
-		rtpoll-test \
-		resampler-test \
-		smoother-test \
-		thread-test \
-		volume-test \
-		mix-test \
-		proplist-test \
-		cpu-mix-test \
-		cpu-remap-test \
-		cpu-sconv-test \
-		cpu-volume-test \
-		lock-autospawn-test \
-		mult-s16-test \
-		lfe-filter-test
+        asyncmsgq-test \
+        asyncq-test \
+        channelmap-test \
+        close-test \
+        core-util-test \
+        cpu-mix-test \
+        cpu-remap-test \
+        cpu-sconv-test \
+        cpu-volume-test \
+        format-test \
+        get-binary-name-test \
+        hashmap-test \
+        hook-list-test \
+        json-test \
+        lfe-filter-test \
+        lock-autospawn-test \
+        mainloop-test \
+        memblock-test \
+        memblockq-test \
+        mix-test \
+        mult-s16-test \
+        proplist-test \
+        queue-test \
+        resampler-test \
+        rtpoll-test \
+        smoother-test \
+        strlist-test \
+        thread-mainloop-test \
+        thread-test \
+        utf8-test \
+        volume-test
 
 TESTS_norun = \
 		ipacl-test \
@@ -295,8 +296,7 @@ TESTS_norun = \
 		sig2str-test \
 		stripnul \
 		echo-cancel-test \
-		lo-latency-test \
-		atomic-test
+		lo-latency-test
 
 # These tests need a running pulseaudio daemon
 TESTS_daemon = \
@@ -313,6 +313,11 @@ if !OS_IS_WIN32
 TESTS_default += \
 		sigbus-test \
 		usergroup-test
+endif
+
+if HAVE_PTHREAD_SETAFFINITY_NP
+TESTS_norun += \
+		atomic-test
 endif
 
 if HAVE_SYS_EVENTFD_H
@@ -384,6 +389,11 @@ core_util_test_SOURCES = tests/core-util-test.c
 core_util_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
 core_util_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
 core_util_test_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS) $(LIBCHECK_LIBS)
+
+hashmap_test_SOURCES = tests/hashmap-test.c
+hashmap_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
+hashmap_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
+hashmap_test_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS) $(LIBCHECK_LIBS)
 
 mainloop_test_SOURCES = tests/mainloop-test.c
 mainloop_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
@@ -1343,6 +1353,7 @@ dist_alsaprofilesets_DATA = \
 		modules/alsa/mixer/profile-sets/default.conf \
 		modules/alsa/mixer/profile-sets/force-speaker.conf \
 		modules/alsa/mixer/profile-sets/force-speaker-and-int-mic.conf \
+		modules/alsa/mixer/profile-sets/audigy.conf \
 		modules/alsa/mixer/profile-sets/maudio-fasttrack-pro.conf \
 		modules/alsa/mixer/profile-sets/native-instruments-audio4dj.conf \
 		modules/alsa/mixer/profile-sets/native-instruments-audio8dj.conf \

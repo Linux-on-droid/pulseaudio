@@ -669,7 +669,7 @@ static size_t handle_udp_timing_packet(pa_raop_client *c, const uint8_t packet[]
     payload = packet[1] ^ 0x80;
     switch (payload) {
         case PAYLOAD_TIMING_REQUEST:
-            pa_log_debug("Sending timing packet at %lu", rci);
+            pa_log_debug("Sending timing packet at %" PRIu64 , rci);
             written = send_udp_timing_packet(c, data, rci);
             break;
         case PAYLOAD_TIMING_REPLY:
@@ -679,6 +679,18 @@ static size_t handle_udp_timing_packet(pa_raop_client *c, const uint8_t packet[]
     }
 
     return written;
+}
+
+static void send_initial_udp_timing_packet(pa_raop_client *c) {
+    uint32_t data[6] = { 0 };
+    struct timeval tv;
+    uint64_t initial_time = 0;
+
+    initial_time = timeval_to_ntp(pa_rtclock_get(&tv));
+    data[4] = htonl(initial_time >> 32);
+    data[5] = htonl(initial_time & 0xffffffff);
+
+    send_udp_timing_packet(c, data, initial_time);
 }
 
 static int connect_udp_socket(pa_raop_client *c, int fd, uint16_t port) {
@@ -1076,6 +1088,13 @@ connect_finish:
                     goto setup_error;
 
                 pa_log_debug("Connection established (UDP;control_port=%d;timing_port=%d)", cport, tport);
+
+                /* Send an initial UDP packet so a connection tracking firewall
+                 * knows the src_ip:src_port <-> dest_ip:dest_port relation
+                 * and accepts the incoming timing packets.
+                 */
+                send_initial_udp_timing_packet(c);
+                pa_log_debug("Sent initial timing packet to UDP port %d", tport);
 
                 if (c->state_callback)
                     c->state_callback(PA_RAOP_CONNECTED, c->state_userdata);

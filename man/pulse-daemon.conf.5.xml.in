@@ -61,7 +61,7 @@ License along with PulseAudio; if not, see <http://www.gnu.org/licenses/>.
   <section name="General Directives">
 
     <option>
-      <p><opt>daemonize= </opt> Daemonize after startup. Takes a
+      <p><opt>daemonize=</opt> Daemonize after startup. Takes a
       boolean value, defaults to <opt>no</opt>. The <opt>--daemonize</opt>
       command line option takes precedence.</p>
     </option>
@@ -135,7 +135,10 @@ License along with PulseAudio; if not, see <http://www.gnu.org/licenses/>.
     <option>
       <p><opt>enable-remixing=</opt> If disabled never upmix or
       downmix channels to different channel maps. Instead, do a simple
-      name-based matching only. Defaults to <opt>yes.</opt></p>
+      name-based matching only. Defaults to <opt>yes</opt>.
+      There is no known valid use case for setting this option to
+      <opt>no</opt>, therefore, this option is deprecated and may be
+      removed in a future version of PulseAudio.</p>
     </option>
 
     <option>
@@ -323,7 +326,8 @@ License along with PulseAudio; if not, see <http://www.gnu.org/licenses/>.
       session, then any positive value will be reset to 0 so that PulseAudio
       will terminate immediately on logout. A positive value therefore has
       effect only in environments where there's no support for login session
-      tracking. A negative value can still be used to disable any automatic
+      tracking (or if the user is logged in without a session spawned, a.k.a.
+      lingering). A negative value can still be used to disable any automatic
       exit.</p>
 
       <p>When PulseAudio runs in the system mode, automatic exit is always
@@ -487,16 +491,9 @@ License along with PulseAudio; if not, see <http://www.gnu.org/licenses/>.
 
     <option>
       <p><opt>default-sample-format=</opt> The default sampling
-      format. Specify one of <opt>u8</opt>, <opt>s16le</opt>,
-      <opt>s16be</opt>, <opt>s24le</opt>, <opt>s24be</opt>,
-      <opt>s24-32le</opt>, <opt>s24-32be</opt>, <opt>s32le</opt>,
-      <opt>s32be</opt> <opt>float32le</opt>, <opt>float32be</opt>,
-      <opt>ulaw</opt>, <opt>alaw</opt>. Depending on the endianness of
-      the CPU the formats <opt>s16ne</opt>, <opt>s16re</opt>,
-      <opt>s24ne</opt>, <opt>s24re</opt>, <opt>s24-32ne</opt>,
-      <opt>s24-32re</opt>, <opt>s32ne</opt>, <opt>s32re</opt>,
-      <opt>float32ne</opt>, <opt>float32re</opt> (for native,
-      resp. reverse endian) are available as aliases.</p>
+      format. See
+      https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/SupportedAudioFormats/
+      for possible values.</p>
     </option>
 
     <option>

@@ -66,6 +66,11 @@
 
 #ifdef HAVE_ALSA_UCM
 
+struct ucm_type {
+    const char *prefix;
+    pa_device_port_type_t type;
+};
+
 struct ucm_items {
     const char *id;
     const char *property;
@@ -76,6 +81,7 @@ struct ucm_info {
     unsigned priority;
 };
 
+static pa_alsa_jack* ucm_get_jack(pa_alsa_ucm_config *ucm, pa_alsa_ucm_device *device);
 static void device_set_jack(pa_alsa_ucm_device *device, pa_alsa_jack *jack);
 static void device_add_hw_mute_jack(pa_alsa_ucm_device *device, pa_alsa_jack *jack);
 
@@ -86,6 +92,21 @@ static void ucm_port_data_init(pa_alsa_ucm_port_data *port, pa_alsa_ucm_config *
                                pa_alsa_ucm_device **devices, unsigned n_devices);
 static void ucm_port_data_free(pa_device_port *port);
 static void ucm_port_update_available(pa_alsa_ucm_port_data *port);
+
+static struct ucm_type types[] = {
+    {"None", PA_DEVICE_PORT_TYPE_UNKNOWN},
+    {"Speaker", PA_DEVICE_PORT_TYPE_SPEAKER},
+    {"Line", PA_DEVICE_PORT_TYPE_LINE},
+    {"Mic", PA_DEVICE_PORT_TYPE_MIC},
+    {"Headphones", PA_DEVICE_PORT_TYPE_HEADPHONES},
+    {"Headset", PA_DEVICE_PORT_TYPE_HEADSET},
+    {"Handset", PA_DEVICE_PORT_TYPE_HANDSET},
+    {"Bluetooth", PA_DEVICE_PORT_TYPE_BLUETOOTH},
+    {"Earpiece", PA_DEVICE_PORT_TYPE_EARPIECE},
+    {"SPDIF", PA_DEVICE_PORT_TYPE_SPDIF},
+    {"HDMI", PA_DEVICE_PORT_TYPE_HDMI},
+    {NULL, 0}
+};
 
 static struct ucm_items item[] = {
     {"PlaybackPCM", PA_ALSA_PROP_UCM_SINK},
@@ -343,13 +364,27 @@ static int ucm_get_device_property(
 
     const char *value;
     const char **devices;
-    char *id;
+    char *id, *s;
     int i;
     int err;
     uint32_t ui;
     int n_confdev, n_suppdev;
     pa_alsa_ucm_volume *vol;
 
+    /* determine the device type */
+    device->type = PA_DEVICE_PORT_TYPE_UNKNOWN;
+    id = s = pa_xstrdup(device_name);
+    while (s && *s && isalpha(*s)) s++;
+    if (s)
+        *s = '\0';
+    for (i = 0; types[i].prefix; i++)
+        if (pa_streq(id, types[i].prefix)) {
+            device->type = types[i].type;
+            break;
+        }
+    pa_xfree(id);
+
+    /* set properties */
     for (i = 0; item[i].id; i++) {
         id = pa_sprintf_malloc("%s/%s", item[i].id, device_name);
         err = snd_use_case_get(uc_mgr, id, &value);
@@ -377,6 +412,13 @@ static int ucm_get_device_property(
             pa_log("UCM playback device %s fetch pcm failed", device_name);
     }
 
+    if (pa_proplist_gets(device->proplist, PA_ALSA_PROP_UCM_SINK) &&
+        device->playback_channels == 0) {
+        pa_log_info("UCM file does not specify 'PlaybackChannels' "
+                    "for device %s, assuming stereo.", device_name);
+        device->playback_channels = 2;
+    }
+
     value = pa_proplist_gets(device->proplist, PA_ALSA_PROP_UCM_CAPTURE_CHANNELS);
     if (value) { /* input */
         /* get channels */
@@ -391,10 +433,10 @@ static int ucm_get_device_property(
             pa_log("UCM capture device %s fetch pcm failed", device_name);
     }
 
-    if (device->playback_channels == 0 && device->capture_channels == 0) {
-        pa_log_warn("UCM file does not specify 'PlaybackChannels' or 'CaptureChannels'"
-                    "for device %s, assuming stereo duplex.", device_name);
-        device->playback_channels = 2;
+    if (pa_proplist_gets(device->proplist, PA_ALSA_PROP_UCM_SOURCE) &&
+        device->capture_channels == 0) {
+        pa_log_info("UCM file does not specify 'CaptureChannels' "
+                    "for device %s, assuming stereo.", device_name);
         device->capture_channels = 2;
     }
 
@@ -715,13 +757,11 @@ static void append_lost_relationship(pa_alsa_ucm_device *dev) {
 
 int pa_alsa_ucm_query_profiles(pa_alsa_ucm_config *ucm, int card_index) {
     char *card_name;
-    const char **verb_list;
+    const char **verb_list, *value;
     int num_verbs, i, err = 0;
 
     /* support multiple card instances, address card directly by index */
     card_name = pa_sprintf_malloc("hw:%i", card_index);
-    if (card_name == NULL)
-        return -ENOMEM;
     err = snd_use_case_mgr_open(&ucm->ucm_mgr, card_name);
     if (err < 0) {
         /* fallback longname: is UCM available for this card ? */
@@ -729,14 +769,27 @@ int pa_alsa_ucm_query_profiles(pa_alsa_ucm_config *ucm, int card_index) {
         err = snd_card_get_name(card_index, &card_name);
         if (err < 0) {
             pa_log("Card can't get card_name from card_index %d", card_index);
+            err = -PA_ALSA_ERR_UNSPECIFIED;
             goto name_fail;
         }
 
         err = snd_use_case_mgr_open(&ucm->ucm_mgr, card_name);
         if (err < 0) {
             pa_log_info("UCM not available for card %s", card_name);
+            err = -PA_ALSA_ERR_UCM_OPEN;
             goto ucm_mgr_fail;
         }
+    }
+
+    err = snd_use_case_get(ucm->ucm_mgr, "=Linked", &value);
+    if (err >= 0) {
+        if (strcasecmp(value, "true") == 0 || strcasecmp(value, "1") == 0) {
+            free((void *)value);
+            pa_log_info("Empty (linked) UCM for card %s", card_name);
+            err = -PA_ALSA_ERR_UCM_LINKED;
+            goto ucm_verb_fail;
+        }
+        free((void *)value);
     }
 
     pa_log_info("UCM available for card %s", card_name);
@@ -745,6 +798,7 @@ int pa_alsa_ucm_query_profiles(pa_alsa_ucm_config *ucm, int card_index) {
     num_verbs = snd_use_case_verb_list(ucm->ucm_mgr, &verb_list);
     if (num_verbs < 0) {
         pa_log("UCM verb list not found for %s", card_name);
+        err = -PA_ALSA_ERR_UNSPECIFIED;
         goto ucm_verb_fail;
     }
 
@@ -764,7 +818,7 @@ int pa_alsa_ucm_query_profiles(pa_alsa_ucm_config *ucm, int card_index) {
 
     if (!ucm->verbs) {
         pa_log("No UCM verb is valid for %s", card_name);
-        err = -1;
+        err = -PA_ALSA_ERR_UCM_NO_VERB;
     }
 
     snd_use_case_free_list(verb_list, num_verbs);
@@ -893,14 +947,15 @@ static void probe_volumes(pa_hashmap *hash, bool is_sink, snd_pcm_t *pcm_handle,
         mdev = NULL;
         PA_DYNARRAY_FOREACH(dev, data->devices, idx) {
             mdev2 = get_mixer_device(dev, is_sink);
-            if (mdev && !pa_streq(mdev, mdev2)) {
+            if (mdev && mdev2 && !pa_streq(mdev, mdev2)) {
                 pa_log_error("Two mixer device names found ('%s', '%s'), using s/w volume", mdev, mdev2);
                 goto fail;
             }
-            mdev = mdev2;
+            if (mdev2)
+                mdev = mdev2;
         }
 
-        if (!(mixer_handle = pa_alsa_open_mixer_by_name(mixers, mdev, true))) {
+        if (mdev == NULL || !(mixer_handle = pa_alsa_open_mixer_by_name(mixers, mdev, true))) {
             pa_log_error("Failed to find a working mixer device (%s).", mdev);
             goto fail;
         }
@@ -948,6 +1003,8 @@ static void ucm_add_port_combination(
     pa_alsa_ucm_device *sorted[num], *dev;
     pa_alsa_ucm_port_data *data;
     pa_alsa_ucm_volume *vol;
+    pa_alsa_jack *jack, *jack2;
+    pa_device_port_type_t type, type2;
     void *state;
 
     for (i = 0; i < num; i++)
@@ -966,6 +1023,8 @@ static void ucm_add_port_combination(
 
     priority = is_sink ? dev->playback_priority : dev->capture_priority;
     prio2 = (priority == 0 ? 0 : 1.0/priority);
+    jack = ucm_get_jack(context->ucm, dev);
+    type = dev->type;
 
     for (i = 1; i < num; i++) {
         char *tmp;
@@ -984,6 +1043,20 @@ static void ucm_add_port_combination(
         priority = is_sink ? dev->playback_priority : dev->capture_priority;
         if (priority != 0 && prio2 > 0)
             prio2 += 1.0/priority;
+
+        jack2 = ucm_get_jack(context->ucm, dev);
+        if (jack2) {
+            if (jack && jack != jack2)
+                pa_log_warn("Multiple jacks per combined device '%s': '%s' '%s'", name, jack->name, jack2->name);
+            jack = jack2;
+        }
+
+        type2 = dev->type;
+        if (type2 != PA_DEVICE_PORT_TYPE_UNKNOWN) {
+            if (type != PA_DEVICE_PORT_TYPE_UNKNOWN && type != type2)
+                pa_log_warn("Multiple device types per combined device '%s': %d %d", name, type, type2);
+            type = type2;
+        }
     }
 
     /* Make combination ports always have lower priority, and use the formula
@@ -1001,7 +1074,10 @@ static void ucm_add_port_combination(
         pa_device_port_new_data_init(&port_data);
         pa_device_port_new_data_set_name(&port_data, name);
         pa_device_port_new_data_set_description(&port_data, desc);
+        pa_device_port_new_data_set_type(&port_data, type);
         pa_device_port_new_data_set_direction(&port_data, is_sink ? PA_DIRECTION_OUTPUT : PA_DIRECTION_INPUT);
+        if (jack)
+            pa_device_port_new_data_set_availability_group(&port_data, jack->name);
 
         port = pa_device_port_new(core, &port_data, sizeof(pa_alsa_ucm_port_data));
         pa_device_port_new_data_done(&port_data);
@@ -1308,7 +1384,7 @@ int pa_alsa_ucm_set_profile(pa_alsa_ucm_config *ucm, pa_card *card, const char *
     /* select volume controls on ports */
     PA_HASHMAP_FOREACH(port, card->ports, state) {
         data = PA_DEVICE_PORT_DATA(port);
-        data->path = pa_hashmap_get(data->paths, new_profile);
+        data->path = pa_hashmap_get(data->paths, profile);
     }
 
     return ret;
@@ -1723,6 +1799,10 @@ static int ucm_create_profile(
         /* JackHWMute contains a list of device names. Each listed device must
          * be associated with the jack object that we just created. */
         jack_hw_mute = pa_proplist_gets(dev->proplist, PA_ALSA_PROP_UCM_JACK_HW_MUTE);
+        if (jack_hw_mute && !jack) {
+            pa_log("[%s] JackHWMute set, but JackControl is missing", name);
+            jack_hw_mute = NULL;
+        }
         if (jack_hw_mute) {
             char *hw_mute_device_name;
             const char *state = NULL;

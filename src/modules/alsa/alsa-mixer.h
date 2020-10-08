@@ -211,6 +211,8 @@ struct pa_alsa_path {
     char *name;
     char *description_key;
     char *description;
+    char *availability_group;
+    pa_device_port_type_t device_port_type;
     unsigned priority;
     bool autodetect_eld_device;
     pa_alsa_mixer *eld_mixer_handle;
@@ -279,6 +281,7 @@ struct pa_alsa_mapping {
 
     char *name;
     char *description;
+    char *description_key;
     unsigned priority;
     pa_alsa_direction_t direction;
     /* These are copied over to the resultant sink/source */
@@ -320,6 +323,7 @@ struct pa_alsa_profile {
 
     char *name;
     char *description;
+    char *description_key;
     unsigned priority;
 
     char *input_name;
