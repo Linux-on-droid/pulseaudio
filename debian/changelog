@@ -1,4 +1,4 @@
-pulseaudio (13.99.2-1) UNRELEASED; urgency=medium
+pulseaudio (13.99.2-1) experimental; urgency=medium
 
   * New upstream version
 
