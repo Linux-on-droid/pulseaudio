@@ -43,6 +43,7 @@
     }
 
 #define MAKE_ELEMENT(v, e) MAKE_ELEMENT_NAMED((v), (e), NULL)
+#define RTP_HEADER_SIZE    12
 
 struct pa_rtp_context {
     pa_fdsem *fdsem;
@@ -51,8 +52,13 @@ struct pa_rtp_context {
     GstElement *pipeline;
     GstElement *appsrc;
     GstElement *appsink;
+    GstCaps *meta_reference;
 
+    bool first_buffer;
     uint32_t last_timestamp;
+
+    uint8_t *send_buf;
+    size_t mtu;
 };
 
 static GstCaps* caps_from_sample_spec(const pa_sample_spec *ss) {
@@ -66,6 +72,7 @@ static GstCaps* caps_from_sample_spec(const pa_sample_spec *ss) {
             "layout", G_TYPE_STRING, "interleaved",
             NULL);
 }
+
 static bool init_send_pipeline(pa_rtp_context *c, int fd, uint8_t payload, size_t mtu, const pa_sample_spec *ss) {
     GstElement *appsrc = NULL, *pay = NULL, *capsf = NULL, *rtpbin = NULL, *sink = NULL;
     GstCaps *caps;
@@ -171,6 +178,8 @@ pa_rtp_context* pa_rtp_context_new_send(int fd, uint8_t payload, size_t mtu, con
     c = pa_xnew0(pa_rtp_context, 1);
 
     c->ss = *ss;
+    c->mtu = mtu - RTP_HEADER_SIZE;
+    c->send_buf = pa_xmalloc(c->mtu);
 
     if (!gst_init_check(NULL, NULL, &error)) {
         pa_log_error("Could not initialise GStreamer: %s", error->message);
@@ -216,18 +225,10 @@ static bool process_bus_messages(pa_rtp_context *c) {
     return ret;
 }
 
-static void free_buffer(pa_memblock *memblock) {
-    pa_memblock_release(memblock);
-    pa_memblock_unref(memblock);
-}
-
 /* Called from I/O thread context */
 int pa_rtp_send(pa_rtp_context *c, pa_memblockq *q) {
-    pa_memchunk chunk = { 0, };
     GstBuffer *buf;
-    void *data;
-    bool stop = false;
-    int ret = 0;
+    size_t n = 0;
 
     pa_assert(c);
     pa_assert(q);
@@ -235,40 +236,81 @@ int pa_rtp_send(pa_rtp_context *c, pa_memblockq *q) {
     if (!process_bus_messages(c))
         return -1;
 
-    while (!stop && pa_memblockq_peek(q, &chunk) == 0) {
-        GstClock *clock;
-        GstClockTime timestamp, clock_time;
+    /*
+     * While we check here for atleast MTU worth of data being available in
+     * memblockq, we might not have exact equivalent to MTU. Hence, we walk
+     * over the memchunks in memblockq and accumulate MTU bytes next.
+     */
+    if (pa_memblockq_get_length(q) < c->mtu)
+        return 0;
 
-        clock = gst_element_get_clock(c->pipeline);
-        clock_time = gst_clock_get_time(clock);
-        gst_object_unref(clock);
+    for (;;) {
+        pa_memchunk chunk;
+        int r;
 
-        timestamp = gst_element_get_base_time(c->pipeline);
-        if (timestamp > clock_time)
-          timestamp -= clock_time;
-        else
-          timestamp = 0;
+        pa_memchunk_reset(&chunk);
 
-        pa_assert(chunk.memblock);
+        if ((r = pa_memblockq_peek(q, &chunk)) >= 0) {
+            /*
+             * Accumulate MTU bytes of data before sending. If the current
+             * chunk length + accumulated bytes exceeds MTU, we drop bytes
+             * considered for transfer in this iteration from memblockq.
+             *
+             * The remaining bytes will be available in the next iteration,
+             * as these will be tracked and maintained by memblockq.
+             */
+            size_t k = n + chunk.length > c->mtu ? c->mtu - n : chunk.length;
 
-        data = pa_memblock_acquire(chunk.memblock);
+            pa_assert(chunk.memblock);
 
-        buf = gst_buffer_new_wrapped_full(GST_MEMORY_FLAG_READONLY | GST_MEMORY_FLAG_PHYSICALLY_CONTIGUOUS,
-                                          data, chunk.length, chunk.index, chunk.length, chunk.memblock,
-                                          (GDestroyNotify) free_buffer);
+            memcpy(c->send_buf + n, pa_memblock_acquire_chunk(&chunk), k);
+            pa_memblock_release(chunk.memblock);
+            pa_memblock_unref(chunk.memblock);
 
-        GST_BUFFER_PTS(buf) = timestamp;
-
-        if (gst_app_src_push_buffer(GST_APP_SRC(c->appsrc), buf) != GST_FLOW_OK) {
-            pa_log_error("Could not push buffer");
-            stop = true;
-            ret = -1;
+            n += k;
+            pa_memblockq_drop(q, k);
         }
 
-        pa_memblockq_drop(q, chunk.length);
+        if (r < 0 || n >= c->mtu) {
+            GstClock *clock;
+            GstClockTime timestamp, clock_time;
+            GstMapInfo info;
+
+            if (n > 0) {
+                clock = gst_element_get_clock(c->pipeline);
+                clock_time = gst_clock_get_time(clock);
+                gst_object_unref(clock);
+
+                timestamp = gst_element_get_base_time(c->pipeline);
+                if (timestamp > clock_time)
+                  timestamp -= clock_time;
+                else
+                  timestamp = 0;
+
+                buf = gst_buffer_new_allocate(NULL, n, NULL);
+                pa_assert(buf);
+
+                GST_BUFFER_PTS(buf) = timestamp;
+
+                pa_assert_se(gst_buffer_map(buf, &info, GST_MAP_WRITE));
+
+                memcpy(info.data, c->send_buf, n);
+                gst_buffer_unmap(buf, &info);
+
+                if (gst_app_src_push_buffer(GST_APP_SRC(c->appsrc), buf) != GST_FLOW_OK) {
+                    pa_log_error("Could not push buffer");
+                    return -1;
+                }
+            }
+
+            if (r < 0 || pa_memblockq_get_length(q) < c->mtu)
+                break;
+
+            n = 0;
+        }
     }
 
-    return ret;
+    return 0;
 }
 
 static GstCaps* rtp_caps_from_sample_spec(const pa_sample_spec *ss) {
@@ -315,9 +357,26 @@ static void on_pad_added(GstElement *element, GstPad *pad, gpointer userdata) {
     gst_object_unref(depay);
 }
 
+static GstPadProbeReturn udpsrc_buffer_probe(GstPad *pad, GstPadProbeInfo *info, gpointer userdata) {
+    struct timeval tv;
+    pa_usec_t timestamp;
+    pa_rtp_context *c = (pa_rtp_context *) userdata;
+
+    pa_assert(info->type & GST_PAD_PROBE_TYPE_BUFFER);
+
+    pa_gettimeofday(&tv);
+    timestamp = pa_timeval_load(&tv);
+
+    gst_buffer_add_reference_timestamp_meta(GST_BUFFER(info->data), c->meta_reference, timestamp * GST_USECOND,
+            GST_CLOCK_TIME_NONE);
+
+    return GST_PAD_PROBE_OK;
+}
+
 static bool init_receive_pipeline(pa_rtp_context *c, int fd, const pa_sample_spec *ss) {
     GstElement *udpsrc = NULL, *rtpbin = NULL, *depay = NULL, *appsink = NULL;
     GstCaps *caps;
+    GstPad *pad;
     GSocket *socket;
     GError *error = NULL;
 
@@ -358,6 +417,14 @@ static bool init_receive_pipeline(pa_rtp_context *c, int fd, const pa_sample_spe
     }
 
     g_signal_connect(G_OBJECT(rtpbin), "pad-added", G_CALLBACK(on_pad_added), c);
+
+    /* This logic should go into udpsrc, and we should be populating the
+     * receive timestamp using SCM_TIMESTAMP, but until we have that ... */
+    c->meta_reference = gst_caps_new_empty_simple("timestamp/x-pulseaudio-wallclock");
+
+    pad = gst_element_get_static_pad(udpsrc, "src");
+    gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, udpsrc_buffer_probe, c, NULL);
+    gst_object_unref(pad);
 
     if (gst_element_set_state(c->pipeline, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) {
         pa_log("Could not start pipeline");
@@ -415,6 +482,8 @@ pa_rtp_context* pa_rtp_context_new_recv(int fd, uint8_t payload, const pa_sample
 
     c->fdsem = pa_fdsem_new();
     c->ss = *ss;
+    c->send_buf = NULL;
+    c->first_buffer = true;
 
     if (!gst_init_check(NULL, NULL, &error)) {
         pa_log_error("Could not initialise GStreamer: %s", error->message);
@@ -443,6 +512,7 @@ int pa_rtp_recv(pa_rtp_context *c, pa_memchunk *chunk, pa_mempool *pool, uint32_
     GstAdapter *adapter;
     GstBuffer *buf;
     GstMapInfo info;
+    GstClockTime timestamp = GST_CLOCK_TIME_NONE;
     uint8_t *data;
     uint64_t data_len = 0;
 
@@ -458,6 +528,21 @@ int pa_rtp_recv(pa_rtp_context *c, pa_memchunk *chunk, pa_mempool *pool, uint32_
             break;
 
         buf = gst_sample_get_buffer(sample);
+
+        /* Get the timestamp from the first buffer */
+        if (timestamp == GST_CLOCK_TIME_NONE) {
+            GstReferenceTimestampMeta *meta = gst_buffer_get_reference_timestamp_meta(buf, c->meta_reference);
+
+            /* Use the meta if we were able to insert it and it came through,
+             * else try to fallback to the DTS, which is only available in
+             * GStreamer 1.16 and earlier. */
+            if (meta)
+                timestamp = meta->timestamp;
+            else if (GST_BUFFER_DTS(buf) != GST_CLOCK_TIME_NONE)
+                timestamp = GST_BUFFER_DTS(buf);
+            else
+                timestamp = 0;
+        }
 
         if (GST_BUFFER_IS_DISCONT(buf))
             pa_log_info("Discontinuity detected, possibly lost some packets");
@@ -510,11 +595,25 @@ int pa_rtp_recv(pa_rtp_context *c, pa_memchunk *chunk, pa_mempool *pool, uint32_
 
     /* When buffer-mode = none, the buffer PTS is the RTP timestamp, converted
      * to time units (instead of clock-rate units as is in the header) and
-     * wraparound-corrected, and the DTS is the pipeline clock timestamp from
-     * when the buffer was acquired at the source (this is actually the running
-     * time which is why we need to add base time). */
+     * wraparound-corrected. */
     *rtp_tstamp = gst_util_uint64_scale_int(GST_BUFFER_PTS(gst_buffer_list_get(buf_list, 0)), c->ss.rate, GST_SECOND) & 0xFFFFFFFFU;
-    pa_timeval_rtstore(tstamp, (GST_BUFFER_DTS(gst_buffer_list_get(buf_list, 0)) + gst_element_get_base_time(c->pipeline)) / GST_USECOND, false);
+    if (timestamp != GST_CLOCK_TIME_NONE)
+        pa_timeval_rtstore(tstamp, timestamp / PA_NSEC_PER_USEC, false);
+
+    if (c->first_buffer) {
+        c->first_buffer = false;
+        c->last_timestamp = *rtp_tstamp;
+    } else {
+        /* The RTP clock -> time domain -> RTP clock transformation above might
+         * add a ±1 rounding error, so let's get rid of that */
+        uint32_t expected = c->last_timestamp + (uint32_t) (data_len / pa_rtp_context_get_frame_size(c));
+        int delta = *rtp_tstamp - expected;
+
+        if (delta == 1 || delta == -1)
+            *rtp_tstamp -= delta;
+
+        c->last_timestamp = *rtp_tstamp;
+    }
 
     gst_buffer_list_unref(buf_list);
     gst_object_unref(adapter);
@@ -534,9 +633,13 @@ fail:
 void pa_rtp_context_free(pa_rtp_context *c) {
     pa_assert(c);
 
+    if (c->meta_reference)
+        gst_caps_unref(c->meta_reference);
+
     if (c->appsrc) {
         gst_app_src_end_of_stream(GST_APP_SRC(c->appsrc));
         gst_object_unref(c->appsrc);
+        pa_xfree(c->send_buf);
     }
 
     if (c->appsink)
