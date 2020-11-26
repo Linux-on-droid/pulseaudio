@@ -1,6 +1,8 @@
 pulseaudio (14.0-1) UNRELEASED; urgency=medium
 
   * New upstream version
+  * debian/rules:
+    - set --enable-gstreamer since the default changed to false now
 
  -- Sebastien Bacher <seb128@debian.org>  Thu, 26 Nov 2020 11:40:50 +0100
 
