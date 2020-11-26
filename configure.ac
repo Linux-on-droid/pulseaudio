@@ -46,7 +46,7 @@ AC_SUBST(PA_PROTOCOL_VERSION, 34)
 
 # The stable ABI for client applications, for the version info x:y:z
 # always will hold x=z
-AC_SUBST(LIBPULSE_VERSION_INFO, [22:0:22])
+AC_SUBST(LIBPULSE_VERSION_INFO, [23:0:23])
 
 # A simplified, synchronous, ABI-stable interface for client
 # applications, for the version info x:y:z always will hold x=z
@@ -1315,9 +1315,9 @@ AS_IF([test "x$HAVE_SYSTEMD_JOURNAL" = "x1"], AC_DEFINE([HAVE_SYSTEMD_JOURNAL], 
 #### GStreamer-based RTP support (optional) ####
 
 AC_ARG_ENABLE([gstreamer],
-    AS_HELP_STRING([--disable-gstreamer],[Disable optional GStreamer-based RTP support]))
+    AS_HELP_STRING([--enable-gstreamer],[Enable optional GStreamer-based RTP support]))
 
-AS_IF([test "x$enable_gstreamer" != "xno"],
+AS_IF([test "x$enable_gstreamer" = "xyes"],
     [PKG_CHECK_MODULES(GSTREAMER, [ gstreamer-1.0 >= 1.14 gstreamer-app-1.0 gstreamer-rtp-1.0 gio-2.0 ],
                        HAVE_GSTREAMER=1, HAVE_GSTREAMER=0)],
     HAVE_GSTREAMER=0)
