@@ -1,6 +1,8 @@
 pulseaudio (14.0-2) UNRELEASED; urgency=medium
 
   * Upload to unstable
+  * debian/control, debian/rules:
+    - disable the gstreamer rtp option which is experimental
 
  -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 06 Jan 2021 12:03:26 +0100
 
