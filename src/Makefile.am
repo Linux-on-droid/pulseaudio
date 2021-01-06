@@ -28,8 +28,8 @@ if HAVE_X11
 xdgautostartdir=$(sysconfdir)/xdg/autostart
 endif
 if HAVE_ALSA
-alsaprofilesetsdir=$(datadir)/pulseaudio/alsa-mixer/profile-sets
-alsapathsdir=$(datadir)/pulseaudio/alsa-mixer/paths
+alsaprofilesetsdir=$(alsadatadir)/profile-sets
+alsapathsdir=$(alsadatadir)/paths
 endif
 if HAVE_DBUS
 dbuspolicydir=$(sysconfdir)/dbus-1/system.d
@@ -253,36 +253,37 @@ endif
 noinst_LTLIBRARIES =
 
 TESTS_default = \
-		core-util-test \
-		mainloop-test \
-		strlist-test \
-		close-test \
-		memblockq-test \
-		channelmap-test \
-		thread-mainloop-test \
-		utf8-test \
-		format-test \
-		json-test \
-		get-binary-name-test \
-		hook-list-test \
-		memblock-test \
-		asyncq-test \
-		asyncmsgq-test \
-		queue-test \
-		rtpoll-test \
-		resampler-test \
-		smoother-test \
-		thread-test \
-		volume-test \
-		mix-test \
-		proplist-test \
-		cpu-mix-test \
-		cpu-remap-test \
-		cpu-sconv-test \
-		cpu-volume-test \
-		lock-autospawn-test \
-		mult-s16-test \
-		lfe-filter-test
+        asyncmsgq-test \
+        asyncq-test \
+        channelmap-test \
+        close-test \
+        core-util-test \
+        cpu-mix-test \
+        cpu-remap-test \
+        cpu-sconv-test \
+        cpu-volume-test \
+        format-test \
+        get-binary-name-test \
+        hashmap-test \
+        hook-list-test \
+        json-test \
+        lfe-filter-test \
+        lock-autospawn-test \
+        mainloop-test \
+        memblock-test \
+        memblockq-test \
+        mix-test \
+        mult-s16-test \
+        proplist-test \
+        queue-test \
+        resampler-test \
+        rtpoll-test \
+        smoother-test \
+        strlist-test \
+        thread-mainloop-test \
+        thread-test \
+        utf8-test \
+        volume-test
 
 TESTS_norun = \
 		ipacl-test \
@@ -295,8 +296,7 @@ TESTS_norun = \
 		sig2str-test \
 		stripnul \
 		echo-cancel-test \
-		lo-latency-test \
-		atomic-test
+		lo-latency-test
 
 # These tests need a running pulseaudio daemon
 TESTS_daemon = \
@@ -313,6 +313,11 @@ if !OS_IS_WIN32
 TESTS_default += \
 		sigbus-test \
 		usergroup-test
+endif
+
+if HAVE_PTHREAD_SETAFFINITY_NP
+TESTS_norun += \
+		atomic-test
 endif
 
 if HAVE_SYS_EVENTFD_H
@@ -384,6 +389,11 @@ core_util_test_SOURCES = tests/core-util-test.c
 core_util_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
 core_util_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
 core_util_test_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS) $(LIBCHECK_LIBS)
+
+hashmap_test_SOURCES = tests/hashmap-test.c
+hashmap_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
+hashmap_test_LDADD = $(AM_LDADD) libpulse.la libpulsecommon-@PA_MAJORMINOR@.la
+hashmap_test_LDFLAGS = $(AM_LDFLAGS) $(BINLDFLAGS) $(LIBCHECK_LIBS)
 
 mainloop_test_SOURCES = tests/mainloop-test.c
 mainloop_test_CFLAGS = $(AM_CFLAGS) $(LIBCHECK_CFLAGS)
@@ -1176,13 +1186,21 @@ libprotocol_esound_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libp
 endif
 
 librtp_la_SOURCES = \
-		modules/rtp/rtp.c modules/rtp/rtp.h \
+		modules/rtp/rtp-common.c modules/rtp/rtp.h \
 		modules/rtp/sdp.c modules/rtp/sdp.h \
 		modules/rtp/sap.c modules/rtp/sap.h \
 		modules/rtp/rtsp_client.c modules/rtp/rtsp_client.h \
 		modules/rtp/headerlist.c modules/rtp/headerlist.h
+librtp_la_CFLAGS = $(AM_CFLAGS)
 librtp_la_LDFLAGS = $(AM_LDFLAGS) $(AM_LIBLDFLAGS) -avoid-version
 librtp_la_LIBADD = $(AM_LIBADD) libpulsecore-@PA_MAJORMINOR@.la libpulsecommon-@PA_MAJORMINOR@.la libpulse.la
+if HAVE_GSTREAMER
+librtp_la_SOURCES += modules/rtp/rtp-gstreamer.c
+librtp_la_CFLAGS += $(GSTREAMER_CFLAGS)
+librtp_la_LIBADD += $(GSTREAMER_LIBS)
+else
+librtp_la_SOURCES += modules/rtp/rtp-native.c
+endif
 
 libraop_la_SOURCES = \
         modules/raop/raop-util.c modules/raop/raop-util.h \
@@ -1335,6 +1353,7 @@ dist_alsaprofilesets_DATA = \
 		modules/alsa/mixer/profile-sets/default.conf \
 		modules/alsa/mixer/profile-sets/force-speaker.conf \
 		modules/alsa/mixer/profile-sets/force-speaker-and-int-mic.conf \
+		modules/alsa/mixer/profile-sets/audigy.conf \
 		modules/alsa/mixer/profile-sets/maudio-fasttrack-pro.conf \
 		modules/alsa/mixer/profile-sets/native-instruments-audio4dj.conf \
 		modules/alsa/mixer/profile-sets/native-instruments-audio8dj.conf \
@@ -1345,8 +1364,8 @@ dist_alsaprofilesets_DATA = \
 		modules/alsa/mixer/profile-sets/native-instruments-korecontroller.conf \
 		modules/alsa/mixer/profile-sets/kinect-audio.conf \
 		modules/alsa/mixer/profile-sets/sb-omni-surround-5.1.conf \
-		modules/alsa/mixer/profile-sets/steelseries-arctis-5-usb-audio.conf \
-		modules/alsa/mixer/profile-sets/steelseries-arctis-7-usb-audio.conf \
+		modules/alsa/mixer/profile-sets/steelseries-arctis-common-usb-audio.conf \
+		modules/alsa/mixer/profile-sets/usb-gaming-headset.conf \
 		modules/alsa/mixer/profile-sets/dell-dock-tb16-usb-audio.conf \
 		modules/alsa/mixer/profile-sets/cmedia-high-speed-true-hdaudio.conf
 
@@ -1391,11 +1410,11 @@ dist_alsapaths_DATA = \
 		modules/alsa/mixer/paths/hdmi-output-5.conf \
 		modules/alsa/mixer/paths/hdmi-output-6.conf \
 		modules/alsa/mixer/paths/hdmi-output-7.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-5-output-chat.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-5-output-game.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-7-input.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-7-output-mono.conf \
-		modules/alsa/mixer/paths/steelseries-arctis-7-output-stereo.conf
+		modules/alsa/mixer/paths/steelseries-arctis-output-chat-common.conf \
+		modules/alsa/mixer/paths/steelseries-arctis-output-game-common.conf \
+		modules/alsa/mixer/paths/usb-gaming-headset-input.conf \
+		modules/alsa/mixer/paths/usb-gaming-headset-output-mono.conf \
+		modules/alsa/mixer/paths/usb-gaming-headset-output-stereo.conf
 
 endif
 
@@ -1734,9 +1753,9 @@ module_tunnel_sink_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_tunnel_sink_la_LIBADD = $(MODULE_LIBADD) $(X11_LIBS)
 
 module_tunnel_source_la_SOURCES = modules/module-tunnel.c
-module_tunnel_source_la_LDFLAGS = $(MODULE_LDFLAGS) $(X11_CFLAGS)
+module_tunnel_source_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_tunnel_source_la_LIBADD = $(MODULE_LIBADD) $(X11_LIBS)
-module_tunnel_source_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_tunnel_source
+module_tunnel_source_la_CFLAGS = $(AM_CFLAGS) $(X11_CFLAGS) -DPA_MODULE_NAME=module_tunnel_source
 
 module_loopback_la_SOURCES = modules/module-loopback.c
 module_loopback_la_LDFLAGS = $(MODULE_LDFLAGS)
@@ -2049,12 +2068,12 @@ endif
 module_rtp_send_la_SOURCES = modules/rtp/module-rtp-send.c
 module_rtp_send_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_rtp_send_la_LIBADD = $(MODULE_LIBADD) librtp.la
-module_rtp_send_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_rtp_send
+module_rtp_send_la_CFLAGS = $(AM_CFLAGS) $(GSTREAMER_CFLAGS) -DPA_MODULE_NAME=module_rtp_send
 
 module_rtp_recv_la_SOURCES = modules/rtp/module-rtp-recv.c
 module_rtp_recv_la_LDFLAGS = $(MODULE_LDFLAGS)
 module_rtp_recv_la_LIBADD = $(MODULE_LIBADD) librtp.la
-module_rtp_recv_la_CFLAGS = $(AM_CFLAGS) -DPA_MODULE_NAME=module_rtp_recv
+module_rtp_recv_la_CFLAGS = $(AM_CFLAGS) $(GSTREAMER_CFLAGS) -DPA_MODULE_NAME=module_rtp_recv
 
 # JACK
 

@@ -395,7 +395,9 @@ static int sco_process_push(struct userdata *u) {
         }
 
     if (!found_tstamp) {
-        pa_log_warn("Couldn't find SO_TIMESTAMP data in auxiliary recvmsg() data!");
+        PA_ONCE_BEGIN {
+            pa_log_warn("Couldn't find SO_TIMESTAMP data in auxiliary recvmsg() data!");
+        } PA_ONCE_END;
         tstamp = pa_rtclock_now();
     }
 
@@ -548,13 +550,29 @@ static int a2dp_process_push(struct userdata *u) {
     a2dp_prepare_decoder_buffer(u);
 
     for (;;) {
+        uint8_t aux[1024];
+        struct iovec iov;
+        struct cmsghdr *cm;
+        struct msghdr m;
         bool found_tstamp = false;
         pa_usec_t tstamp;
         uint8_t *ptr;
         ssize_t l;
         size_t processed;
 
-        l = pa_read(u->stream_fd, u->decoder_buffer, u->decoder_buffer_size, &u->stream_write_type);
+        pa_zero(m);
+        pa_zero(aux);
+        pa_zero(iov);
+
+        m.msg_iov = &iov;
+        m.msg_iovlen = 1;
+        m.msg_control = aux;
+        m.msg_controllen = sizeof(aux);
+
+        iov.iov_base = u->decoder_buffer;
+        iov.iov_len = u->decoder_buffer_size;
+
+        l = recvmsg(u->stream_fd, &m, 0);
 
         if (l <= 0) {
 
@@ -574,8 +592,21 @@ static int a2dp_process_push(struct userdata *u) {
         pa_assert((size_t) l <= u->decoder_buffer_size);
 
         /* TODO: get timestamp from rtp */
+
+        for (cm = CMSG_FIRSTHDR(&m); cm; cm = CMSG_NXTHDR(&m, cm)) {
+            if (cm->cmsg_level == SOL_SOCKET && cm->cmsg_type == SO_TIMESTAMP) {
+                struct timeval *tv = (struct timeval*) CMSG_DATA(cm);
+                pa_rtclock_from_wallclock(tv);
+                tstamp = pa_timeval_load(tv);
+                found_tstamp = true;
+                break;
+            }
+        }
+
         if (!found_tstamp) {
-            /* pa_log_warn("Couldn't find SO_TIMESTAMP data in auxiliary recvmsg() data!"); */
+            PA_ONCE_BEGIN {
+                pa_log_warn("Couldn't find SO_TIMESTAMP data in auxiliary recvmsg() data!");
+            } PA_ONCE_END;
             tstamp = pa_rtclock_now();
         }
 
@@ -1731,6 +1762,7 @@ static pa_available_t transport_state_to_availability(pa_bluetooth_transport_sta
 static void create_card_ports(struct userdata *u, pa_hashmap *ports) {
     pa_device_port *port;
     pa_device_port_new_data port_data;
+    pa_device_port_type_t input_type, output_type;
     const char *name_prefix, *input_description, *output_description;
 
     pa_assert(u);
@@ -1740,60 +1772,67 @@ static void create_card_ports(struct userdata *u, pa_hashmap *ports) {
     name_prefix = "unknown";
     input_description = _("Bluetooth Input");
     output_description = _("Bluetooth Output");
+    input_type = output_type = PA_DEVICE_PORT_TYPE_BLUETOOTH;
 
     switch (form_factor_from_class(u->device->class_of_device)) {
         case PA_BLUETOOTH_FORM_FACTOR_HEADSET:
             name_prefix = "headset";
             input_description = output_description = _("Headset");
+            input_type = output_type = PA_DEVICE_PORT_TYPE_HEADSET;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_HANDSFREE:
             name_prefix = "handsfree";
             input_description = output_description = _("Handsfree");
+            input_type = output_type = PA_DEVICE_PORT_TYPE_HANDSFREE;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_MICROPHONE:
             name_prefix = "microphone";
             input_description = _("Microphone");
             output_description = _("Bluetooth Output");
+            input_type = PA_DEVICE_PORT_TYPE_MIC;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_SPEAKER:
             name_prefix = "speaker";
             input_description = _("Bluetooth Input");
             output_description = _("Speaker");
+            output_type = PA_DEVICE_PORT_TYPE_SPEAKER;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_HEADPHONE:
             name_prefix = "headphone";
             input_description = _("Bluetooth Input");
             output_description = _("Headphone");
+            output_type = PA_DEVICE_PORT_TYPE_HEADPHONES;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_PORTABLE:
             name_prefix = "portable";
             input_description = output_description = _("Portable");
+            input_type = output_type = PA_DEVICE_PORT_TYPE_PORTABLE;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_CAR:
             name_prefix = "car";
             input_description = output_description = _("Car");
+            input_type = output_type = PA_DEVICE_PORT_TYPE_CAR;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_HIFI:
             name_prefix = "hifi";
             input_description = output_description = _("HiFi");
+            input_type = output_type = PA_DEVICE_PORT_TYPE_HIFI;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_PHONE:
             name_prefix = "phone";
             input_description = output_description = _("Phone");
+            input_type = output_type = PA_DEVICE_PORT_TYPE_PHONE;
             break;
 
         case PA_BLUETOOTH_FORM_FACTOR_UNKNOWN:
-            name_prefix = "unknown";
-            input_description = _("Bluetooth Input");
-            output_description = _("Bluetooth Output");
             break;
     }
 
@@ -1802,6 +1841,7 @@ static void create_card_ports(struct userdata *u, pa_hashmap *ports) {
     pa_device_port_new_data_set_name(&port_data, u->output_port_name);
     pa_device_port_new_data_set_description(&port_data, output_description);
     pa_device_port_new_data_set_direction(&port_data, PA_DIRECTION_OUTPUT);
+    pa_device_port_new_data_set_type(&port_data, output_type);
     pa_device_port_new_data_set_available(&port_data, get_port_availability(u, PA_DIRECTION_OUTPUT));
     pa_assert_se(port = pa_device_port_new(u->core, &port_data, 0));
     pa_assert_se(pa_hashmap_put(ports, port->name, port) >= 0);
@@ -1812,6 +1852,7 @@ static void create_card_ports(struct userdata *u, pa_hashmap *ports) {
     pa_device_port_new_data_set_name(&port_data, u->input_port_name);
     pa_device_port_new_data_set_description(&port_data, input_description);
     pa_device_port_new_data_set_direction(&port_data, PA_DIRECTION_INPUT);
+    pa_device_port_new_data_set_type(&port_data, input_type);
     pa_device_port_new_data_set_available(&port_data, get_port_availability(u, PA_DIRECTION_INPUT));
     pa_assert_se(port = pa_device_port_new(u->core, &port_data, 0));
     pa_assert_se(pa_hashmap_put(ports, port->name, port) >= 0);

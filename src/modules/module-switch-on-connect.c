@@ -33,6 +33,12 @@
 #include <pulsecore/namereg.h>
 #include <pulsecore/core-util.h>
 
+/* Ignore HDMI devices by default. HDMI monitors don't necessarily have audio
+ * output on them, and even if they do, waking up from sleep or changing
+ * monitor resolution may appear as a plugin event, which causes trouble if the
+ * user doesn't want to use the monitor for audio. */
+#define DEFAULT_BLACKLIST "hdmi"
+
 PA_MODULE_AUTHOR("Michael Terry");
 PA_MODULE_DESCRIPTION("When a sink/source is added, switch to it or conditionally switch to it");
 PA_MODULE_VERSION(PACKAGE_VERSION);
@@ -40,23 +46,23 @@ PA_MODULE_LOAD_ONCE(true);
 PA_MODULE_USAGE(
         "only_from_unavailable=<boolean, only switch from unavailable ports> "
         "ignore_virtual=<boolean, ignore new virtual sinks and sources, defaults to true> "
+        "blacklist=<regex, ignore matching devices> "
 );
 
 static const char* const valid_modargs[] = {
     "only_from_unavailable",
     "ignore_virtual",
+    "blacklist",
     NULL,
 };
 
 struct userdata {
     bool only_from_unavailable;
     bool ignore_virtual;
+    char *blacklist;
 };
 
 static pa_hook_result_t sink_put_hook_callback(pa_core *c, pa_sink *sink, void* userdata) {
-    pa_sink_input *i;
-    uint32_t idx;
-    pa_sink *old_default_sink;
     const char *s;
     struct userdata *u = userdata;
 
@@ -78,6 +84,12 @@ static pa_hook_result_t sink_put_hook_callback(pa_core *c, pa_sink *sink, void* 
             pa_log_debug("Refusing to switch to sink on %s bus", s);
             return PA_HOOK_OK;
         }
+    }
+
+    /* Ignore sinks matching the blacklist regex */
+    if (u->blacklist && (pa_match(u->blacklist, sink->name) > 0)) {
+        pa_log_info("Refusing to switch to blacklisted sink %s", sink->name);
+        return PA_HOOK_OK;
     }
 
     /* Ignore virtual sinks if not configured otherwise on the command line */
@@ -103,36 +115,13 @@ static pa_hook_result_t sink_put_hook_callback(pa_core *c, pa_sink *sink, void* 
             return PA_HOOK_OK;
         }
 
-    old_default_sink = c->default_sink;
-
     /* Actually do the switch to the new sink */
     pa_core_set_configured_default_sink(c, sink->name);
-
-    /* Now move all old inputs over */
-    if (pa_idxset_size(old_default_sink->inputs) <= 0) {
-        pa_log_debug("No sink inputs to move away.");
-        return PA_HOOK_OK;
-    }
-
-    PA_IDXSET_FOREACH(i, old_default_sink->inputs, idx) {
-        if (i->save_sink || !PA_SINK_INPUT_IS_LINKED(i->state))
-            continue;
-
-        if (pa_sink_input_move_to(i, sink, false) < 0)
-            pa_log_info("Failed to move sink input %u \"%s\" to %s.", i->index,
-                        pa_strnull(pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME)), sink->name);
-        else
-            pa_log_info("Successfully moved sink input %u \"%s\" to %s.", i->index,
-                        pa_strnull(pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME)), sink->name);
-    }
 
     return PA_HOOK_OK;
 }
 
 static pa_hook_result_t source_put_hook_callback(pa_core *c, pa_source *source, void* userdata) {
-    pa_source_output *o;
-    uint32_t idx;
-    pa_source *old_default_source;
     const char *s;
     struct userdata *u = userdata;
 
@@ -154,6 +143,12 @@ static pa_hook_result_t source_put_hook_callback(pa_core *c, pa_source *source, 
     s = pa_proplist_gets(source->proplist, PA_PROP_DEVICE_BUS);
     if (pa_safe_streq(s, "pci") || pa_safe_streq(s, "isa")) {
         pa_log_debug("Refusing to switch to source on %s bus", s);
+        return PA_HOOK_OK;
+    }
+
+    /* Ignore sources matching the blacklist regex */
+    if (u->blacklist && (pa_match(u->blacklist, source->name) > 0)) {
+        pa_log_info("Refusing to switch to blacklisted source %s", source->name);
         return PA_HOOK_OK;
     }
 
@@ -180,28 +175,8 @@ static pa_hook_result_t source_put_hook_callback(pa_core *c, pa_source *source, 
             return PA_HOOK_OK;
         }
 
-    old_default_source = c->default_source;
-
     /* Actually do the switch to the new source */
     pa_core_set_configured_default_source(c, source->name);
-
-    /* Now move all old outputs over */
-    if (pa_idxset_size(old_default_source->outputs) <= 0) {
-        pa_log_debug("No source outputs to move away.");
-        return PA_HOOK_OK;
-    }
-
-    PA_IDXSET_FOREACH(o, old_default_source->outputs, idx) {
-        if (o->save_source || !PA_SOURCE_OUTPUT_IS_LINKED(o->state))
-            continue;
-
-        if (pa_source_output_move_to(o, source, false) < 0)
-            pa_log_info("Failed to move source output %u \"%s\" to %s.", o->index,
-                        pa_strnull(pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME)), source->name);
-        else
-            pa_log_info("Successfully moved source output %u \"%s\" to %s.", o->index,
-                        pa_strnull(pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME)), source->name);
-    }
 
     return PA_HOOK_OK;
 }
@@ -219,7 +194,6 @@ int pa__init(pa_module*m) {
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
 
-    /* A little bit later than module-rescue-streams... */
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_PUT], PA_HOOK_LATE+30, (pa_hook_cb_t) sink_put_hook_callback, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_PUT], PA_HOOK_LATE+20, (pa_hook_cb_t) source_put_hook_callback, u);
 
@@ -231,6 +205,20 @@ int pa__init(pa_module*m) {
     u->ignore_virtual = true;
     if (pa_modargs_get_value_boolean(ma, "ignore_virtual", &u->ignore_virtual) < 0) {
         pa_log("Failed to get a boolean value for ignore_virtual.");
+        goto fail;
+    }
+
+    u->blacklist = pa_xstrdup(pa_modargs_get_value(ma, "blacklist", DEFAULT_BLACKLIST));
+
+    /* An empty string disables all blacklisting. */
+    if (!*u->blacklist) {
+        pa_xfree(u->blacklist);
+        u->blacklist = NULL;
+    }
+
+    if (u->blacklist != NULL && !pa_is_regex_valid(u->blacklist)) {
+        pa_log_error("A blacklist pattern was provided but is not a valid regex");
+        pa_xfree(u->blacklist);
         goto fail;
     }
 
@@ -253,6 +241,9 @@ void pa__done(pa_module*m) {
 
     if (!(u = m->userdata))
         return;
+
+    if (u->blacklist)
+        pa_xfree(u->blacklist);
 
     pa_xfree(u);
 }

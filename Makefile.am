@@ -32,7 +32,6 @@ EXTRA_DIST = \
 	README \
 	CODE_OF_CONDUCT.md \
 	scripts/benchmark_memory_usage.sh \
-	scripts/Dockerfile \
 	scripts/plot_memory_usage.gp \
 	scripts/benchmarks/README \
 	todo \
@@ -47,6 +46,7 @@ EXTRA_DIST = \
 	src/pulse/.gitignore \
 	meson.build \
 	meson_options.txt \
+	doxygen/meson.build \
 	man/meson.build \
 	po/meson.build \
 	shell-completion/bash/meson.build \
@@ -58,7 +58,7 @@ EXTRA_DIST = \
 	src/modules/bluetooth/meson.build \
 	src/modules/echo-cancel/meson.build \
 	src/modules/gsettings/meson.build \
-	src/modules/gsettings/post-install.sh \
+	src/modules/gsettings/meson_post_install.py \
 	src/modules/meson.build \
 	src/modules/oss/meson.build \
 	src/modules/raop/meson.build \

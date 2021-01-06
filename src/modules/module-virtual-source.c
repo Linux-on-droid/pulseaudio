@@ -152,18 +152,6 @@ static void sink_update_requested_latency_cb(pa_sink *s) {
 }
 
 /* Called from I/O thread context */
-static void sink_request_rewind_cb(pa_sink *s) {
-    struct userdata *u;
-
-    pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
-
-    /* Do nothing */
-    pa_sink_process_rewind(u->sink, 0);
-
-}
-
-/* Called from I/O thread context */
 static int source_process_msg_cb(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk) {
     struct userdata *u = PA_SOURCE(o)->userdata;
 
@@ -458,6 +446,8 @@ static void source_output_kill_cb(pa_source_output *o) {
 /* Called from main thread */
 static void source_output_moving_cb(pa_source_output *o, pa_source *dest) {
     struct userdata *u;
+    uint32_t idx;
+    pa_source_output *output;
 
     pa_source_output_assert_ref(o);
     pa_assert_ctl_context();
@@ -468,6 +458,12 @@ static void source_output_moving_cb(pa_source_output *o, pa_source *dest) {
         pa_source_update_flags(u->source, PA_SOURCE_LATENCY|PA_SOURCE_DYNAMIC_LATENCY, dest->flags);
     } else
         pa_source_set_asyncmsgq(u->source, NULL);
+
+    /* Propagate asyncmsq change to attached virtual sources */
+    PA_IDXSET_FOREACH(output, u->source->outputs, idx) {
+        if (output->destination_source && output->moving)
+            output->moving(output, u->source);
+    }
 
     if (u->auto_desc && dest) {
         const char *z;
@@ -675,7 +671,6 @@ int pa__init(pa_module*m) {
 
         u->sink->parent.process_msg = sink_process_msg_cb;
         u->sink->update_requested_latency = sink_update_requested_latency_cb;
-        u->sink->request_rewind = sink_request_rewind_cb;
         u->sink->set_state_in_main_thread = sink_set_state_in_main_thread_cb;
         u->sink->userdata = u;
 
@@ -685,7 +680,7 @@ int pa__init(pa_module*m) {
         /* FIXME: no idea what I am doing here */
         u->block_usec = BLOCK_USEC;
         nbytes = pa_usec_to_bytes(u->block_usec, &u->sink->sample_spec);
-        pa_sink_set_max_rewind(u->sink, nbytes);
+        pa_sink_set_max_rewind(u->sink, 0);
         pa_sink_set_max_request(u->sink, nbytes);
 
         pa_sink_put(u->sink);

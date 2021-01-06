@@ -33,6 +33,13 @@
 
 #include "alsa-mixer.h"
 
+enum {
+    PA_ALSA_ERR_UNSPECIFIED = 1,
+    PA_ALSA_ERR_UCM_OPEN = 1000,
+    PA_ALSA_ERR_UCM_NO_VERB = 1001,
+    PA_ALSA_ERR_UCM_LINKED = 1002
+};
+
 int pa_alsa_set_hw_params(
         snd_pcm_t *pcm_handle,
         pa_sample_spec *ss,                /* modified at return */
@@ -141,9 +148,14 @@ const char* pa_alsa_strerror(int errnum);
 
 bool pa_alsa_may_tsched(bool want);
 
-snd_mixer_elem_t *pa_alsa_mixer_find(snd_mixer_t *mixer, const char *name, unsigned int device);
+snd_mixer_elem_t *pa_alsa_mixer_find_card(snd_mixer_t *mixer, const char *name, unsigned int device);
+snd_mixer_elem_t *pa_alsa_mixer_find_pcm(snd_mixer_t *mixer, const char *name, unsigned int device);
 
-snd_mixer_t *pa_alsa_open_mixer(int alsa_card_index, char **ctl_device);
+snd_mixer_t *pa_alsa_open_mixer(pa_hashmap *mixers, int alsa_card_index, bool probe);
+snd_mixer_t *pa_alsa_open_mixer_by_name(pa_hashmap *mixers, const char *dev, bool probe);
+snd_mixer_t *pa_alsa_open_mixer_for_pcm(pa_hashmap *mixers, snd_pcm_t *pcm, bool probe);
+void pa_alsa_mixer_set_fdlist(pa_hashmap *mixers, snd_mixer_t *mixer, pa_mainloop_api *ml);
+void pa_alsa_mixer_free(pa_alsa_mixer *mixer);
 
 typedef struct pa_hdmi_eld pa_hdmi_eld;
 struct pa_hdmi_eld {

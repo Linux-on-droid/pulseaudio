@@ -29,6 +29,7 @@ pa_device_port_new_data *pa_device_port_new_data_init(pa_device_port_new_data *d
     pa_assert(data);
 
     pa_zero(*data);
+    data->type = PA_DEVICE_PORT_TYPE_UNKNOWN;
     data->available = PA_AVAILABLE_UNKNOWN;
     return data;
 }
@@ -53,10 +54,23 @@ void pa_device_port_new_data_set_available(pa_device_port_new_data *data, pa_ava
     data->available = available;
 }
 
+void pa_device_port_new_data_set_availability_group(pa_device_port_new_data *data, const char *group) {
+    pa_assert(data);
+
+    pa_xfree(data->availability_group);
+    data->availability_group = pa_xstrdup(group);
+}
+
 void pa_device_port_new_data_set_direction(pa_device_port_new_data *data, pa_direction_t direction) {
     pa_assert(data);
 
     data->direction = direction;
+}
+
+void pa_device_port_new_data_set_type(pa_device_port_new_data *data, pa_device_port_type_t type) {
+    pa_assert(data);
+
+    data->type = type;
 }
 
 void pa_device_port_new_data_done(pa_device_port_new_data *data) {
@@ -64,6 +78,7 @@ void pa_device_port_new_data_done(pa_device_port_new_data *data) {
 
     pa_xfree(data->name);
     pa_xfree(data->description);
+    pa_xfree(data->availability_group);
 }
 
 void pa_device_port_set_preferred_profile(pa_device_port *p, const char *new_pp) {
@@ -92,6 +107,18 @@ void pa_device_port_set_available(pa_device_port *p, pa_available_t status) {
      * be created before port objects, and then p->card could be non-NULL for
      * the whole lifecycle of pa_device_port. */
     if (p->card && p->card->linked) {
+        pa_sink *sink;
+        pa_source *source;
+
+        pa_subscription_post(p->core, PA_SUBSCRIPTION_EVENT_CARD|PA_SUBSCRIPTION_EVENT_CHANGE, p->card->index);
+
+        sink = pa_device_port_get_sink(p);
+        source = pa_device_port_get_source(p);
+        if (sink)
+            pa_subscription_post(p->core, PA_SUBSCRIPTION_EVENT_SINK|PA_SUBSCRIPTION_EVENT_CHANGE, sink->index);
+        if (source)
+            pa_subscription_post(p->core, PA_SUBSCRIPTION_EVENT_SOURCE|PA_SUBSCRIPTION_EVENT_CHANGE, source->index);
+
         /* A sink or source whose active port is unavailable can't be the
          * default sink/source, so port availability changes may affect the
          * default sink/source choice. */
@@ -100,7 +127,27 @@ void pa_device_port_set_available(pa_device_port *p, pa_available_t status) {
         else
             pa_core_update_default_source(p->core);
 
-        pa_subscription_post(p->core, PA_SUBSCRIPTION_EVENT_CARD|PA_SUBSCRIPTION_EVENT_CHANGE, p->card->index);
+        if (p->direction == PA_DIRECTION_OUTPUT) {
+            if (sink && p == sink->active_port) {
+                if (sink->active_port->available == PA_AVAILABLE_NO) {
+                    if (p->core->rescue_streams)
+                        pa_sink_move_streams_to_default_sink(p->core, sink, false);
+                } else
+                    pa_core_move_streams_to_newly_available_preferred_sink(p->core, sink);
+            }
+        } else {
+            if (source && p == source->active_port) {
+                if (source->active_port->available == PA_AVAILABLE_NO) {
+                    if (p->core->rescue_streams)
+                        pa_source_move_streams_to_default_source(p->core, source, false);
+                } else
+                    pa_core_move_streams_to_newly_available_preferred_source(p->core, source);
+            }
+        }
+
+        /* This may cause the sink and source pointers to become invalid, if
+         * the availability change causes the card profile to get switched. If
+         * you add code after this line, remember to take that into account. */
         pa_hook_fire(&p->core->hooks[PA_CORE_HOOK_PORT_AVAILABLE_CHANGED], p);
     }
 }
@@ -120,6 +167,7 @@ static void device_port_free(pa_object *o) {
     if (p->profiles)
         pa_hashmap_free(p->profiles);
 
+    pa_xfree(p->availability_group);
     pa_xfree(p->preferred_profile);
     pa_xfree(p->name);
     pa_xfree(p->description);
@@ -145,8 +193,11 @@ pa_device_port *pa_device_port_new(pa_core *c, pa_device_port_new_data *data, si
     p->card = NULL;
     p->priority = 0;
     p->available = data->available;
+    p->availability_group = data->availability_group;
+    data->availability_group = NULL;
     p->profiles = pa_hashmap_new(pa_idxset_string_hash_func, pa_idxset_string_compare_func);
     p->direction = data->direction;
+    p->type = data->type;
 
     p->latency_offset = 0;
     p->proplist = pa_proplist_new();
@@ -223,4 +274,30 @@ pa_device_port *pa_device_port_find_best(pa_hashmap *ports)
     }
 
     return best;
+}
+
+pa_sink *pa_device_port_get_sink(pa_device_port *p) {
+    pa_sink *rs = NULL;
+    pa_sink *sink;
+    uint32_t state;
+
+    PA_IDXSET_FOREACH(sink, p->card->sinks, state)
+        if (p == pa_hashmap_get(sink->ports, p->name)) {
+            rs = sink;
+            break;
+        }
+    return rs;
+}
+
+pa_source *pa_device_port_get_source(pa_device_port *p) {
+    pa_source *rs = NULL;
+    pa_source *source;
+    uint32_t state;
+
+    PA_IDXSET_FOREACH(source, p->card->sources, state)
+        if (p == pa_hashmap_get(source->ports, p->name)) {
+            rs = source;
+            break;
+        }
+    return rs;
 }

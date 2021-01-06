@@ -52,11 +52,15 @@ static void remap_mono_to_stereo_float32ne_generic_arm(pa_remap_t *m, float *dst
         __asm__ __volatile__ (
             "ldm        %[src]!, {r4,r6}        \n\t"
             "mov        r5, r4                  \n\t"
-            "mov        r7, r6                  \n\t"
-            "stm        %[dst]!, {r4-r7}        \n\t"
+
+            /* We use r12 instead of r7 here, because r7 is reserved for the
+             * frame pointer when using Thumb. */
+            "mov        r12, r6                 \n\t"
+
+            "stm        %[dst]!, {r4-r6,r12}    \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : /* input operands */
-            : "memory", "r4", "r5", "r6", "r7" /* clobber list */
+            : "memory", "r4", "r5", "r6", "r12" /* clobber list */
         );
     }
 
@@ -189,7 +193,7 @@ static void remap_ch4_to_mono_float32ne_neon(pa_remap_t *m, float *dst, const fl
             "vadd.f32   d0, d0, d1              \n\t"
             "vadd.f32   d2, d2, d3              \n\t"
             "vadd.f32   d0, d0, d2              \n\t"
-            "vmul.f32   d0, d0, %[quart]        \n\t"
+            "vmul.f32   d0, d0, %P[quart]       \n\t"
             "vst1.32    {d0}, [%[dst]]!         \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [quart] "w" (quart) /* input operands */
@@ -276,7 +280,7 @@ static void remap_arrange_stereo_s16ne_neon(pa_remap_t *m, int16_t *dst, const i
     for (; n >= 2; n -= 2) {
         __asm__ __volatile__ (
             "vld1.s16   d0, [%[src]]!           \n\t"
-            "vtbl.8     d0, {d0}, %[t]          \n\t"
+            "vtbl.8     d0, {d0}, %P[t]         \n\t"
             "vst1.s16   d0, [%[dst]]!           \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t] "w" (t) /* input operands */
@@ -287,7 +291,7 @@ static void remap_arrange_stereo_s16ne_neon(pa_remap_t *m, int16_t *dst, const i
     if (n > 0) {
         __asm__ __volatile__ (
             "vld1.32   d0[0], [%[src]]!         \n\t"
-            "vtbl.8    d0, {d0}, %[t]           \n\t"
+            "vtbl.8    d0, {d0}, %P[t]          \n\t"
             "vst1.32   d0[0], [%[dst]]!         \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t] "w" (t) /* input operands */
@@ -302,8 +306,8 @@ static void remap_arrange_ch2_ch4_s16ne_neon(pa_remap_t *m, int16_t *dst, const 
     for (; n > 0; n--) {
         __asm__ __volatile__ (
             "vld1.32    d0[0], [%[src]]!           \n\t"
-            "vtbl.8     d0, {d0}, %[t]          \n\t"
-            "vst1.s16   d0, [%[dst]]!           \n\t"
+            "vtbl.8     d0, {d0}, %P[t]            \n\t"
+            "vst1.s16   d0, [%[dst]]!              \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t] "w" (t) /* input operands */
             : "memory", "d0" /* clobber list */
@@ -317,7 +321,7 @@ static void remap_arrange_ch4_s16ne_neon(pa_remap_t *m, int16_t *dst, const int1
     for (; n > 0; n--) {
         __asm__ __volatile__ (
             "vld1.s16   d0, [%[src]]!           \n\t"
-            "vtbl.8     d0, {d0}, %[t]          \n\t"
+            "vtbl.8     d0, {d0}, %P[t]         \n\t"
             "vst1.s16   d0, [%[dst]]!           \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t] "w" (t) /* input operands */
@@ -332,7 +336,7 @@ static void remap_arrange_stereo_float32ne_neon(pa_remap_t *m, float *dst, const
     for (; n > 0; n--) {
         __asm__ __volatile__ (
             "vld1.f32   d0, [%[src]]!           \n\t"
-            "vtbl.8     d0, {d0}, %[t]          \n\t"
+            "vtbl.8     d0, {d0}, %P[t]         \n\t"
             "vst1.s16   {d0}, [%[dst]]!         \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t] "w" (t) /* input operands */
@@ -349,8 +353,8 @@ static void remap_arrange_ch2_ch4_any32ne_neon(pa_remap_t *m, float *dst, const 
     for (; n > 0; n--) {
         __asm__ __volatile__ (
             "vld1.f32   d0, [%[src]]!           \n\t"
-            "vtbl.8     d1, {d0}, %[t0]         \n\t"
-            "vtbl.8     d2, {d0}, %[t1]         \n\t"
+            "vtbl.8     d1, {d0}, %P[t0]        \n\t"
+            "vtbl.8     d2, {d0}, %P[t1]        \n\t"
             "vst1.s16   {d1,d2}, [%[dst]]!      \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t0] "w" (t0), [t1] "w" (t1) /* input operands */
@@ -366,8 +370,8 @@ static void remap_arrange_ch4_float32ne_neon(pa_remap_t *m, float *dst, const fl
     for (; n > 0; n--) {
         __asm__ __volatile__ (
             "vld1.f32   {d0,d1}, [%[src]]!      \n\t"
-            "vtbl.8     d2, {d0,d1}, %[t0]      \n\t"
-            "vtbl.8     d3, {d0,d1}, %[t1]      \n\t"
+            "vtbl.8     d2, {d0,d1}, %P[t0]     \n\t"
+            "vtbl.8     d3, {d0,d1}, %P[t1]     \n\t"
             "vst1.s16   {d2,d3}, [%[dst]]!      \n\t"
             : [dst] "+r" (dst), [src] "+r" (src) /* output operands */
             : [t0] "w" (t0), [t1] "w" (t1) /* input operands */

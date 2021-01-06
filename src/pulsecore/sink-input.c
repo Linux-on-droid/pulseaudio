@@ -190,7 +190,10 @@ bool pa_sink_input_new_data_set_sink(pa_sink_input_new_data *data, pa_sink *s, b
     if (!data->req_formats) {
         /* We're not working with the extended API */
         data->sink = s;
-        data->save_sink = save;
+        if (save) {
+            pa_xfree(data->preferred_sink);
+            data->preferred_sink = pa_xstrdup(s->name);
+	}
         data->sink_requested_by_application = requested_by_application;
     } else {
         /* Extended API: let's see if this sink supports the formats the client can provide */
@@ -199,7 +202,10 @@ bool pa_sink_input_new_data_set_sink(pa_sink_input_new_data *data, pa_sink *s, b
         if (formats && !pa_idxset_isempty(formats)) {
             /* Sink supports at least one of the requested formats */
             data->sink = s;
-            data->save_sink = save;
+	    if (save) {
+		pa_xfree(data->preferred_sink);
+		data->preferred_sink = pa_xstrdup(s->name);
+	    }
             data->sink_requested_by_application = requested_by_application;
             if (data->nego_formats)
                 pa_idxset_free(data->nego_formats, (pa_free_cb_t) pa_format_info_free);
@@ -226,7 +232,7 @@ bool pa_sink_input_new_data_set_formats(pa_sink_input_new_data *data, pa_idxset 
 
     if (data->sink) {
         /* Trigger format negotiation */
-        return pa_sink_input_new_data_set_sink(data, data->sink, data->save_sink, data->sink_requested_by_application);
+        return pa_sink_input_new_data_set_sink(data, data->sink, (data->preferred_sink != NULL), data->sink_requested_by_application);
     }
 
     return true;
@@ -249,6 +255,9 @@ void pa_sink_input_new_data_done(pa_sink_input_new_data *data) {
 
     if (data->volume_factor_sink_items)
         pa_hashmap_free(data->volume_factor_sink_items);
+
+    if (data->preferred_sink)
+        pa_xfree(data->preferred_sink);
 
     pa_proplist_free(data->proplist);
 }
@@ -467,7 +476,8 @@ int pa_sink_input_new(
                           ((data->flags & PA_SINK_INPUT_NO_REMAP) ? PA_RESAMPLER_NO_REMAP : 0) |
                           (core->disable_remixing || (data->flags & PA_SINK_INPUT_NO_REMIX) ? PA_RESAMPLER_NO_REMIX : 0) |
                           (core->remixing_use_all_sink_channels ? 0 : PA_RESAMPLER_NO_FILL_SINK) |
-                          (core->disable_lfe_remixing ? PA_RESAMPLER_NO_LFE : 0)))) {
+                          (core->remixing_produce_lfe ? PA_RESAMPLER_PRODUCE_LFE : 0) |
+                          (core->remixing_consume_lfe ? PA_RESAMPLER_CONSUME_LFE : 0)))) {
                 pa_log_warn("Unsupported resampling operation.");
                 return -PA_ERR_NOTSUPPORTED;
             }
@@ -518,7 +528,7 @@ int pa_sink_input_new(
     pa_cvolume_reset(&i->real_ratio, i->sample_spec.channels);
     i->volume_writable = data->volume_writable;
     i->save_volume = data->save_volume;
-    i->save_sink = data->save_sink;
+    i->preferred_sink = pa_xstrdup(data->preferred_sink);
     i->save_muted = data->save_muted;
 
     i->muted = data->muted;
@@ -775,6 +785,9 @@ static void sink_input_free(pa_object *o) {
 
     if (i->volume_factor_sink_items)
         pa_hashmap_free(i->volume_factor_sink_items);
+
+    if (i->preferred_sink)
+        pa_xfree(i->preferred_sink);
 
     pa_xfree(i->driver);
     pa_xfree(i);
@@ -1914,7 +1927,16 @@ int pa_sink_input_finish_move(pa_sink_input *i, pa_sink *dest, bool save) {
         i->moving(i, dest);
 
     i->sink = dest;
-    i->save_sink = save;
+    /* save == true, means user is calling the move_to() and want to
+       save the preferred_sink */
+    if (save) {
+        pa_xfree(i->preferred_sink);
+        if (dest == dest->core->default_sink)
+            i->preferred_sink = NULL;
+        else
+            i->preferred_sink = pa_xstrdup(dest->name);
+    }
+
     pa_idxset_put(dest->inputs, pa_sink_input_ref(i), NULL);
 
     PA_HASHMAP_FOREACH(v, i->volume_factor_sink_items, state)
@@ -1956,6 +1978,12 @@ void pa_sink_input_fail_move(pa_sink_input *i) {
     /* Check if someone wants this sink input? */
     if (pa_hook_fire(&i->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_FAIL], i) == PA_HOOK_STOP)
         return;
+
+    /* Can we move the sink input to the default sink? */
+    if (i->core->rescue_streams && pa_sink_input_may_move_to(i, i->core->default_sink)) {
+        if (pa_sink_input_finish_move(i, i->core->default_sink, false) >= 0)
+            return;
+    }
 
     if (i->moving)
         i->moving(i, NULL);
@@ -2292,7 +2320,8 @@ int pa_sink_input_update_resampler(pa_sink_input *i) {
                                      ((i->flags & PA_SINK_INPUT_NO_REMAP) ? PA_RESAMPLER_NO_REMAP : 0) |
                                      (i->core->disable_remixing || (i->flags & PA_SINK_INPUT_NO_REMIX) ? PA_RESAMPLER_NO_REMIX : 0) |
                                      (i->core->remixing_use_all_sink_channels ? 0 : PA_RESAMPLER_NO_FILL_SINK) |
-                                     (i->core->disable_lfe_remixing ? PA_RESAMPLER_NO_LFE : 0));
+                                     (i->core->remixing_produce_lfe ? PA_RESAMPLER_PRODUCE_LFE : 0) |
+                                     (i->core->remixing_consume_lfe ? PA_RESAMPLER_CONSUME_LFE : 0));
 
         if (!new_resampler) {
             pa_log_warn("Unsupported resampling operation.");
@@ -2403,4 +2432,18 @@ void pa_sink_input_set_reference_ratio(pa_sink_input *i, const pa_cvolume *ratio
     pa_log_debug("Sink input %u reference ratio changed from %s to %s.", i->index,
                  pa_cvolume_snprint_verbose(old_ratio_str, sizeof(old_ratio_str), &old_ratio, &i->channel_map, true),
                  pa_cvolume_snprint_verbose(new_ratio_str, sizeof(new_ratio_str), ratio, &i->channel_map, true));
+}
+
+/* Called from the main thread. */
+void pa_sink_input_set_preferred_sink(pa_sink_input *i, pa_sink *s) {
+    pa_assert(i);
+
+    pa_xfree(i->preferred_sink);
+    if (s) {
+        i->preferred_sink = pa_xstrdup(s->name);
+        pa_sink_input_move_to(i, s, false);
+    } else {
+        i->preferred_sink = NULL;
+        pa_sink_input_move_to(i, i->core->default_sink, false);
+    }
 }

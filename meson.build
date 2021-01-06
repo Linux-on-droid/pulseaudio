@@ -19,11 +19,11 @@ endif
 pa_version_major_minor = pa_version_major + '.' + pa_version_minor
 
 pa_api_version = 12
-pa_protocol_version = 33
+pa_protocol_version = 34
 
 # The stable ABI for client applications, for the version info x:y:z
 # always will hold x=z
-libpulse_version_info = [21, 1, 21]
+libpulse_version_info = [23, 0, 23]
 
 # A simplified, synchronous, ABI-stable interface for client
 # applications, for the version info x:y:z always will hold x=z
@@ -31,7 +31,7 @@ libpulse_simple_version_info = [1, 1, 1]
 
 # The ABI-stable GLib adapter for client applications, for the version
 # info x:y:z always will hold x=z
-libpulse_mainloop_glib_version_info = [0, 5, 0]
+libpulse_mainloop_glib_version_info = [0, 6, 0]
 
 libpulse_version = '@0@.@1@.@2@'.format(
   libpulse_version_info[0] - libpulse_version_info[2],
@@ -66,7 +66,11 @@ localedir = join_paths(prefix, get_option('localedir'))
 localstatedir = join_paths(prefix, get_option('localstatedir'))
 sysconfdir = join_paths(prefix, get_option('sysconfdir'))
 privlibdir = join_paths(libdir, 'pulseaudio')
-alsadatadir = join_paths(datadir, 'pulseaudio', 'alsa-mixer')
+
+alsadatadir = get_option('alsadatadir')
+if alsadatadir == ''
+  alsadatadir = join_paths(datadir, 'pulseaudio', 'alsa-mixer')
+endif
 
 pkgconfigdir = join_paths(libdir, 'pkgconfig')
 pulselibexecdir = join_paths(libexecdir, 'pulse')
@@ -147,6 +151,7 @@ cdata.set_quoted('DESKTOPFILEDIR', join_paths(datadir, 'applications'))
 cdata.set_quoted('PULSE_LOCALEDIR', localedir)
 cdata.set_quoted('GETTEXT_PACKAGE', 'pulseaudio')
 cdata.set('ENABLE_NLS', 1)
+cdata.set('top_srcdir', meson.source_root())
 
 # Platform specifics
 # First some defaults to keep config file generation happy
@@ -292,8 +297,14 @@ foreach f : check_functions
   endif
 endforeach
 
-if cc.has_function('SYS_memfd_create', prefix : '#include <sys/syscall.h>')
+if cc.has_header_symbol('sys/syscall.h', 'SYS_memfd_create')
   cdata.set('HAVE_MEMFD', 1)
+endif
+
+if cc.has_function('dgettext')
+  libintl_dep = []
+else
+  libintl_dep = cc.find_library('intl')
 endif
 
 # Symbols
@@ -516,6 +527,10 @@ if get_option('legacy-database-entry-format')
   cdata.set('ENABLE_LEGACY_DATABASE_ENTRY_FORMAT', 1)
 endif
 
+if get_option('stream-restore-clear-old-devices')
+  cdata.set('STREAM_RESTORE_CLEAR_OLD_DEVICES', 1)
+endif
+
 if get_option('running-from-build-tree')
   cdata.set('HAVE_RUNNING_FROM_BUILD_TREE', 1)
 endif
@@ -663,6 +678,15 @@ if webrtc_dep.found()
   cdata.set('HAVE_WEBRTC', 1)
 endif
 
+gst_dep = dependency('gstreamer-1.0', version : '>= 1.14', required : get_option('gstreamer'))
+gstapp_dep = dependency('gstreamer-app-1.0', required : get_option('gstreamer'))
+gstrtp_dep = dependency('gstreamer-rtp-1.0', required : get_option('gstreamer'))
+
+have_gstreamer = false
+if gst_dep.found() and gstapp_dep.found() and gstrtp_dep.found()
+  have_gstreamer = true
+endif
+
 # These are required for the CMake file generation
 cdata.set('PA_LIBDIR', libdir)
 cdata.set('PA_INCDIR', includedir)
@@ -676,6 +700,7 @@ check_dep = dependency('check', version : '>= 0.9.10', required : get_option('te
 
 # Subdirs
 
+subdir('doxygen')
 subdir('po')
 if get_option('man')
   subdir('man')
@@ -769,6 +794,7 @@ summary = [
   'sysconfdir:                    @0@'.format(sysconfdir),
   'localstatedir:                 @0@'.format(localstatedir),
   'modlibexecdir:                 @0@'.format(modlibexecdir),
+  'alsadatadir:                   @0@'.format(alsadatadir),
   'System Runtime Path:           @0@'.format(cdata.get_unquoted('PA_SYSTEM_RUNTIME_PATH')),
   'System State Path:             @0@'.format(cdata.get_unquoted('PA_SYSTEM_STATE_PATH')),
   'System Config Path:            @0@'.format(cdata.get_unquoted('PA_SYSTEM_CONFIG_PATH')),
@@ -809,6 +835,7 @@ summary = [
   'Enable OpenSSL (for Airtunes): @0@'.format(openssl_dep.found()),
   'Enable FFTW:                   @0@'.format(fftw_dep.found()),
   'Enable ORC:                    @0@'.format(have_orcc),
+  'Enable GStreamer:              @0@'.format(have_gstreamer),
   'Enable Adrian echo canceller:  @0@'.format(get_option('adrian-aec')),
   'Enable Speex (resampler, AEC): @0@'.format(speex_dep.found()),
   'Enable SoXR (resampler):       @0@'.format(soxr_dep.found()),
@@ -819,6 +846,8 @@ summary = [
   '',
   'Database:                      @0@'.format(get_option('database')),
   'Legacy Database Entry Support: @0@'.format(get_option('legacy-database-entry-format')),
+  'module-stream-restore:',
+  '  Clear old devices:           @0@'.format(get_option('stream-restore-clear-old-devices')),
   'Running from build tree:       @0@'.format(get_option('running-from-build-tree')),
   'System User:                   @0@'.format(cdata.get_unquoted('PA_SYSTEM_USER')),
   'System Group:                  @0@'.format(cdata.get_unquoted('PA_SYSTEM_GROUP')),

@@ -42,11 +42,11 @@ AC_SUBST(PA_MINOR, pa_minor)
 AC_SUBST(PA_MAJORMINOR, pa_major.pa_minor)
 
 AC_SUBST(PA_API_VERSION, 12)
-AC_SUBST(PA_PROTOCOL_VERSION, 33)
+AC_SUBST(PA_PROTOCOL_VERSION, 34)
 
 # The stable ABI for client applications, for the version info x:y:z
 # always will hold x=z
-AC_SUBST(LIBPULSE_VERSION_INFO, [21:1:21])
+AC_SUBST(LIBPULSE_VERSION_INFO, [23:0:23])
 
 # A simplified, synchronous, ABI-stable interface for client
 # applications, for the version info x:y:z always will hold x=z
@@ -54,7 +54,7 @@ AC_SUBST(LIBPULSE_SIMPLE_VERSION_INFO, [1:1:1])
 
 # The ABI-stable GLib adapter for client applications, for the version
 # info x:y:z always will hold x=z
-AC_SUBST(LIBPULSE_MAINLOOP_GLIB_VERSION_INFO, [0:5:0])
+AC_SUBST(LIBPULSE_MAINLOOP_GLIB_VERSION_INFO, [0:6:0])
 
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED([CANONICAL_HOST], "$host", [Canonical host string.])
@@ -101,7 +101,7 @@ PKG_PROG_PKG_CONFIG
 
 # gettext
 
-AM_GNU_GETTEXT_VERSION([0.19.3])
+AM_GNU_GETTEXT_VERSION([0.19.8])
 AM_GNU_GETTEXT([external])
 
 GETTEXT_PACKAGE=pulseaudio
@@ -561,10 +561,12 @@ AC_FUNC_GETGROUPS
 AC_CHECK_FUNCS_ONCE([chmod chown fstat fchown fchmod clock_gettime getaddrinfo getgrgid_r getgrnam_r \
     getpwnam_r getpwuid_r gettimeofday getuid mlock nanosleep \
     pipe posix_fadvise posix_madvise posix_memalign setpgid setsid shm_open \
-    sigaction sleep symlink sysconf uname pthread_setaffinity_np pthread_getname_np pthread_setname_np])
+    sigaction sleep symlink sysconf uname pthread_getname_np pthread_setname_np])
 AC_CHECK_FUNCS([mkfifo], [HAVE_MKFIFO=1], [HAVE_MKFIFO=0])
 AC_SUBST(HAVE_MKFIFO)
 AM_CONDITIONAL(HAVE_MKFIFO, test "x$HAVE_MKFIFO" = "x1")
+AC_CHECK_FUNCS([pthread_setaffinity_np], [HAVE_PTHREAD_SETAFFINITY_NP=1], [HAVE_PTHREAD_SETAFFINITY_NP=0])
+AM_CONDITIONAL(HAVE_PTHREAD_SETAFFINITY_NP, test "x$HAVE_PTHREAD_SETAFFINITY_NP" = "x1")
 
 # X/OPEN
 AC_CHECK_FUNCS_ONCE([readlink])
@@ -1310,6 +1312,22 @@ AC_SUBST(HAVE_SYSTEMD_JOURNAL)
 AM_CONDITIONAL([HAVE_SYSTEMD_JOURNAL], [test "x$HAVE_SYSTEMD_JOURNAL" = x1])
 AS_IF([test "x$HAVE_SYSTEMD_JOURNAL" = "x1"], AC_DEFINE([HAVE_SYSTEMD_JOURNAL], 1, [Have SYSTEMDJOURNAL?]))
 
+#### GStreamer-based RTP support (optional) ####
+
+AC_ARG_ENABLE([gstreamer],
+    AS_HELP_STRING([--enable-gstreamer],[Enable optional GStreamer-based RTP support]))
+
+AS_IF([test "x$enable_gstreamer" = "xyes"],
+    [PKG_CHECK_MODULES(GSTREAMER, [ gstreamer-1.0 >= 1.14 gstreamer-app-1.0 gstreamer-rtp-1.0 gio-2.0 ],
+                       HAVE_GSTREAMER=1, HAVE_GSTREAMER=0)],
+    HAVE_GSTREAMER=0)
+
+AS_IF([test "x$enable_gstreamer" = "xyes" && test "x$HAVE_GSTREAMER" = "x0"],
+    [AC_MSG_ERROR([*** GStreamer 1.0 support not found])])
+
+AM_CONDITIONAL([HAVE_GSTREAMER], [test "x$HAVE_GSTREAMER" = x1])
+AS_IF([test "x$HAVE_GSTREAMER" = "x1"], AC_DEFINE([HAVE_GSTREAMER], 1, [Have GStreamer?]))
+
 #### Build and Install man pages ####
 
 AC_ARG_ENABLE([manpages],
@@ -1461,6 +1479,12 @@ if test "x$enable_legacy_database_entry_format" != "xno" ; then
         AC_DEFINE(ENABLE_LEGACY_DATABASE_ENTRY_FORMAT, [1], [Legacy database entry format])
 fi
 
+AC_ARG_ENABLE([stream-restore-clear-old-devices],
+    AS_HELP_STRING([--enable-stream-restore-clear-old-devices], [Forget per-stream routing settings that have been set before version 14.0. Recommended when using GNOME. See https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/832]))
+if test "x$enable_stream_restore_clear_old_devices" == "xyes" ; then
+    AC_DEFINE(STREAM_RESTORE_CLEAR_OLD_DEVICES, [1], [module-stream-restore: Clear old devices])
+fi
+
 AC_ARG_ENABLE([static-bins],
     AS_HELP_STRING([--enable-static-bins],[Statically link executables.]))
 AM_CONDITIONAL([STATIC_BINS], [test "x$enable_static_bins" = "xyes"])
@@ -1486,6 +1510,13 @@ AC_ARG_WITH(
 
 AC_SUBST(modlibexecdir)
 AX_DEFINE_DIR(PA_DLSEARCHPATH, modlibexecdir, [Modules dir])
+
+AC_ARG_WITH(
+        [alsa-data-dir],
+        AS_HELP_STRING([--with-alsa-data-dir],[Directory for ALSA card profiles (defaults to ${datadir}/pulseaudio/alsa-mixer)]),
+        [alsadatadir=$withval], [alsadatadir="${datadir}/pulseaudio/alsa-mixer"])
+
+AC_SUBST(alsadatadir)
 
 AC_ARG_WITH(
         [udev-rules-dir],
@@ -1520,6 +1551,13 @@ else
 fi
 
 AM_CONDITIONAL([FORCE_PREOPEN], [test "x$FORCE_PREOPEN" = "xyes"])
+
+# Substitute the variable with an empty string. This makes the output go to the
+# directory where doxygen is run (which is the doxygen directory under the
+# build directory). Substituting a variable with a constant value wouldn't
+# otherwise make sense, but the substitution variable needs to exist, because
+# we substitute a different value when using Meson.
+AC_SUBST([DOXYGEN_OUTPUT_DIRECTORY], [])
 
 AC_CONFIG_FILES([
 Makefile
@@ -1614,6 +1652,7 @@ AS_IF([test "x$HAVE_ADRIAN_EC" = "x1"], ENABLE_ADRIAN_EC=yes, ENABLE_ADRIAN_EC=n
 AS_IF([test "x$HAVE_SPEEX" = "x1"], ENABLE_SPEEX=yes, ENABLE_SPEEX=no)
 AS_IF([test "x$HAVE_SOXR" = "x1"], ENABLE_SOXR=yes, ENABLE_SOXR=no)
 AS_IF([test "x$HAVE_WEBRTC" = "x1"], ENABLE_WEBRTC=yes, ENABLE_WEBRTC=no)
+AS_IF([test "x$HAVE_GSTREAMER" = "x1"], ENABLE_GSTREAMER=yes, ENABLE_GSTREAMER=no)
 AS_IF([test "x$HAVE_TDB" = "x1"], ENABLE_TDB=yes, ENABLE_TDB=no)
 AS_IF([test "x$HAVE_GDBM" = "x1"], ENABLE_GDBM=yes, ENABLE_GDBM=no)
 AS_IF([test "x$HAVE_SIMPLEDB" = "x1"], ENABLE_SIMPLEDB=yes, ENABLE_SIMPLEDB=no)
@@ -1622,6 +1661,7 @@ AS_IF([test "x$HAVE_ESOUND" = "x1" -a "x$USE_PER_USER_ESOUND_SOCKET" = "x1"], EN
 AS_IF([test "x$HAVE_GCOV" = "x1"], ENABLE_GCOV=yes, ENABLE_GCOV=no)
 AS_IF([test "x$HAVE_LIBCHECK" = "x1"], ENABLE_TESTS=yes, ENABLE_TESTS=no)
 AS_IF([test "x$enable_legacy_database_entry_format" != "xno"], ENABLE_LEGACY_DATABASE_ENTRY_FORMAT=yes, ENABLE_LEGACY_DATABASE_ENTRY_FORMAT=no)
+AS_IF([test "x$enable_stream_restore_clear_old_devices" == "xyes"], ENABLE_STREAM_RESTORE_CLEAR_OLD_DEVICES=yes, ENABLE_STREAM_RESTORE_CLEAR_OLD_DEVICES=no)
 
 echo "
  ---{ $PACKAGE_NAME $VERSION }---
@@ -1630,6 +1670,7 @@ echo "
     sysconfdir:                    ${sysconfdir}
     localstatedir:                 ${localstatedir}
     modlibexecdir:                 ${modlibexecdir}
+    alsadatadir:                   ${alsadatadir}
     System Runtime Path:           ${PA_SYSTEM_RUNTIME_PATH}
     System State Path:             ${PA_SYSTEM_STATE_PATH}
     System Config Path:            ${PA_SYSTEM_CONFIG_PATH}
@@ -1677,6 +1718,7 @@ echo "
     Enable speex (resampler, AEC): ${ENABLE_SPEEX}
     Enable soxr (resampler):       ${ENABLE_SOXR}
     Enable WebRTC echo canceller:  ${ENABLE_WEBRTC}
+    Enable GStreamer-based RTP:    ${ENABLE_GSTREAMER}
     Enable gcov coverage:          ${ENABLE_GCOV}
     Enable unit tests:             ${ENABLE_TESTS}
     Database
@@ -1692,6 +1734,8 @@ echo "
     Preopened modules:             ${PREOPEN_MODS}
 
     Legacy Database Entry Support: ${ENABLE_LEGACY_DATABASE_ENTRY_FORMAT}
+    module-stream-restore:
+      Clear old devices:           ${ENABLE_STREAM_RESTORE_CLEAR_OLD_DEVICES}
 "
 
 if test "${ENABLE_SPEEX}" = "no" && test "${ENABLE_WEBRTC}" = "no" && test "${ENABLE_ADRIAN_EC}" = "no" ; then

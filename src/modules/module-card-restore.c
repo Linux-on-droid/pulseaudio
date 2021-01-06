@@ -55,7 +55,8 @@ PA_MODULE_USAGE(
 #define SAVE_INTERVAL (10 * PA_USEC_PER_SEC)
 
 static const char* const valid_modargs[] = {
-    "restore_bluetooth_profile=<boolean>"
+    "restore_bluetooth_profile",
+    NULL
 };
 
 struct userdata {
@@ -561,7 +562,7 @@ static pa_hook_result_t card_choose_initial_profile_callback(pa_core *core, pa_c
     if (!u->restore_bluetooth_profile) {
         const char *s = pa_proplist_gets(card->proplist, PA_PROP_DEVICE_BUS);
         if (pa_safe_streq(s, "bluetooth"))
-            return PA_HOOK_OK;
+            goto finish;
     }
 
     if (e->profile[0]) {
@@ -581,6 +582,7 @@ static pa_hook_result_t card_choose_initial_profile_callback(pa_core *core, pa_c
         }
     }
 
+finish:
     entry_free(e);
 
     return PA_HOOK_OK;

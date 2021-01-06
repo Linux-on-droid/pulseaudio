@@ -95,6 +95,7 @@ struct pa_raop_client {
     pa_rtsp_client *rtsp;
     char *sci, *sid;
     char *password;
+    bool autoreconnect;
 
     pa_raop_protocol_t protocol;
     pa_raop_encryption_t encryption;
@@ -362,13 +363,12 @@ static ssize_t send_tcp_audio_packet(pa_raop_client *c, pa_memchunk *block, size
     ssize_t written = -1;
     size_t done = 0;
 
-    if (!(packet = pa_raop_packet_buffer_retrieve(c->pbuf, c->seq)))
-        return -1;
+    packet = pa_raop_packet_buffer_retrieve(c->pbuf, c->seq);
 
-    if (packet->length <= 0) {
+    if (!packet || (packet && packet->length <= 0)) {
         pa_assert(block->index == offset);
 
-        if (!(packet = pa_raop_packet_buffer_prepare(c->pbuf, c->seq + 1, max)))
+        if (!(packet = pa_raop_packet_buffer_prepare(c->pbuf, c->seq, max)))
             return -1;
 
         packet->index = 0;
@@ -669,7 +669,7 @@ static size_t handle_udp_timing_packet(pa_raop_client *c, const uint8_t packet[]
     payload = packet[1] ^ 0x80;
     switch (payload) {
         case PAYLOAD_TIMING_REQUEST:
-            pa_log_debug("Sending timing packet at %lu", rci);
+            pa_log_debug("Sending timing packet at %" PRIu64 , rci);
             written = send_udp_timing_packet(c, data, rci);
             break;
         case PAYLOAD_TIMING_REPLY:
@@ -679,6 +679,18 @@ static size_t handle_udp_timing_packet(pa_raop_client *c, const uint8_t packet[]
     }
 
     return written;
+}
+
+static void send_initial_udp_timing_packet(pa_raop_client *c) {
+    uint32_t data[6] = { 0 };
+    struct timeval tv;
+    uint64_t initial_time = 0;
+
+    initial_time = timeval_to_ntp(pa_rtclock_get(&tv));
+    data[4] = htonl(initial_time >> 32);
+    data[5] = htonl(initial_time & 0xffffffff);
+
+    send_udp_timing_packet(c, data, initial_time);
 }
 
 static int connect_udp_socket(pa_raop_client *c, int fd, uint16_t port) {
@@ -1077,6 +1089,13 @@ connect_finish:
 
                 pa_log_debug("Connection established (UDP;control_port=%d;timing_port=%d)", cport, tport);
 
+                /* Send an initial UDP packet so a connection tracking firewall
+                 * knows the src_ip:src_port <-> dest_ip:dest_port relation
+                 * and accepts the incoming timing packets.
+                 */
+                send_initial_udp_timing_packet(c);
+                pa_log_debug("Sent initial timing packet to UDP port %d", tport);
+
                 if (c->state_callback)
                     c->state_callback(PA_RAOP_CONNECTED, c->state_userdata);
             }
@@ -1326,10 +1345,11 @@ static void rtsp_auth_cb(pa_rtsp_client *rtsp, pa_rtsp_state_t state, pa_rtsp_st
                 c->password = NULL;
             }
 
-            if (c->state_callback)
-                c->state_callback((int) PA_RAOP_AUTHENTICATED, c->state_userdata);
             pa_rtsp_client_free(c->rtsp);
             c->rtsp = NULL;
+            /* Ensure everything is cleaned before calling the callback, otherwise it may raise a crash */
+            if (c->state_callback)
+                c->state_callback((int) PA_RAOP_AUTHENTICATED, c->state_userdata);
 
             waiting = false;
             break;
@@ -1379,8 +1399,39 @@ static void rtsp_auth_cb(pa_rtsp_client *rtsp, pa_rtsp_state_t state, pa_rtsp_st
     }
 }
 
+
+void pa_raop_client_disconnect(pa_raop_client *c) {
+    c->is_recording = false;
+
+    if (c->tcp_sfd >= 0)
+        pa_close(c->tcp_sfd);
+    c->tcp_sfd = -1;
+
+    if (c->udp_sfd >= 0)
+        pa_close(c->udp_sfd);
+    c->udp_sfd = -1;
+
+    /* Polling sockets will be closed by sink */
+    c->udp_cfd = c->udp_tfd = -1;
+    c->tcp_sfd = -1;
+
+    pa_log_error("RTSP control channel closed (disconnected)");
+
+    if (c->rtsp)
+        pa_rtsp_client_free(c->rtsp);
+    if (c->sid)
+        pa_xfree(c->sid);
+    c->rtsp = NULL;
+    c->sid = NULL;
+
+    if (c->state_callback)
+        c->state_callback((int) PA_RAOP_DISCONNECTED, c->state_userdata);
+
+}
+
+
 pa_raop_client* pa_raop_client_new(pa_core *core, const char *host, pa_raop_protocol_t protocol,
-                                   pa_raop_encryption_t encryption, pa_raop_codec_t codec) {
+                                   pa_raop_encryption_t encryption, pa_raop_codec_t codec, bool autoreconnect) {
     pa_raop_client *c;
 
     pa_parsed_address a;
@@ -1408,6 +1459,7 @@ pa_raop_client* pa_raop_client_new(pa_core *core, const char *host, pa_raop_prot
     c->rtsp = NULL;
     c->sci = c->sid = NULL;
     c->password = NULL;
+    c->autoreconnect = autoreconnect;
 
     c->protocol = protocol;
     c->encryption = encryption;
@@ -1473,7 +1525,7 @@ int pa_raop_client_authenticate (pa_raop_client *c, const char *password) {
     c->password = NULL;
     if (password)
         c->password = pa_xstrdup(password);
-    c->rtsp = pa_rtsp_client_new(c->core->mainloop, c->host, c->port, DEFAULT_USER_AGENT);
+    c->rtsp = pa_rtsp_client_new(c->core->mainloop, c->host, c->port, DEFAULT_USER_AGENT, c->autoreconnect);
 
     pa_assert(c->rtsp);
 
@@ -1502,7 +1554,7 @@ int pa_raop_client_announce(pa_raop_client *c) {
         return 1;
     }
 
-    c->rtsp = pa_rtsp_client_new(c->core->mainloop, c->host, c->port, DEFAULT_USER_AGENT);
+    c->rtsp = pa_rtsp_client_new(c->core->mainloop, c->host, c->port, DEFAULT_USER_AGENT, c->autoreconnect);
 
     pa_assert(c->rtsp);
 
@@ -1545,7 +1597,6 @@ bool pa_raop_client_can_stream(pa_raop_client *c) {
     pa_assert(c);
 
     if (!c->rtsp || !c->sci) {
-        pa_log_debug("Can't stream, connection not established yet...");
         return false;
     }
 
@@ -1563,6 +1614,10 @@ bool pa_raop_client_can_stream(pa_raop_client *c) {
     }
 
     return false;
+}
+
+bool pa_raop_client_is_recording(pa_raop_client *c) {
+    return c->is_recording;
 }
 
 int pa_raop_client_stream(pa_raop_client *c) {
@@ -1723,6 +1778,10 @@ bool pa_raop_client_register_pollfd(pa_raop_client *c, pa_rtpoll *poll, pa_rtpol
     }
 
     return oob;
+}
+
+bool pa_raop_client_is_timing_fd(pa_raop_client *c, const int fd) {
+    return fd == c->udp_tfd;
 }
 
 pa_volume_t pa_raop_client_adjust_volume(pa_raop_client *c, pa_volume_t volume) {

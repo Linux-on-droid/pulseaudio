@@ -104,6 +104,13 @@ void pa_source_new_data_set_alternate_sample_rate(pa_source_new_data *data, cons
     data->alternate_sample_rate = alternate_sample_rate;
 }
 
+void pa_source_new_data_set_avoid_resampling(pa_source_new_data *data, bool avoid_resampling) {
+    pa_assert(data);
+
+    data->avoid_resampling_is_set = true;
+    data->avoid_resampling = avoid_resampling;
+}
+
 void pa_source_new_data_set_volume(pa_source_new_data *data, const pa_cvolume *volume) {
     pa_assert(data);
 
@@ -258,7 +265,10 @@ pa_source* pa_source_new(
     else
         s->alternate_sample_rate = s->core->alternate_sample_rate;
 
-    s->avoid_resampling = data->avoid_resampling;
+    if (data->avoid_resampling_is_set)
+        s->avoid_resampling = data->avoid_resampling;
+    else
+        s->avoid_resampling = s->core->avoid_resampling;
 
     s->outputs = pa_idxset_new(NULL, NULL);
     s->n_corked = 0;
@@ -644,8 +654,8 @@ void pa_source_put(pa_source *s) {
         pa_cvolume_remap(&s->real_volume, &root_source->channel_map, &s->channel_map);
     } else
         /* We assume that if the sink implementor changed the default
-         * volume he did so in real_volume, because that is the usual
-         * place where he is supposed to place his changes.  */
+         * volume they did so in real_volume, because that is the usual
+         * place where they are supposed to place their changes.  */
         s->reference_volume = s->real_volume;
 
     s->thread_info.soft_volume = s->soft_volume;
@@ -666,9 +676,13 @@ void pa_source_put(pa_source *s) {
     pa_subscription_post(s->core, PA_SUBSCRIPTION_EVENT_SOURCE | PA_SUBSCRIPTION_EVENT_NEW, s->index);
     pa_hook_fire(&s->core->hooks[PA_CORE_HOOK_SOURCE_PUT], s);
 
-    /* This function must be called after the PA_CORE_HOOK_SOURCE_PUT hook,
-     * because module-switch-on-connect needs to know the old default source */
+    /* It's good to fire the SOURCE_PUT hook before updating the default source,
+     * because module-switch-on-connect will set the new source as the default
+     * source, and if we were to call pa_core_update_default_source() before that,
+     * the default source might change twice, causing unnecessary stream moving. */
     pa_core_update_default_source(s->core);
+
+    pa_core_move_streams_to_newly_available_preferred_source(s->core, s);
 }
 
 /* Called from main context */
@@ -697,6 +711,9 @@ void pa_source_unlink(pa_source *s) {
     pa_idxset_remove_by_data(s->core->sources, s, NULL);
 
     pa_core_update_default_source(s->core);
+
+    if (linked && s->core->rescue_streams)
+	pa_source_move_streams_to_default_source(s->core, s, false);
 
     if (s->card)
         pa_idxset_remove_by_data(s->card->sources, s, NULL);
@@ -2987,4 +3004,49 @@ void pa_source_set_reference_volume_direct(pa_source *s, const pa_cvolume *volum
 
     pa_subscription_post(s->core, PA_SUBSCRIPTION_EVENT_SOURCE|PA_SUBSCRIPTION_EVENT_CHANGE, s->index);
     pa_hook_fire(&s->core->hooks[PA_CORE_HOOK_SOURCE_VOLUME_CHANGED], s);
+}
+
+void pa_source_move_streams_to_default_source(pa_core *core, pa_source *old_source, bool default_source_changed) {
+    pa_source_output *o;
+    uint32_t idx;
+
+    pa_assert(core);
+    pa_assert(old_source);
+
+    if (core->state == PA_CORE_SHUTDOWN)
+        return;
+
+    if (core->default_source == NULL || core->default_source->unlink_requested)
+        return;
+
+    if (old_source == core->default_source)
+        return;
+
+    PA_IDXSET_FOREACH(o, old_source->outputs, idx) {
+        if (!PA_SOURCE_OUTPUT_IS_LINKED(o->state))
+            continue;
+
+        if (!o->source)
+            continue;
+
+        /* Don't move source-outputs which connect sources to filter sources */
+        if (o->destination_source)
+            continue;
+
+        /* If default_source_changed is false, the old source became unavailable, so all streams must be moved. */
+        if (pa_safe_streq(old_source->name, o->preferred_source) && default_source_changed)
+            continue;
+
+        if (!pa_source_output_may_move_to(o, core->default_source))
+            continue;
+
+        if (default_source_changed)
+            pa_log_info("The source output %u \"%s\" is moving to %s due to change of the default source.",
+                        o->index, pa_strnull(pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME)), core->default_source->name);
+        else
+            pa_log_info("The source output %u \"%s\" is moving to %s, because the old source became unavailable.",
+                        o->index, pa_strnull(pa_proplist_gets(o->proplist, PA_PROP_APPLICATION_NAME)), core->default_source->name);
+
+        pa_source_output_move_to(o, core->default_source, false);
+    }
 }

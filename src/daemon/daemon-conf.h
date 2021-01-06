@@ -70,12 +70,14 @@ typedef struct pa_daemon_conf {
         avoid_resampling,
         disable_remixing,
         remixing_use_all_sink_channels,
-        disable_lfe_remixing,
+        remixing_produce_lfe,
+        remixing_consume_lfe,
         load_default_script_file,
         disallow_exit,
         log_meta,
         log_time,
         flat_volumes,
+        rescue_streams,
         lock_memory,
         deferred_volume;
     pa_server_type_t local_server_type;

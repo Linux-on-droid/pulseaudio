@@ -86,9 +86,9 @@
 /* Define to 1 if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
-/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
-#undef HAVE_CFLOCALECOPYCURRENT
+/* Define to 1 if you have the Mac OS X function
+   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
 
 /* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
@@ -209,6 +209,9 @@
 
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
+
+/* Have GStreamer? */
+#undef HAVE_GSTREAMER
 
 /* Have GTK? */
 #undef HAVE_GTK
@@ -680,6 +683,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* module-stream-restore: Clear old devices */
+#undef STREAM_RESTORE_CLEAR_OLD_DEVICES
 
 /* Define this if the compiler supports __thread for Thread-Local Storage */
 #undef SUPPORT_TLS___THREAD

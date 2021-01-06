@@ -144,7 +144,8 @@ pa_core* pa_core_new(pa_mainloop_api *m, bool shared, bool enable_memfd, size_t 
     c->realtime_priority = 5;
     c->disable_remixing = false;
     c->remixing_use_all_sink_channels = true;
-    c->disable_lfe_remixing = true;
+    c->remixing_produce_lfe = false;
+    c->remixing_consume_lfe = false;
     c->lfe_crossover_freq = 0;
     c->deferred_volume = true;
     c->resample_method = PA_RESAMPLER_SPEEX_FLOAT_BASE + 1;
@@ -157,10 +158,6 @@ pa_core* pa_core_new(pa_mainloop_api *m, bool shared, bool enable_memfd, size_t 
 #ifdef SIGPIPE
     pa_check_signal_is_blocked(SIGPIPE);
 #endif
-
-    pa_core_check_idle(c);
-
-    c->state = PA_CORE_RUNNING;
 
     return c;
 }
@@ -349,6 +346,10 @@ void pa_core_update_default_sink(pa_core *core) {
 
     pa_subscription_post(core, PA_SUBSCRIPTION_EVENT_SERVER | PA_SUBSCRIPTION_EVENT_CHANGE, PA_INVALID_INDEX);
     pa_hook_fire(&core->hooks[PA_CORE_HOOK_DEFAULT_SINK_CHANGED], core->default_sink);
+
+    /* try to move the streams from old_default_sink to the new default_sink conditionally */
+    if (old_default_sink)
+        pa_sink_move_streams_to_default_sink(core, old_default_sink, true);
 }
 
 /* a  < b  ->  return -1
@@ -430,6 +431,10 @@ void pa_core_update_default_source(pa_core *core) {
                 old_default_source ? old_default_source->name : "(unset)", best ? best->name : "(unset)");
     pa_subscription_post(core, PA_SUBSCRIPTION_EVENT_SERVER | PA_SUBSCRIPTION_EVENT_CHANGE, PA_INVALID_INDEX);
     pa_hook_fire(&core->hooks[PA_CORE_HOOK_DEFAULT_SOURCE_CHANGED], core->default_source);
+
+    /* try to move the streams from old_default_source to the new default_source conditionally */
+    if (old_default_source)
+	pa_source_move_streams_to_default_source(core, old_default_source, true);
 }
 
 void pa_core_set_exit_idle_time(pa_core *core, int time) {
@@ -518,6 +523,72 @@ void pa_core_rttime_restart(pa_core *c, pa_time_event *e, pa_usec_t usec) {
 
     c->mainloop->time_restart(e, pa_timeval_rtstore(&tv, usec, true));
 }
+
+void pa_core_move_streams_to_newly_available_preferred_sink(pa_core *c, pa_sink *s) {
+    pa_sink_input *si;
+    uint32_t idx;
+
+    pa_assert(c);
+    pa_assert(s);
+
+    PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
+        if (si->sink == s)
+            continue;
+
+        if (!si->sink)
+            continue;
+
+        /* Skip this sink input if it is connecting a filter sink to
+         * the master */
+        if (si->origin_sink)
+            continue;
+
+        /* It might happen that a stream and a sink are set up at the
+           same time, in which case we want to make sure we don't
+           interfere with that */
+        if (!PA_SINK_INPUT_IS_LINKED(si->state))
+            continue;
+
+        if (pa_safe_streq(si->preferred_sink, s->name))
+            pa_sink_input_move_to(si, s, false);
+    }
+
+}
+
+void pa_core_move_streams_to_newly_available_preferred_source(pa_core *c, pa_source *s) {
+    pa_source_output *so;
+    uint32_t idx;
+
+    pa_assert(c);
+    pa_assert(s);
+
+    PA_IDXSET_FOREACH(so, c->source_outputs, idx) {
+        if (so->source == s)
+            continue;
+
+        if (so->direct_on_input)
+            continue;
+
+        if (!so->source)
+            continue;
+
+        /* Skip this source output if it is connecting a filter source to
+         * the master */
+        if (so->destination_source)
+            continue;
+
+        /* It might happen that a stream and a source are set up at the
+           same time, in which case we want to make sure we don't
+           interfere with that */
+        if (!PA_SOURCE_OUTPUT_IS_LINKED(so->state))
+            continue;
+
+        if (pa_safe_streq(so->preferred_source, s->name))
+            pa_source_output_move_to(so, s, false);
+    }
+
+}
+
 
 /* Helper macro to reduce repetition in pa_suspend_cause_to_string().
  * Parameters:

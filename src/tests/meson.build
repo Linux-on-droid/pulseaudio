@@ -30,6 +30,8 @@ default_tests = [
     [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
   [ 'get-binary-name-test', 'get-binary-name-test.c',
     [ check_dep, libpulse_dep, libpulsecommon_dep ] ],
+  [ 'hashmap-test', 'hashmap-test.c',
+    [ check_dep, libpulse_dep, libpulsecommon_dep ] ],
   [ 'hook-list-test', 'hook-list-test.c',
     [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
   [ 'json-test', 'json-test.c',
@@ -53,7 +55,7 @@ default_tests = [
   [ 'queue-test', 'queue-test.c',
     [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
   [ 'resampler-test', 'resampler-test.c',
-    [            libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
+    [            libpulse_dep, libpulsecommon_dep, libpulsecore_dep, libintl_dep ] ],
   [ 'rtpoll-test', 'rtpoll-test.c',
     [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ] ],
   [ 'smoother-test', 'smoother-test.c',
@@ -143,7 +145,7 @@ echo_cancel_test_sources += module_echo_cancel_orc_sources
 
 norun_tests += [
   [ 'echo-cancel-test', echo_cancel_test_sources,
-    module_echo_cancel_deps + [ libpulse_dep, libpulsecommon_dep, libpulsecore_dep ],
+    module_echo_cancel_deps + [ libpulse_dep, libpulsecommon_dep, libpulsecore_dep, libintl_dep ],
     module_echo_cancel_libs,
     module_echo_cancel_flags + server_c_args + [ '-DPA_MODULE_NAME=module_echo_cancel', '-DECHO_CANCEL_TEST=1' ] ]
 ]
@@ -155,6 +157,13 @@ if cc.has_header_symbol('signal.h', 'SIGXCPU')
     [ 'cpulimit-test2', [ 'cpulimit-test.c', '../daemon/cpulimit.c', '../daemon/cpulimit.h' ],
       [ check_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep ],
       [], ['-DTEST2'] ],
+  ]
+endif
+
+if cc.has_function('pthread_setaffinity_np', dependencies : thread_dep)
+  norun_tests += [
+    [ 'atomic-test', 'atomic-test.c',
+      [ check_dep, libpulsecommon_dep, thread_dep ] ]
   ]
 endif
 

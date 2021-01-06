@@ -58,9 +58,11 @@ static const char* const valid_modargs[] = {
     "format",
     "rate",
     "channels",
+    "channel_map",
     "username",
     "password",
     "latency_msec",
+    "autoreconnect",
     NULL
 };
 

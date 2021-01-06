@@ -113,6 +113,13 @@ void pa_sink_new_data_set_alternate_sample_rate(pa_sink_new_data *data, const ui
     data->alternate_sample_rate = alternate_sample_rate;
 }
 
+void pa_sink_new_data_set_avoid_resampling(pa_sink_new_data *data, bool avoid_resampling) {
+    pa_assert(data);
+
+    data->avoid_resampling_is_set = true;
+    data->avoid_resampling = avoid_resampling;
+}
+
 void pa_sink_new_data_set_volume(pa_sink_new_data *data, const pa_cvolume *volume) {
     pa_assert(data);
 
@@ -271,7 +278,10 @@ pa_sink* pa_sink_new(
     else
         s->alternate_sample_rate = s->core->alternate_sample_rate;
 
-    s->avoid_resampling = data->avoid_resampling;
+    if (data->avoid_resampling_is_set)
+        s->avoid_resampling = data->avoid_resampling;
+    else
+        s->avoid_resampling = s->core->avoid_resampling;
 
     s->inputs = pa_idxset_new(NULL, NULL);
     s->n_corked = 0;
@@ -363,11 +373,11 @@ pa_sink* pa_sink_new(
     pa_source_new_data_set_sample_spec(&source_data, &s->sample_spec);
     pa_source_new_data_set_channel_map(&source_data, &s->channel_map);
     pa_source_new_data_set_alternate_sample_rate(&source_data, s->alternate_sample_rate);
+    pa_source_new_data_set_avoid_resampling(&source_data, s->avoid_resampling);
     source_data.name = pa_sprintf_malloc("%s.monitor", name);
     source_data.driver = data->driver;
     source_data.module = data->module;
     source_data.card = data->card;
-    source_data.avoid_resampling = data->avoid_resampling;
 
     dn = pa_proplist_gets(s->proplist, PA_PROP_DEVICE_DESCRIPTION);
     pa_proplist_setf(source_data.proplist, PA_PROP_DEVICE_DESCRIPTION, "Monitor of %s", dn ? dn : s->name);
@@ -694,8 +704,8 @@ void pa_sink_put(pa_sink* s) {
         pa_cvolume_remap(&s->real_volume, &root_sink->channel_map, &s->channel_map);
     } else
         /* We assume that if the sink implementor changed the default
-         * volume he did so in real_volume, because that is the usual
-         * place where he is supposed to place his changes.  */
+         * volume they did so in real_volume, because that is the usual
+         * place where they are supposed to place their changes.  */
         s->reference_volume = s->real_volume;
 
     s->thread_info.soft_volume = s->soft_volume;
@@ -724,9 +734,14 @@ void pa_sink_put(pa_sink* s) {
     pa_subscription_post(s->core, PA_SUBSCRIPTION_EVENT_SINK | PA_SUBSCRIPTION_EVENT_NEW, s->index);
     pa_hook_fire(&s->core->hooks[PA_CORE_HOOK_SINK_PUT], s);
 
-    /* This function must be called after the PA_CORE_HOOK_SINK_PUT hook,
-     * because module-switch-on-connect needs to know the old default sink */
+    /* It's good to fire the SINK_PUT hook before updating the default sink,
+     * because module-switch-on-connect will set the new sink as the default
+     * sink, and if we were to call pa_core_update_default_sink() before that,
+     * the default sink might change twice, causing unnecessary stream moving. */
+
     pa_core_update_default_sink(s->core);
+
+    pa_core_move_streams_to_newly_available_preferred_sink(s->core, s);
 }
 
 /* Called from main context */
@@ -756,6 +771,9 @@ void pa_sink_unlink(pa_sink* s) {
     pa_idxset_remove_by_data(s->core->sinks, s, NULL);
 
     pa_core_update_default_sink(s->core);
+
+    if (linked && s->core->rescue_streams)
+	pa_sink_move_streams_to_default_sink(s->core, s, false);
 
     if (s->card)
         pa_idxset_remove_by_data(s->card->sinks, s, NULL);
@@ -3930,4 +3948,49 @@ void pa_sink_set_reference_volume_direct(pa_sink *s, const pa_cvolume *volume) {
 
     pa_subscription_post(s->core, PA_SUBSCRIPTION_EVENT_SINK|PA_SUBSCRIPTION_EVENT_CHANGE, s->index);
     pa_hook_fire(&s->core->hooks[PA_CORE_HOOK_SINK_VOLUME_CHANGED], s);
+}
+
+void pa_sink_move_streams_to_default_sink(pa_core *core, pa_sink *old_sink, bool default_sink_changed) {
+    pa_sink_input *i;
+    uint32_t idx;
+
+    pa_assert(core);
+    pa_assert(old_sink);
+
+    if (core->state == PA_CORE_SHUTDOWN)
+        return;
+
+    if (core->default_sink == NULL || core->default_sink->unlink_requested)
+        return;
+
+    if (old_sink == core->default_sink)
+        return;
+
+    PA_IDXSET_FOREACH(i, old_sink->inputs, idx) {
+        if (!PA_SINK_INPUT_IS_LINKED(i->state))
+            continue;
+
+        if (!i->sink)
+            continue;
+
+        /* Don't move sink-inputs which connect filter sinks to their target sinks */
+        if (i->origin_sink)
+            continue;
+
+        /* If default_sink_changed is false, the old sink became unavailable, so all streams must be moved. */
+        if (pa_safe_streq(old_sink->name, i->preferred_sink) && default_sink_changed)
+            continue;
+
+        if (!pa_sink_input_may_move_to(i, core->default_sink))
+            continue;
+
+        if (default_sink_changed)
+            pa_log_info("The sink input %u \"%s\" is moving to %s due to change of the default sink.",
+                        i->index, pa_strnull(pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME)), core->default_sink->name);
+        else
+            pa_log_info("The sink input %u \"%s\" is moving to %s, because the old sink became unavailable.",
+                        i->index, pa_strnull(pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME)), core->default_sink->name);
+
+        pa_sink_input_move_to(i, core->default_sink, false);
+    }
 }

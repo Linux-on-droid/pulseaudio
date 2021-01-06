@@ -384,6 +384,7 @@ typedef struct pa_sink_new_data {
     bool sample_spec_is_set:1;
     bool channel_map_is_set:1;
     bool alternate_sample_rate_is_set:1;
+    bool avoid_resampling_is_set:1;
     bool volume_is_set:1;
     bool muted_is_set:1;
 
@@ -399,6 +400,7 @@ void pa_sink_new_data_set_name(pa_sink_new_data *data, const char *name);
 void pa_sink_new_data_set_sample_spec(pa_sink_new_data *data, const pa_sample_spec *spec);
 void pa_sink_new_data_set_channel_map(pa_sink_new_data *data, const pa_channel_map *map);
 void pa_sink_new_data_set_alternate_sample_rate(pa_sink_new_data *data, const uint32_t alternate_sample_rate);
+void pa_sink_new_data_set_avoid_resampling(pa_sink_new_data *data, bool avoid_resampling);
 void pa_sink_new_data_set_volume(pa_sink_new_data *data, const pa_cvolume *volume);
 void pa_sink_new_data_set_muted(pa_sink_new_data *data, bool mute);
 void pa_sink_new_data_set_port(pa_sink_new_data *data, const char *port);
@@ -557,6 +559,12 @@ int64_t pa_sink_get_latency_within_thread(pa_sink *s, bool allow_negative);
  * extra stuff that pa_sink_set_volume() does. This function simply sets
  * s->reference_volume and fires change notifications. */
 void pa_sink_set_reference_volume_direct(pa_sink *s, const pa_cvolume *volume);
+
+/* When the default_sink is changed or the active_port of a sink is changed to
+ * PA_AVAILABLE_NO, this function is called to move the streams of the old
+ * default_sink or the sink with active_port equals PA_AVAILABLE_NO to the
+ * current default_sink conditionally*/
+void pa_sink_move_streams_to_default_sink(pa_core *core, pa_sink *old_sink, bool default_sink_changed);
 
 /* Verify that we called in IO context (aka 'thread context), or that
  * the sink is not yet set up, i.e. the thread not set up yet. See

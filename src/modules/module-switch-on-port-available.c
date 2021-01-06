@@ -303,6 +303,35 @@ static pa_hook_result_t port_available_hook_callback(pa_core *c, pa_device_port 
         return PA_HOOK_OK;
 
     switch (port->available) {
+    case PA_AVAILABLE_UNKNOWN:
+        /* If a port availability became unknown, let's see if it's part of
+         * some availability group. If it is, it is likely to be a headphone
+         * jack that does not have impedance sensing to detect whether what was
+         * plugged in was a headphone, headset or microphone. In desktop
+         * environments that support it, this will trigger a user choice to
+         * select what kind of device was plugged in. However, let's switch to
+         * the headphone port at least, so that we have don't break
+         * functionality for setups that can't trigger this kind of
+         * interaction.
+         *
+         * We should make this configurable so that users can optionally
+         * override the default to a headset or mic. */
+
+        /* Not part of a group of ports, so likely not a combination port */
+        if (!port->availability_group) {
+            pa_log_debug("Not switching to port %s, its availability is unknown and it's not in any availability group.", port->name);
+            break;
+        }
+
+        /* For no we only switch the headphone port */
+        if (port->direction != PA_DIRECTION_OUTPUT) {
+            pa_log_debug("Not switching to input port %s, its availability is unknown.", port->name);
+            break;
+        }
+
+        switch_to_port(port);
+        break;
+
     case PA_AVAILABLE_YES:
         switch_to_port(port);
         break;
