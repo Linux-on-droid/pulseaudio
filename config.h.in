@@ -12,9 +12,6 @@
 /* Enable memory barriers */
 #undef ATOMIC_ARM_MEMORY_BARRIER_ENABLED
 
-/* Canonical host string. */
-#undef CANONICAL_HOST
-
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */

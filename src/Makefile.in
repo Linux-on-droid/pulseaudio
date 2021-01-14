@@ -994,14 +994,14 @@ am__libpulsecore_@PA_MAJORMINOR@_la_SOURCES_DIST =  \
 	pulsecore/source-output.c pulsecore/source-output.h \
 	pulsecore/source.c pulsecore/source.h pulsecore/start-child.c \
 	pulsecore/start-child.h pulsecore/thread-mq.c \
-	pulsecore/thread-mq.h pulsecore/database.h \
-	pulsecore/svolume_orc.c pulsecore/x11wrap.c \
-	pulsecore/x11wrap.h pulsecore/dbus-shared.c \
-	pulsecore/dbus-shared.h pulsecore/protocol-dbus.c \
-	pulsecore/protocol-dbus.h pulsecore/database-gdbm.c \
-	pulsecore/database-tdb.c pulsecore/database-simple.c \
-	pulsecore/resampler/speex.c pulsecore/resampler/soxr.c \
-	pulsecore/resampler/libsamplerate.c
+	pulsecore/thread-mq.h pulsecore/database.c \
+	pulsecore/database.h pulsecore/svolume_orc.c \
+	pulsecore/x11wrap.c pulsecore/x11wrap.h \
+	pulsecore/dbus-shared.c pulsecore/dbus-shared.h \
+	pulsecore/protocol-dbus.c pulsecore/protocol-dbus.h \
+	pulsecore/database-gdbm.c pulsecore/database-tdb.c \
+	pulsecore/database-simple.c pulsecore/resampler/speex.c \
+	pulsecore/resampler/soxr.c pulsecore/resampler/libsamplerate.c
 @HAVE_ORC_TRUE@am__objects_14 = pulsecore/libpulsecore_@PA_MAJORMINOR@_la-svolume_orc.lo
 @HAVE_X11_TRUE@am__objects_15 = pulsecore/libpulsecore_@PA_MAJORMINOR@_la-x11wrap.lo
 @HAVE_DBUS_TRUE@am__objects_16 = pulsecore/libpulsecore_@PA_MAJORMINOR@_la-dbus-shared.lo \
@@ -1069,6 +1069,7 @@ am_libpulsecore_@PA_MAJORMINOR@_la_OBJECTS = pulsecore/filter/libpulsecore_@PA_M
 	pulsecore/libpulsecore_@PA_MAJORMINOR@_la-source.lo \
 	pulsecore/libpulsecore_@PA_MAJORMINOR@_la-start-child.lo \
 	pulsecore/libpulsecore_@PA_MAJORMINOR@_la-thread-mq.lo \
+	pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo \
 	$(am__objects_14) $(am__objects_15) $(am__objects_16) \
 	$(am__objects_17) $(am__objects_18) $(am__objects_19) \
 	$(am__objects_20) $(am__objects_21) $(am__objects_22)
@@ -3007,6 +3008,7 @@ am__depfiles_remade = daemon/$(DEPDIR)/cpulimit_test-cpulimit.Po \
 	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-gdbm.Plo \
 	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-simple.Plo \
 	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-tdb.Plo \
+	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Plo \
 	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-dbus-shared.Plo \
 	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-device-port.Plo \
 	pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-hook-list.Plo \
@@ -4627,10 +4629,11 @@ libpulsecore_@PA_MAJORMINOR@_la_SOURCES =  \
 	pulsecore/source-output.c pulsecore/source-output.h \
 	pulsecore/source.c pulsecore/source.h pulsecore/start-child.c \
 	pulsecore/start-child.h pulsecore/thread-mq.c \
-	pulsecore/thread-mq.h pulsecore/database.h $(am__append_54) \
-	$(am__append_57) $(am__append_60) $(am__append_63) \
-	$(am__append_66) $(am__append_69) $(am__append_70) \
-	$(am__append_73) $(am__append_76)
+	pulsecore/thread-mq.h pulsecore/database.c \
+	pulsecore/database.h $(am__append_54) $(am__append_57) \
+	$(am__append_60) $(am__append_63) $(am__append_66) \
+	$(am__append_69) $(am__append_70) $(am__append_73) \
+	$(am__append_76)
 libpulsecore_@PA_MAJORMINOR@_la_CFLAGS = $(AM_CFLAGS) $(SERVER_CFLAGS) \
 	$(LIBSNDFILE_CFLAGS) $(WINSOCK_CFLAGS) $(am__append_55) \
 	$(am__append_58) $(am__append_61) $(am__append_64) \
@@ -6230,6 +6233,8 @@ pulsecore/libpulsecore_@PA_MAJORMINOR@_la-start-child.lo:  \
 	pulsecore/$(am__dirstamp) pulsecore/$(DEPDIR)/$(am__dirstamp)
 pulsecore/libpulsecore_@PA_MAJORMINOR@_la-thread-mq.lo:  \
 	pulsecore/$(am__dirstamp) pulsecore/$(DEPDIR)/$(am__dirstamp)
+pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo:  \
+	pulsecore/$(am__dirstamp) pulsecore/$(DEPDIR)/$(am__dirstamp)
 pulsecore/libpulsecore_@PA_MAJORMINOR@_la-svolume_orc.lo:  \
 	pulsecore/$(am__dirstamp) pulsecore/$(DEPDIR)/$(am__dirstamp)
 pulsecore/libpulsecore_@PA_MAJORMINOR@_la-x11wrap.lo:  \
@@ -7741,6 +7746,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-gdbm.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-simple.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-tdb.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-dbus-shared.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-device-port.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-hook-list.Plo@am__quote@ # am--include-marker
@@ -9148,6 +9154,13 @@ pulsecore/libpulsecore_@PA_MAJORMINOR@_la-thread-mq.lo: pulsecore/thread-mq.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pulsecore/thread-mq.c' object='pulsecore/libpulsecore_@PA_MAJORMINOR@_la-thread-mq.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpulsecore_@PA_MAJORMINOR@_la_CFLAGS) $(CFLAGS) -c -o pulsecore/libpulsecore_@PA_MAJORMINOR@_la-thread-mq.lo `test -f 'pulsecore/thread-mq.c' || echo '$(srcdir)/'`pulsecore/thread-mq.c
+
+pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo: pulsecore/database.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpulsecore_@PA_MAJORMINOR@_la_CFLAGS) $(CFLAGS) -MT pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo -MD -MP -MF pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Tpo -c -o pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo `test -f 'pulsecore/database.c' || echo '$(srcdir)/'`pulsecore/database.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Tpo pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pulsecore/database.c' object='pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpulsecore_@PA_MAJORMINOR@_la_CFLAGS) $(CFLAGS) -c -o pulsecore/libpulsecore_@PA_MAJORMINOR@_la-database.lo `test -f 'pulsecore/database.c' || echo '$(srcdir)/'`pulsecore/database.c
 
 pulsecore/libpulsecore_@PA_MAJORMINOR@_la-svolume_orc.lo: pulsecore/svolume_orc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpulsecore_@PA_MAJORMINOR@_la_CFLAGS) $(CFLAGS) -MT pulsecore/libpulsecore_@PA_MAJORMINOR@_la-svolume_orc.lo -MD -MP -MF pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-svolume_orc.Tpo -c -o pulsecore/libpulsecore_@PA_MAJORMINOR@_la-svolume_orc.lo `test -f 'pulsecore/svolume_orc.c' || echo '$(srcdir)/'`pulsecore/svolume_orc.c
@@ -12389,6 +12402,7 @@ distclean: distclean-am
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-gdbm.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-simple.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-tdb.Plo
+	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-dbus-shared.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-device-port.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-hook-list.Plo
@@ -12851,6 +12865,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-gdbm.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-simple.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database-tdb.Plo
+	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-database.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-dbus-shared.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-device-port.Plo
 	-rm -f pulsecore/$(DEPDIR)/libpulsecore_@PA_MAJORMINOR@_la-hook-list.Plo
