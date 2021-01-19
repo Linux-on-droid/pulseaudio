@@ -1,3 +1,24 @@
+pulseaudio (14.2-1) unstable; urgency=medium
+
+  [ Helmut Grohne ]
+  * Reduce Build-Depends
+    * Annotate check with <!nocheck>.
+    * Drop libsamplerate0-dev: It is deprecated and no longer enabled when
+      present. Given the lack of --enable-libsamplerate, it wasn't enabled
+      in a while.
+    * Drop libjson-c-dev: Since 10.0, pulseaudio has its own json parser.
+    (Closes: #979281)
+
+  [ Felipe Sateler ]
+  * Make pulsedsp use $LIB RPATH.
+    This way, if libpulsedsp is installed for both amd64 and i386, the
+    linker knows which one to use automatically.
+    Some extra escaping is necessary to prevent expansion via multiple
+    make/shell layers (Closes: #845802)
+  * New upstream version 14.2
+
+ -- Felipe Sateler <fsateler@debian.org>  Tue, 19 Jan 2021 14:31:45 -0300
+
 pulseaudio (14.1-1) unstable; urgency=medium
 
   * New bugfix version
