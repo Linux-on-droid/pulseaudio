@@ -1,3 +1,16 @@
+pulseaudio (14.2-2) unstable; urgency=medium
+
+  * Stop installing the console kit module.
+    ConsoleKit was removed from debian, so it no longer brings any purpose
+    (Closes: #854327)
+  * Fix test failure in ppc64el.
+    Thanks to Faidon Liambotis <paravoid@debian.org> for the patch.
+    (Closes: #982740)
+  * Move the home directory of pulseaudio user to /run/pulse
+    /var/run is a symlink to /run so let's just use the canonical place
+
+ -- Felipe Sateler <fsateler@debian.org>  Fri, 26 Feb 2021 19:51:50 -0300
+
 pulseaudio (14.2-1) unstable; urgency=medium
 
   [ Helmut Grohne ]
