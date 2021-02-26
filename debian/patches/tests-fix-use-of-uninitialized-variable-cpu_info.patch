@@ -1,0 +1,34 @@
+From: Faidon Liambotis <paravoid@debian.org>
+Date: Fri, 26 Feb 2021 03:23:52 +0200
+Subject: tests: fix use of uninitialized variable cpu_info
+
+On cpu-volume-test, cpu_info is initialized only on i386/amd64 systems,
+and otherwise passed on to pa_cpu_init_orc() uninitialized.
+
+If one was unlucky enough, they could end up with cpu_info.cpu_type ==
+PA_CPU_X86 on a non-x86 system, and use and test the Orc codepath
+without that being functional, and thus with the test failing.
+
+This has been observed in the wild on the ppc64el Debian buildds. See
+Debian bug #982740 for more context.
+
+Define cpu_info here in the same way as in other tests.
+
+Signed-off-by: Faidon Liambotis <paravoid@debian.org>
+---
+ src/tests/cpu-volume-test.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/tests/cpu-volume-test.c b/src/tests/cpu-volume-test.c
+index 535488e..5de8c83 100644
+--- a/src/tests/cpu-volume-test.c
++++ b/src/tests/cpu-volume-test.c
+@@ -187,7 +187,7 @@ END_TEST
+ 
+ START_TEST (svolume_orc_test) {
+     pa_do_volume_func_t orig_func, orc_func;
+-    pa_cpu_info cpu_info;
++    pa_cpu_info cpu_info = { PA_CPU_UNDEFINED, {}, false };
+     int i, j;
+ 
+ #if defined (__i386__) || defined (__amd64__)
