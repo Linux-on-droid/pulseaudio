@@ -9,6 +9,7 @@ usr/bin/padsp
 usr/bin/pax11publish
 usr/bin/pasuspender
 usr/bin/pa-info
+usr/share/bash-completion/completions/*
 usr/share/man/man1/pacat.1
 usr/share/man/man1/pacmd.1
 usr/share/man/man1/pactl.1
@@ -19,3 +20,4 @@ usr/share/man/man1/parec.1
 usr/share/man/man1/parecord.1
 usr/share/man/man1/pasuspender.1
 usr/share/man/man1/pax11publish.1
+usr/share/zsh
