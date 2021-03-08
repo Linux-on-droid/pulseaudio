@@ -12,38 +12,48 @@ include /usr/share/dpkg/default.mk
 export XDG_RUNTIME_DIR = $(CURDIR)/debian/tmp/tmp/xdgruntimedir
 export CK_TIMEOUT_MULTIPLIER = 0
 
+ifeq ($(words $(sort $(filter stage1,$(DEB_BUILD_PROFILES)))),1)
+  bluez = false
+else
+  bluez = true
+endif
+
 # Libs should be in the multi-arch path, but the modules should be in the
 # normal directory as pulseaudio is foreign
-DEB_CONFIGURE_EXTRA_FLAGS = --enable-x11 --disable-hal-compat \
-  --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
-  --with-module-dir=\$${prefix}/lib/pulse-$(DEB_VERSION_UPSTREAM)/modules \
-  --with-zsh-completion-dir=\$${datadir}/zsh/vendor-completions \
-  --with-bash-completion-dir=\$${datadir}/bash-completion/completions \
-  --with-systemduserunitdir=\$${prefix}/lib/systemd/user \
-  --disable-bluez4 \
-  --disable-esound \
-  --enable-gsettings \
-  --disable-gstreamer \
-  --disable-gconf \
-  --with-pulsedsp-location=/usr/\\\\'$$$$'LIB/pulseaudio \
-  --enable-stream-restore-clear-old-devices
+DEB_MESON_OPTIONS = \
+  -Dx11=enabled \
+  -Dhal-compat=false \
+  -Dgsettings=enabled \
+  -Dgstreamer=disabled \
+  -Dbluez5=$(bluez) \
+  -Dstream-restore-clear-old-devices=true \
+  -Dzshcompletiondir=/usr/share/zsh/vendor-completions \
+  -Dsystemduserunitdir=/usr/lib/systemd/user \
+  -Dmodlibexecdir=/usr/lib/pulse-$(DEB_VERSION_UPSTREAM)/modules \
+  -Dpulsedsp-location=/usr/\\\\'$$$$'LIB/pulseaudio \
+  -Dgtk=enabled \
+  -Dflib=enabled \
+  -Dfftw=enabled \
+  -Djack=enabled \
+  -Dopenssl=enabled \
+  -Dipv6=true \
+  -Dsoxr=enabled \
+  -Dsystemd=enabled \
+  -Dudev=enabled \
+  -Dstream-restore-clear-old-devices=true \
+
 
 PA_MAJORMINOR = $(shell echo $(DEB_VERSION_UPSTREAM) | sed -r -e 's/^([0-9]+\.[0-9]+).*/\1/')
-
-ifeq ($(words $(sort $(filter stage1,$(DEB_BUILD_PROFILES)))),1)
-  DEB_CONFIGURE_EXTRA_FLAGS += --disable-bluez5
-endif
 
 %:
 	dh $@
 
 
 override_dh_auto_configure:
-	dh_auto_configure -- $(DEB_CONFIGURE_EXTRA_FLAGS)
+	dh_auto_configure -- $(DEB_MESON_OPTIONS)
 
 override_dh_auto_install:
 	dh_auto_install
-	find debian/tmp -name "*.la" -delete
 	install -d $(CURDIR)/debian/tmp/usr/share/apport/package-hooks
 	cp $(CURDIR)/debian/apport-hook.py $(CURDIR)/debian/tmp/usr/share/apport/package-hooks/source_pulseaudio.py
 ifeq ($(DEB_HOST_ARCH_OS),linux)
