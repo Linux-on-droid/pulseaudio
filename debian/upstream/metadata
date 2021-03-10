@@ -1,3 +1,5 @@
 Name: pulseaudio
+Bug-Database: https://gitlab.freedesktop.org/pulseaudio/pulseaudio/issues
+Bug-Submit: https://gitlab.freedesktop.org/pulseaudio/pulseaudio/issues/new
 Repository: https://gitlab.freedesktop.org/pulseaudio/pulseaudio.git
 Repository-Browse: https://gitlab.freedesktop.org/pulseaudio/pulseaudio
