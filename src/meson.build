@@ -38,7 +38,6 @@ libpulsecommon_sources = [
   'pulsecore/memblock.c',
   'pulsecore/memblockq.c',
   'pulsecore/memchunk.c',
-  'pulsecore/mutex-posix.c',
   'pulsecore/native-common.c',
   'pulsecore/once.c',
   'pulsecore/packet.c',
@@ -55,7 +54,6 @@ libpulsecommon_sources = [
   'pulsecore/random.c',
   'pulsecore/srbchannel.c',
   'pulsecore/sample-util.c',
-  'pulsecore/semaphore-posix.c',
   'pulsecore/shm.c',
   'pulsecore/bitset.c',
   'pulsecore/socket-client.c',
@@ -64,7 +62,6 @@ libpulsecommon_sources = [
   'pulsecore/strbuf.c',
   'pulsecore/strlist.c',
   'pulsecore/tagstruct.c',
-  'pulsecore/thread-posix.c',
   'pulsecore/time-smoother.c',
   'pulsecore/tokenizer.c',
   'pulsecore/usergroup.c',
@@ -175,6 +172,20 @@ if x11_dep.found()
 endif
 
 # FIXME: Do non-POSIX thread things
+if host_machine.system() == 'windows'
+  libpulsecommon_sources += [
+    'pulsecore/mutex-win32.c',
+    'pulsecore/poll-win32.c',
+    'pulsecore/semaphore-win32.c',
+    'pulsecore/thread-win32.c',
+  ]
+else
+  libpulsecommon_sources += [
+    'pulsecore/mutex-posix.c',
+    'pulsecore/semaphore-posix.c',
+    'pulsecore/thread-posix.c'
+  ]
+endif
 # FIXME: Do SIMD things
 
 libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
@@ -188,15 +199,18 @@ libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
   dependencies : [
     libm_dep, thread_dep, dl_dep, shm_dep, iconv_dep, sndfile_dep, dbus_dep,
     x11_dep, libsystemd_dep, glib_dep, gtk_dep, asyncns_dep, libintl_dep,
+    platform_dep, tcpwrap_dep, platform_socket_dep, execinfo_dep,
   ],
   implicit_include_directories : false)
 
 libpulsecommon_dep = declare_dependency(link_with: libpulsecommon)
 
 subdir('pulse')
-subdir('pulsecore')
-subdir('daemon')
-subdir('modules')
+if get_option('daemon')
+  subdir('pulsecore')
+  subdir('daemon')
+  subdir('modules')
+endif
 if get_option('tests')
   subdir('tests')
 endif

@@ -28,6 +28,8 @@
 #include <unistd.h>
 
 #include <jack/jack.h>
+#include <jack/metadata.h>
+#include <jack/uuid.h>
 
 #include <pulse/util.h>
 #include <pulse/xmalloc.h>
@@ -59,6 +61,8 @@ PA_MODULE_USAGE(
         "connect=<connect ports?>");
 
 #define DEFAULT_SOURCE_NAME "jack_in"
+#define METADATA_TYPE_INT "http://www.w3.org/2001/XMLSchema#int"
+#define METADATA_KEY_ORDER "http://jackaudio.org/metadata/order"
 
 struct userdata {
     pa_core *core;
@@ -249,6 +253,8 @@ int pa__init(pa_module*m) {
     const char **ports = NULL, **p;
     pa_source_new_data data;
     jack_latency_range_t r;
+    jack_uuid_t port_uuid;
+    char port_order[4];
     size_t n;
 
     pa_assert(m);
@@ -331,6 +337,17 @@ int pa__init(pa_module*m) {
             pa_log("jack_port_register() failed.");
             goto fail;
         }
+
+        /* Set order of ports as JACK metadata, if possible. */
+        /* See: https://jackaudio.org/api/group__Metadata.html */
+        port_uuid = jack_port_uuid(u->port[i]);
+
+        if (!jack_uuid_empty(port_uuid)) {
+            if (snprintf(port_order, 4, "%d", i+1) >= 4)
+                pa_log("Port order metadata value > 999 truncated.");
+            if (jack_set_property(u->client, port_uuid, METADATA_KEY_ORDER, port_order, METADATA_TYPE_INT) != 0)
+                pa_log("jack_set_property() failed.");
+        }
     }
 
     pa_source_new_data_init(&data);
@@ -342,7 +359,7 @@ int pa__init(pa_module*m) {
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_API, "jack");
     if (server_name)
         pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, server_name);
-    pa_proplist_setf(data.proplist, PA_PROP_DEVICE_DESCRIPTION, "Jack source (%s)", jack_get_client_name(u->client));
+    pa_proplist_setf(data.proplist, PA_PROP_DEVICE_DESCRIPTION, "JACK source (%s)", jack_get_client_name(u->client));
     pa_proplist_sets(data.proplist, "jack.client_name", jack_get_client_name(u->client));
 
     if (pa_modargs_get_proplist(ma, "source_properties", data.proplist, PA_UPDATE_REPLACE) < 0) {

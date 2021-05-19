@@ -19,12 +19,14 @@ executable('pacat',
   c_args : pa_c_args,
 )
 
-foreach alias : pacat_aliases
-  # FIXME How to handle extension (.exe on windows)?
-  dst = join_paths(bindir, alias)
-  cmd = 'ln -fs @0@ $DESTDIR@1@'.format('pacat', dst)
-  meson.add_install_script('sh', '-c', cmd)
-endforeach
+# Windows doesn't support symbolic links.
+if host_machine.system() != 'windows'
+  foreach alias : pacat_aliases
+    dst = join_paths(bindir, alias)
+    cmd = 'ln -fs @0@ $DESTDIR@1@'.format('pacat', dst)
+    meson.add_install_script('sh', '-c', cmd)
+  endforeach
+endif
 
 pactl_sources = [
   'pactl.c',
@@ -40,33 +42,37 @@ executable('pactl',
   c_args : pa_c_args,
 )
 
-pasuspender_sources = [
-  'pasuspender.c',
-]
+if get_option('daemon')
+  if host_machine.system() != 'windows'
+    pasuspender_sources = [
+      'pasuspender.c',
+    ]
 
-executable('pasuspender',
-  pasuspender_sources,
-  install: true,
-  install_rpath : privlibdir,
-  include_directories : [configinc, topinc],
-  link_with : [libpulsecommon, libpulse],
-  dependencies: [libintl_dep],
-  c_args : pa_c_args,
-)
+    executable('pasuspender',
+      pasuspender_sources,
+      install: true,
+      install_rpath : privlibdir,
+      include_directories : [configinc, topinc],
+      link_with : [libpulsecommon, libpulse],
+      dependencies: [libintl_dep],
+      c_args : pa_c_args,
+    )
 
-pacmd_sources = [
-  'pacmd.c',
-]
+    pacmd_sources = [
+      'pacmd.c',
+    ]
 
-executable('pacmd',
-  pacmd_sources,
-  install: true,
-  install_rpath : privlibdir,
-  include_directories : [configinc, topinc],
-  link_with : [libpulsecommon, libpulse],
-  dependencies: [libintl_dep],
-  c_args : pa_c_args,
-)
+    executable('pacmd',
+      pacmd_sources,
+      install: true,
+      install_rpath : privlibdir,
+      include_directories : [configinc, topinc],
+      link_with : [libpulsecommon, libpulse],
+      dependencies: [libintl_dep],
+      c_args : pa_c_args,
+    )
+  endif
+endif
 
 if x11_dep.found()
   pax11publish_sources = [
@@ -84,7 +90,7 @@ if x11_dep.found()
   )
 endif
 
-if cc.has_header('sys/soundcard.h')
+if cdata.has('HAVE_OSS_WRAPPER')
   libpulsecommon_sources = [
     'padsp.c',
   ]
