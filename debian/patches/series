@@ -1,1 +1,2 @@
 disable-autospawn.patch
+Do-not-link-pulsecommon-with-Glib-or-GTK.patch

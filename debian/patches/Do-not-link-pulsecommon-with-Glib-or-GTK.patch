@@ -1,0 +1,25 @@
+From: Pulseaudio maintenance team
+ <pkg-pulseaudio-devel@lists.alioth.debian.org>
+Date: Wed, 19 May 2021 00:07:31 -0400
+Subject: Do not link pulsecommon with Glib or GTK
+
+Autotools didn't do it, and the code marks the symbols as weak,
+suggesting that a hard dependency was not required
+---
+ src/meson.build | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/meson.build b/src/meson.build
+index d8ecd86..69319c2 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -198,7 +198,8 @@ libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
+   install_dir : privlibdir,
+   dependencies : [
+     libm_dep, thread_dep, dl_dep, shm_dep, iconv_dep, sndfile_dep, dbus_dep,
+-    x11_dep, libsystemd_dep, glib_dep, gtk_dep, asyncns_dep, libintl_dep,
++    x11_dep, libsystemd_dep, glib_dep.partial_dependency(compile_args: true),
++    gtk_dep.partial_dependency(compile_args: true), asyncns_dep, libintl_dep,
+     platform_dep, tcpwrap_dep, platform_socket_dep, execinfo_dep,
+   ],
+   implicit_include_directories : false)
