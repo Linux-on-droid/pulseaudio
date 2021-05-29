@@ -23,34 +23,119 @@
 
 #include <pulsecore/core.h>
 #include <pulsecore/core-util.h>
+#if defined(HAVE_GSTAPTX) || defined(HAVE_GSTLDAC)
+#include <gst/gst.h>
+#endif
 
 #include "a2dp-codec-util.h"
 
-extern const pa_a2dp_codec pa_a2dp_codec_sbc;
+extern const pa_bt_codec pa_bt_codec_msbc;
+extern const pa_bt_codec pa_bt_codec_cvsd;
 
-/* This is list of supported codecs. Their order is important.
- * Codec with higher index has higher priority. */
-const pa_a2dp_codec *pa_a2dp_codecs[] = {
-    &pa_a2dp_codec_sbc,
+/* List of HSP/HFP codecs.
+ */
+static const pa_bt_codec *pa_hf_codecs[] = {
+    &pa_bt_codec_cvsd,
+    &pa_bt_codec_msbc,
 };
 
-unsigned int pa_bluetooth_a2dp_codec_count(void) {
-    return PA_ELEMENTSOF(pa_a2dp_codecs);
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_sbc;
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_sbc_xq_453;
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_sbc_xq_512;
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_sbc_xq_552;
+#ifdef HAVE_GSTAPTX
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_aptx;
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_aptx_hd;
+#endif
+#ifdef HAVE_GSTLDAC
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_ldac_eqmid_hq;
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_ldac_eqmid_sq;
+extern const pa_a2dp_endpoint_conf pa_a2dp_endpoint_conf_ldac_eqmid_mq;
+#endif
+
+/* This is list of supported codecs. Their order is important.
+ * Codec with lower index has higher priority. */
+static const pa_a2dp_endpoint_conf *pa_a2dp_endpoint_configurations[] = {
+#ifdef HAVE_GSTLDAC
+    &pa_a2dp_endpoint_conf_ldac_eqmid_hq,
+    &pa_a2dp_endpoint_conf_ldac_eqmid_sq,
+    &pa_a2dp_endpoint_conf_ldac_eqmid_mq,
+#endif
+#ifdef HAVE_GSTAPTX
+    &pa_a2dp_endpoint_conf_aptx_hd,
+    &pa_a2dp_endpoint_conf_aptx,
+#endif
+    &pa_a2dp_endpoint_conf_sbc,
+    &pa_a2dp_endpoint_conf_sbc_xq_453,
+    &pa_a2dp_endpoint_conf_sbc_xq_512,
+    &pa_a2dp_endpoint_conf_sbc_xq_552,
+};
+
+unsigned int pa_bluetooth_a2dp_endpoint_conf_count(void) {
+    return PA_ELEMENTSOF(pa_a2dp_endpoint_configurations);
 }
 
-const pa_a2dp_codec *pa_bluetooth_a2dp_codec_iter(unsigned int i) {
-    pa_assert(i < pa_bluetooth_a2dp_codec_count());
-    return pa_a2dp_codecs[i];
+const pa_a2dp_endpoint_conf *pa_bluetooth_a2dp_endpoint_conf_iter(unsigned int i) {
+    pa_assert(i < pa_bluetooth_a2dp_endpoint_conf_count());
+    return pa_a2dp_endpoint_configurations[i];
 }
 
-const pa_a2dp_codec *pa_bluetooth_get_a2dp_codec(const char *name) {
+unsigned int pa_bluetooth_hf_codec_count(void) {
+    return PA_ELEMENTSOF(pa_hf_codecs);
+}
+
+const pa_bt_codec *pa_bluetooth_hf_codec_iter(unsigned int i) {
+    pa_assert(i < pa_bluetooth_hf_codec_count());
+    return pa_hf_codecs[i];
+}
+
+const pa_bt_codec *pa_bluetooth_get_hf_codec(const char *name) {
     unsigned int i;
-    unsigned int count = pa_bluetooth_a2dp_codec_count();
 
-    for (i = 0; i < count; i++) {
-        if (pa_streq(pa_a2dp_codecs[i]->name, name))
-            return pa_a2dp_codecs[i];
+    for (i = 0; i < PA_ELEMENTSOF(pa_hf_codecs); ++i) {
+        if (pa_streq(pa_hf_codecs[i]->name, name))
+            return pa_hf_codecs[i];
     }
 
     return NULL;
+}
+
+const pa_a2dp_endpoint_conf *pa_bluetooth_get_a2dp_endpoint_conf(const char *name) {
+    unsigned int i;
+    unsigned int count = pa_bluetooth_a2dp_endpoint_conf_count();
+
+    for (i = 0; i < count; i++) {
+        if (pa_streq(pa_a2dp_endpoint_configurations[i]->bt_codec.name, name))
+            return pa_a2dp_endpoint_configurations[i];
+    }
+
+    return NULL;
+}
+
+void pa_bluetooth_a2dp_codec_gst_init(void) {
+#if defined(HAVE_GSTAPTX) || defined(HAVE_GSTLDAC)
+    GError *error = NULL;
+
+    if (!gst_init_check(NULL, NULL, &error)) {
+        pa_log_error("Could not initialise GStreamer: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+    pa_log_info("GStreamer initialisation done");
+#endif
+}
+
+bool pa_bluetooth_a2dp_codec_is_available(const pa_a2dp_codec_id *id, bool is_a2dp_sink) {
+    unsigned int i;
+    unsigned int count = pa_bluetooth_a2dp_endpoint_conf_count();
+    const pa_a2dp_endpoint_conf *conf;
+
+    for (i = 0; i < count; i++) {
+        conf = pa_bluetooth_a2dp_endpoint_conf_iter(i);
+        if (memcmp(id, &conf->id, sizeof(pa_a2dp_codec_id)) == 0
+                && conf->can_be_supported(is_a2dp_sink))
+            return true;
+    }
+
+    return false;
 }

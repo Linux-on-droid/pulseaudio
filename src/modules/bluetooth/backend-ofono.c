@@ -43,12 +43,12 @@
 #define HF_AUDIO_AGENT_XML                                          \
     DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE                       \
     "<node>"                                                        \
-    "  <interface name=\"org.freedesktop.DBus.Introspectable\">"    \
+    "  <interface name=\"" DBUS_INTERFACE_INTROSPECTABLE "\">"      \
     "    <method name=\"Introspect\">"                              \
     "      <arg direction=\"out\" type=\"s\" />"                    \
     "    </method>"                                                 \
     "  </interface>"                                                \
-    "  <interface name=\"org.ofono.HandsfreeAudioAgent\">"          \
+    "  <interface name=\"" HF_AUDIO_AGENT_INTERFACE "\">"           \
     "    <method name=\"Release\">"                                 \
     "    </method>"                                                 \
     "    <method name=\"NewConnection\">"                           \
@@ -82,6 +82,61 @@ struct pa_bluetooth_backend {
 
     PA_LLIST_HEAD(pa_dbus_pending, pending);
 };
+
+static ssize_t sco_transport_write(pa_bluetooth_transport *t, int fd, const void* buffer, size_t size, size_t write_mtu) {
+    ssize_t l = 0;
+    size_t written = 0;
+    size_t write_size;
+
+    pa_assert(t);
+
+    /* since SCO setup is symmetric, fix write MTU to be size of last read packet */
+    if (t->last_read_size)
+        write_mtu = PA_MIN(t->last_read_size, write_mtu);
+
+    /* if encoder buffer has less data than required to make complete packet */
+    if (size < write_mtu)
+        return 0;
+
+    /* write out MTU sized chunks only */
+    while (written < size) {
+        write_size = PA_MIN(size - written, write_mtu);
+        if (write_size < write_mtu)
+            break;
+        l = pa_write(fd, buffer + written, write_size, &t->stream_write_type);
+        if (l < 0)
+            break;
+        written += l;
+    }
+
+    if (l < 0) {
+        if (errno == EAGAIN) {
+            /* Hmm, apparently the socket was not writable, give up for now */
+            pa_log_debug("Got EAGAIN on write() after POLLOUT, probably there is a temporary connection loss.");
+            /* Drain write buffer */
+            written = size;
+        } else if (errno == EINVAL && t->last_read_size == 0) {
+            /* Likely write_link_mtu is still wrong, retry after next successful read */
+            pa_log_debug("got write EINVAL, next successful read should fix MTU");
+            /* Drain write buffer */
+            written = size;
+        } else {
+            pa_log_error("Failed to write data to socket: %s", pa_cstrerror(errno));
+            /* Report error from write call */
+            return -1;
+        }
+    }
+
+    /* if too much data left discard it all */
+    if (size - written >= write_mtu) {
+        pa_log_warn("Wrote memory block to socket only partially! %lu written, discarding pending write size %lu larger than write_mtu %lu",
+                    written, size, write_mtu);
+        /* Drain write buffer */
+        written = size;
+    }
+
+    return written;
+}
 
 static pa_dbus_pending* hf_dbus_send_and_add_to_pending(pa_bluetooth_backend *backend, DBusMessage *m,
                                                     DBusPendingCallNotifyFunction func, void *call_data) {
@@ -165,14 +220,21 @@ static int card_acquire(struct hf_audio_card *card) {
                                       DBUS_TYPE_BYTE, &codec,
                                       DBUS_TYPE_INVALID) == true)) {
         dbus_message_unref(r);
-        if (codec != HFP_AUDIO_CODEC_CVSD) {
+
+        if (codec == HFP_AUDIO_CODEC_CVSD) {
+            pa_bluetooth_transport_reconfigure(card->transport, pa_bluetooth_get_hf_codec("CVSD"), sco_transport_write, NULL);
+        } else if (codec == HFP_AUDIO_CODEC_MSBC) {
+            /* oFono is expected to set up socket BT_VOICE_TRANSPARENT option */
+            pa_bluetooth_transport_reconfigure(card->transport, pa_bluetooth_get_hf_codec("mSBC"), sco_transport_write, NULL);
+        } else {
+            pa_assert_fp(codec != HFP_AUDIO_CODEC_CVSD && codec != HFP_AUDIO_CODEC_MSBC);
             pa_log_error("Invalid codec: %u", codec);
             /* shutdown to make sure connection is dropped immediately */
             shutdown(fd, SHUT_RDWR);
             close(fd);
             return -1;
         }
-        card->transport->codec = codec;
+
         card->fd = fd;
         return 0;
     }
@@ -267,11 +329,14 @@ static int hf_audio_agent_transport_acquire(pa_bluetooth_transport *t, bool opti
      * the Bluetooth adapter and (for adapters in the USB bus) the MxPS
      * value from the Isoc USB endpoint in use by btusb and should be
      * made available to userspace by the Bluetooth kernel subsystem.
-     * Meanwhile the empiric value 48 will be used. */
+     *
+     * Set initial MTU to max size which is reported to be working (60 bytes)
+     * See also pa_bluetooth_transport::last_read_size handling.
+     */
     if (imtu)
-        *imtu = 48;
+        *imtu = 60;
     if (omtu)
-        *omtu = 48;
+        *omtu = 60;
 
     err = socket_accept(card->fd);
     if (err < 0) {
@@ -303,7 +368,7 @@ static void hf_audio_agent_card_found(pa_bluetooth_backend *backend, const char 
     const char *key, *value;
     struct hf_audio_card *card;
     pa_bluetooth_device *d;
-    pa_bluetooth_profile_t p = PA_BLUETOOTH_PROFILE_HEADSET_AUDIO_GATEWAY;
+    pa_bluetooth_profile_t p = PA_BLUETOOTH_PROFILE_HFP_AG;
 
     pa_assert(backend);
     pa_assert(path);
@@ -337,7 +402,7 @@ static void hf_audio_agent_card_found(pa_bluetooth_backend *backend, const char 
             card->local_address = pa_xstrdup(value);
         } else if (pa_streq(key, "Type")) {
             if (pa_streq(value, "gateway"))
-                p = PA_BLUETOOTH_PROFILE_HEADSET_HEAD_UNIT;
+                p = PA_BLUETOOTH_PROFILE_HFP_HF;
         }
 
         pa_log_debug("%s: %s", key, value);
@@ -347,7 +412,7 @@ static void hf_audio_agent_card_found(pa_bluetooth_backend *backend, const char 
 
     d = pa_bluetooth_discovery_get_device_by_address(backend->discovery, card->remote_address, card->local_address);
     if (!d) {
-        pa_log_error("Device doesnt exist for %s", path);
+        pa_log_error("Device doesn't exist for %s", path);
         goto fail;
     }
 
@@ -355,6 +420,7 @@ static void hf_audio_agent_card_found(pa_bluetooth_backend *backend, const char 
     card->transport->acquire = hf_audio_agent_transport_acquire;
     card->transport->release = hf_audio_agent_transport_release;
     card->transport->userdata = card;
+    pa_bluetooth_transport_reconfigure(card->transport, pa_bluetooth_get_hf_codec("CVSD"), sco_transport_write, NULL);
 
     pa_bluetooth_transport_put(card->transport);
     pa_hashmap_put(backend->cards, card->path, card);
@@ -482,6 +548,8 @@ static void hf_audio_agent_register(pa_bluetooth_backend *hf) {
     pa_assert_se(m = dbus_message_new_method_call(OFONO_SERVICE, "/", HF_AUDIO_MANAGER_INTERFACE, "Register"));
 
     codecs[ncodecs++] = HFP_AUDIO_CODEC_CVSD;
+    if (pa_bluetooth_discovery_get_enable_msbc(hf->discovery))
+        codecs[ncodecs++] = HFP_AUDIO_CODEC_MSBC;
 
     pa_assert_se(dbus_message_append_args(m, DBUS_TYPE_OBJECT_PATH, &path, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &pcodecs, ncodecs,
                                           DBUS_TYPE_INVALID));
@@ -515,12 +583,12 @@ static DBusHandlerResult filter_cb(DBusConnection *bus, DBusMessage *m, void *da
     pa_assert(backend);
 
     sender = dbus_message_get_sender(m);
-    if (!pa_safe_streq(backend->ofono_bus_id, sender) && !pa_streq("org.freedesktop.DBus", sender))
+    if (!pa_safe_streq(backend->ofono_bus_id, sender) && !pa_streq(DBUS_SERVICE_DBUS, sender))
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
     dbus_error_init(&err);
 
-    if (dbus_message_is_signal(m, "org.freedesktop.DBus", "NameOwnerChanged")) {
+    if (dbus_message_is_signal(m, DBUS_INTERFACE_DBUS, "NameOwnerChanged")) {
         const char *name, *old_owner, *new_owner;
 
         if (!dbus_message_get_args(m, &err,
@@ -528,7 +596,7 @@ static DBusHandlerResult filter_cb(DBusConnection *bus, DBusMessage *m, void *da
                                    DBUS_TYPE_STRING, &old_owner,
                                    DBUS_TYPE_STRING, &new_owner,
                                    DBUS_TYPE_INVALID)) {
-            pa_log_error("Failed to parse org.freedesktop.DBus.NameOwnerChanged: %s", err.message);
+            pa_log_error("Failed to parse " DBUS_INTERFACE_DBUS ".NameOwnerChanged: %s", err.message);
             goto fail;
         }
 
@@ -627,7 +695,7 @@ static DBusMessage *hf_audio_agent_new_connection(DBusConnection *c, DBusMessage
 
     card = pa_hashmap_get(backend->cards, path);
 
-    if (!card || codec != HFP_AUDIO_CODEC_CVSD || card->fd >= 0) {
+    if (!card || (codec != HFP_AUDIO_CODEC_CVSD && codec != HFP_AUDIO_CODEC_MSBC) || card->fd >= 0) {
         pa_log_warn("New audio connection invalid arguments (path=%s fd=%d, codec=%d)", path, fd, codec);
         pa_assert_se(r = dbus_message_new_error(m, "org.ofono.Error.InvalidArguments", "Invalid arguments in method call"));
         shutdown(fd, SHUT_RDWR);
@@ -639,7 +707,12 @@ static DBusMessage *hf_audio_agent_new_connection(DBusConnection *c, DBusMessage
 
     card->connecting = false;
     card->fd = fd;
-    card->transport->codec = codec;
+    if (codec == HFP_AUDIO_CODEC_CVSD) {
+        pa_bluetooth_transport_reconfigure(card->transport, pa_bluetooth_get_hf_codec("CVSD"), sco_transport_write, NULL);
+    } else if (codec == HFP_AUDIO_CODEC_MSBC) {
+        /* oFono is expected to set up socket BT_VOICE_TRANSPARENT option */
+        pa_bluetooth_transport_reconfigure(card->transport, pa_bluetooth_get_hf_codec("mSBC"), sco_transport_write, NULL);
+    }
 
     pa_bluetooth_transport_set_state(card->transport, PA_BLUETOOTH_TRANSPORT_STATE_PLAYING);
 
@@ -664,7 +737,7 @@ static DBusHandlerResult hf_audio_agent_handler(DBusConnection *c, DBusMessage *
 
     pa_log_debug("dbus: path=%s, interface=%s, member=%s", path, interface, member);
 
-    if (dbus_message_is_method_call(m, "org.freedesktop.DBus.Introspectable", "Introspect")) {
+    if (dbus_message_is_method_call(m, DBUS_INTERFACE_INTROSPECTABLE, "Introspect")) {
         const char *xml = HF_AUDIO_AGENT_XML;
 
         pa_assert_se(r = dbus_message_new_method_return(m));
@@ -718,7 +791,7 @@ pa_bluetooth_backend *pa_bluetooth_ofono_backend_new(pa_core *c, pa_bluetooth_di
     }
 
     if (pa_dbus_add_matches(pa_dbus_connection_get(backend->connection), &err,
-            "type='signal',sender='org.freedesktop.DBus',interface='org.freedesktop.DBus',member='NameOwnerChanged',"
+            "type='signal',sender='" DBUS_SERVICE_DBUS "',interface='" DBUS_INTERFACE_DBUS "',member='NameOwnerChanged',"
             "arg0='" OFONO_SERVICE "'",
             "type='signal',sender='" OFONO_SERVICE "',interface='" HF_AUDIO_MANAGER_INTERFACE "',member='CardAdded'",
             "type='signal',sender='" OFONO_SERVICE "',interface='" HF_AUDIO_MANAGER_INTERFACE "',member='CardRemoved'",
@@ -748,7 +821,7 @@ void pa_bluetooth_ofono_backend_free(pa_bluetooth_backend *backend) {
     dbus_connection_unregister_object_path(pa_dbus_connection_get(backend->connection), HF_AUDIO_AGENT_PATH);
 
     pa_dbus_remove_matches(pa_dbus_connection_get(backend->connection),
-            "type='signal',sender='org.freedesktop.DBus',interface='org.freedesktop.DBus',member='NameOwnerChanged',"
+            "type='signal',sender='" DBUS_SERVICE_DBUS "',interface='" DBUS_INTERFACE_DBUS "',member='NameOwnerChanged',"
             "arg0='" OFONO_SERVICE "'",
             "type='signal',sender='" OFONO_SERVICE "',interface='" HF_AUDIO_MANAGER_INTERFACE "',member='CardAdded'",
             "type='signal',sender='" OFONO_SERVICE "',interface='" HF_AUDIO_MANAGER_INTERFACE "',member='CardRemoved'",
