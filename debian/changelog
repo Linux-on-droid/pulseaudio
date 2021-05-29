@@ -1,4 +1,4 @@
-pulseaudio (14.99.1+dfsg1-1) UNRELEASED; urgency=medium
+pulseaudio (14.99.1+dfsg1-1) experimental; urgency=medium
 
   [ Kevin Locke ]
   * Move shell completion scripts to pulseaudio-utils.
@@ -12,14 +12,26 @@ pulseaudio (14.99.1+dfsg1-1) UNRELEASED; urgency=medium
     Also move the Lintian override for script-not-executable and add one for
     bash-completion-with-hashbang.  I'm in favor of fixing these, rather
     than overriding them, but not sufficiently to pursue it right now.
-    Signed-off-by: Kevin Locke <kevin@kevinlocke.name> (Closes: #803329)
+    (Closes: #803329)
 
   [ Felipe Sateler ]
   * Fix machine-readable format with the help of Config::Model
   * New upstream release candidate
     - Exclude non-free rfcs from upstream tarball
+  * Drop patches picked from upstream
+  * Change build system to use meson.
+    Autotools was dropped so the switch is necessary
+  * Don't link pulsecommon with gtk or glib.
+    This was the behaviour with previous autotools build system
 
- -- Felipe Sateler <fsateler@debian.org>  Fri, 28 May 2021 20:55:39 -0400
+  [ Faidon Liambotis ]
+  * Create /etc/pulse/default.pa.d that can now be used for additional 
+    configuration snippets
+  * Validate manpages and desktop file.
+    For that we need the new build dependencies on libxml2-utils
+    (for xmllint) and desktop-file-utils (for desktop-file-validate)
+
+ -- Felipe Sateler <fsateler@debian.org>  Fri, 28 May 2021 21:04:18 -0400
 
 pulseaudio (14.2-2) unstable; urgency=medium
 
