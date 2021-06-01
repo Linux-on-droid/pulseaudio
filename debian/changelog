@@ -1,3 +1,10 @@
+pulseaudio (14.99.1+dfsg1-2) experimental; urgency=medium
+
+  * Add systemd build-dependency.
+    Build fails without it installed, and systemd integration configured.
+
+ -- Felipe Sateler <fsateler@debian.org>  Tue, 01 Jun 2021 08:39:50 -0400
+
 pulseaudio (14.99.1+dfsg1-1) experimental; urgency=medium
 
   [ Kevin Locke ]
