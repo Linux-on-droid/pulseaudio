@@ -1,3 +1,10 @@
+pulseaudio (14.99.1+dfsg1-3) experimental; urgency=medium
+
+  [ Laurent Bigonville ]
+  * debian/control: Add the needed Breaks/Replaces after moving the completion files
+
+ -- Felipe Sateler <fsateler@debian.org>  Mon, 14 Jun 2021 22:38:31 -0400
+
 pulseaudio (14.99.1+dfsg1-2) experimental; urgency=medium
 
   * Add systemd build-dependency.
