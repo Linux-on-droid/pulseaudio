@@ -1,3 +1,24 @@
+pulseaudio (14.2-3) UNRELEASED; urgency=medium
+
+  [ Kevin Locke ]
+  * Move shell completion scripts to pulseaudio-utils.
+    The shell completion scripts support commands from both the pulseaudio
+    package and pulseaudio-utils package, which may be installed without
+    pulseaudio (e.g. for use with PipeWire configured for PulseAudio
+    compatibility).  Ship the completions in pulseaudio-utils to cover this
+    case.  Note that the completion for the pulseaudio command will be
+    available if the pulseaudio package is installed, since it depends on
+    pulseaudio-utils.
+    Also move the Lintian override for script-not-executable and add one for
+    bash-completion-with-hashbang.  I'm in favor of fixing these, rather
+    than overriding them, but not sufficiently to pursue it right now.
+    Signed-off-by: Kevin Locke <kevin@kevinlocke.name> (Closes: #803329)
+
+  [ Laurent Bigonville ]
+  * debian/control: Add the needed Breaks/Replaces after moving the completion files
+
+ -- Felipe Sateler <fsateler@debian.org>  Mon, 14 Jun 2021 22:59:16 -0400
+
 pulseaudio (14.2-2) unstable; urgency=medium
 
   * Stop installing the console kit module.
