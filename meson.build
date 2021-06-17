@@ -169,6 +169,10 @@ cdata.set('OS_IS_FREEBSD', 0)
 platform_socket_dep = []
 platform_dep = []
 
+if host_machine.endian() == 'big'
+  cdata.set('WORDS_BIGENDIAN', 1)
+endif
+
 # FIXME: This was not tested. Maybe some flags should better be CFLAGS,
 # rather than ending up in the config.h file?
 if host_machine.system() == 'darwin'
@@ -561,8 +565,11 @@ if host_machine.cpu_family() == 'arm'
 endif
 # NEON checks are automatically done by the unstable-simd module
 
-# FIXME: make sure it's >= 2.2
-ltdl_dep = cc.find_library('ltdl', required : true)
+if get_option('daemon')
+  # FIXME: make sure it's >= 2.2
+  ltdl_dep = cc.find_library('ltdl', required : true)
+endif
+
 # FIXME: can meson support libtool -dlopen/-dlpreopen things?
 #        and do we still want to support this at all?
 cdata.set('DISABLE_LIBTOOL_PRELOAD', 1)
@@ -778,7 +785,9 @@ check_dep = dependency('check', version : '>= 0.9.10', required : get_option('te
 
 # Subdirs
 
-subdir('doxygen')
+if get_option('doxygen')
+  subdir('doxygen')
+endif
 subdir('po')
 if get_option('man')
   subdir('man')
