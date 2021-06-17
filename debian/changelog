@@ -1,8 +1,12 @@
-pulseaudio (14.99.2+dfsg1-1) UNRELEASED; urgency=medium
+pulseaudio (14.99.2+dfsg1-1) experimental; urgency=medium
 
   * New upstream version 14.99.2+dfsg1
+    - Drop patches applied upstream
+  * Fix uscan suffix mangling.
+    The correct way is to use repacksuffix and dversionmangle so that uscan
+    knows the new file has a different version.
 
- -- Felipe Sateler <fsateler@debian.org>  Thu, 17 Jun 2021 08:46:51 -0400
+ -- Felipe Sateler <fsateler@debian.org>  Thu, 17 Jun 2021 09:16:54 -0400
 
 pulseaudio (14.99.1+dfsg1-3) experimental; urgency=medium
 
