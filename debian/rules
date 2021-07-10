@@ -14,8 +14,16 @@ export CK_TIMEOUT_MULTIPLIER = 0
 
 ifeq ($(words $(sort $(filter stage1,$(DEB_BUILD_PROFILES)))),1)
   bluez = disabled
+else ifneq ($(DEB_HOST_ARCH_OS),linux)
+  bluez = disabled
 else
   bluez = enabled
+endif
+
+ifeq ($(DEB_HOST_ARCH_OS),linux)
+  systemd = enabled
+else
+  systemd = disabled
 endif
 
 # Libs should be in the multi-arch path, but the modules should be in the
@@ -38,8 +46,8 @@ DEB_MESON_OPTIONS = \
   -Dopenssl=enabled \
   -Dipv6=true \
   -Dsoxr=enabled \
-  -Dsystemd=enabled \
-  -Dudev=enabled \
+  -Dsystemd=$(systemd) \
+  -Dudev=$(systemd) \
   -Dstream-restore-clear-old-devices=true \
 
 
