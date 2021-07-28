@@ -118,7 +118,7 @@ if avahi_dep.found()
   ]
 endif
 
-if get_option('bluez5')
+if cdata.has('HAVE_BLUEZ_5')
   subdir('bluetooth')
   all_modules += [
     [ 'module-bluetooth-discover', 'bluetooth/module-bluetooth-discover.c' ],
@@ -161,7 +161,7 @@ if dbus_dep.found() and fftw_dep.found()
   ]
 endif
 
-if gio_dep.found()
+if get_option('gsettings').enabled() and gio_dep.found()
   subdir('gsettings')
   all_modules += [
     [ 'module-gsettings',

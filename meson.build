@@ -614,9 +614,12 @@ if dbus_dep.found()
   cdata.set('HAVE_DBUS', 1)
 endif
 
-gio_dep = dependency('gio-2.0', version : '>= 2.26.0', required : get_option('gsettings'))
-if gio_dep.found()
+gio_dep = dependency('gio-2.0', version : '>= 2.26.0')
+if get_option('gsettings').enabled()
+  assert(gio_dep.found(), 'GSettings support needs glib I/O library (GIO)')
   cdata.set('HAVE_GSETTINGS', 1)
+else
+  cdata.set('HAVE_GSETTINGS', 0)
 endif
 
 glib_dep = dependency('glib-2.0', version : '>= 2.28.0', required: get_option('glib'))
@@ -701,11 +704,15 @@ endif
 avahi_dep = dependency('avahi-client', version : '>= 0.6.0', required : get_option('avahi'), disabler : true)
 if avahi_dep.found()
   cdata.set('HAVE_AVAHI', 1)
+else
+  cdata.set('HAVE_AVAHI', 0)
 endif
 
 sbc_dep = dependency('sbc', version : '>= 1.0', required : false)
 
-if get_option('bluez5')
+bluez_dep = dependency('bluez', required : get_option('bluez5'))
+
+if bluez_dep.found()
   assert(dbus_dep.found(), 'BlueZ requires D-Bus support')
   assert(sbc_dep.found(), 'BlueZ requires SBC support')
   cdata.set('HAVE_SBC', 1)
@@ -760,6 +767,7 @@ gstrtp_dep = dependency('gstreamer-rtp-1.0', required : get_option('gstreamer'))
 
 have_gstreamer = false
 if gst_dep.found() and gstapp_dep.found() and gstrtp_dep.found()
+  assert(gio_dep.found(), 'GStreamer-based RTP needs glib I/O library (GIO)')
   have_gstreamer = true
 endif
 
@@ -912,9 +920,9 @@ summary = [
   'Enable Async DNS:              @0@'.format(asyncns_dep.found()),
   'Enable LIRC:                   @0@'.format(lirc_dep.found()),
   'Enable D-Bus:                  @0@'.format(dbus_dep.found()),
-  '  Enable BlueZ 5:              @0@'.format(get_option('bluez5')),
-  '    Enable native headsets:    @0@'.format(get_option('bluez5-native-headset')),
-  '    Enable  ofono headsets:    @0@'.format(get_option('bluez5-ofono-headset')),
+  '  Enable BlueZ 5:              @0@'.format(cdata.has('HAVE_BLUEZ_5')),
+  '    Enable native headsets:    @0@'.format(cdata.has('HAVE_BLUEZ_5_NATIVE_HEADSET')),
+  '    Enable  ofono headsets:    @0@'.format(cdata.has('HAVE_BLUEZ_5_OFONO_HEADSET')),
   '    Enable GStreamer based codecs: @0@'.format(have_bluez5_gstreamer),
   'Enable udev:                   @0@'.format(udev_dep.found()),
   '  Enable HAL->udev compat:     @0@'.format(get_option('hal-compat')),
