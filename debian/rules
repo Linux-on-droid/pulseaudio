@@ -13,9 +13,9 @@ export XDG_RUNTIME_DIR = $(CURDIR)/debian/tmp/tmp/xdgruntimedir
 export CK_TIMEOUT_MULTIPLIER = 0
 
 ifeq ($(words $(sort $(filter stage1,$(DEB_BUILD_PROFILES)))),1)
-  bluez = false
+  bluez = disabled
 else
-  bluez = true
+  bluez = enabled
 endif
 
 # Libs should be in the multi-arch path, but the modules should be in the
