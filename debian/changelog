@@ -1,8 +1,16 @@
-pulseaudio (15.0+dfsg1-1) UNRELEASED; urgency=medium
+pulseaudio (15.0+dfsg1-1) experimental; urgency=medium
 
+  [ Felipe Sateler ]
   * New upstream version 15.0+dfsg1
+    - Adjust bluez enablement option to feature.
+      The meson option changed from boolean to feature
+      and thus true/false to enabled/disabled
 
- -- Felipe Sateler <fsateler@debian.org>  Wed, 28 Jul 2021 17:06:12 -0400
+  [ Laurent Bigonville ]
+  * Allow the package to build on non-linux architectures
+  * Re-add libtdb-dev to the BD on hurd as it builds properly now
+
+ -- Felipe Sateler <fsateler@debian.org>  Thu, 29 Jul 2021 08:46:15 -0400
 
 pulseaudio (14.99.2+dfsg1-1) experimental; urgency=medium
 
