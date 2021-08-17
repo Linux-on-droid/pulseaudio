@@ -1,3 +1,9 @@
+pulseaudio (15.0+dfsg1-2) unstable; urgency=medium
+
+  * Release to unstable
+
+ -- Felipe Sateler <fsateler@debian.org>  Tue, 17 Aug 2021 19:16:03 -0400
+
 pulseaudio (15.0+dfsg1-1) experimental; urgency=medium
 
   [ Felipe Sateler ]
