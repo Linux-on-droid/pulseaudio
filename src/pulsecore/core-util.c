@@ -83,6 +83,7 @@
 
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
+#include <shlobj.h>
 #endif
 
 #ifndef ENOTSUP
@@ -169,6 +170,15 @@ char *pa_win32_get_toplevel(HANDLE handle) {
     }
 
     return toplevel;
+}
+
+char *pa_win32_get_system_appdata() {
+    static char appdata[MAX_PATH] = {0};
+
+    if (!*appdata && SHGetFolderPathAndSubDirA(NULL, CSIDL_COMMON_APPDATA|CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, "PulseAudio", appdata) != S_OK)
+        return NULL;
+
+    return appdata;
 }
 
 #endif
@@ -407,6 +417,8 @@ ssize_t pa_read(int fd, void *buf, size_t count, int *type) {
 
         if (WSAGetLastError() != WSAENOTSOCK) {
             errno = WSAGetLastError();
+            if (errno == WSAEWOULDBLOCK)
+                errno = EAGAIN;
             return r;
         }
 
@@ -448,6 +460,8 @@ ssize_t pa_write(int fd, const void *buf, size_t count, int *type) {
 #ifdef OS_IS_WIN32
         if (WSAGetLastError() != WSAENOTSOCK) {
             errno = WSAGetLastError();
+            if (errno == WSAEWOULDBLOCK)
+                errno = EAGAIN;
             return r;
         }
 #else
@@ -755,7 +769,7 @@ int pa_raise_priority(int nice_level) {
 #ifdef OS_IS_WIN32
     if (nice_level < 0) {
         if (!SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS)) {
-            pa_log_warn("SetPriorityClass() failed: 0x%08X", GetLastError());
+            pa_log_warn("SetPriorityClass() failed: 0x%08lX", GetLastError());
             errno = EPERM;
             return -1;
         }
@@ -1321,7 +1335,7 @@ int pa_lock_fd(int fd, int b) {
     if (!b && UnlockFile(h, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF))
         return 0;
 
-    pa_log("%slock failed: 0x%08X", !b ? "un" : "", GetLastError());
+    pa_log("%slock failed: 0x%08lX", !b ? "un" : "", GetLastError());
 
     /* FIXME: Needs to set errno! */
 #endif
@@ -1565,6 +1579,70 @@ int pa_get_config_home_dir(char **_r) {
 
     *_r = pa_sprintf_malloc("%s" PA_PATH_SEP ".config" PA_PATH_SEP "pulse", home_dir);
     pa_xfree(home_dir);
+    return 0;
+}
+
+int pa_get_data_home_dir(char **_r) {
+    const char *e;
+    char *home_dir;
+
+    pa_assert(_r);
+
+    e = getenv("XDG_DATA_HOME");
+    if (e && *e) {
+        if (pa_is_path_absolute(e)) {
+            *_r = pa_sprintf_malloc("%s" PA_PATH_SEP "pulseaudio", e);
+            return 0;
+        }
+        else
+            pa_log_warn("Ignored non-absolute XDG_DATA_HOME value '%s'", e);
+    }
+
+    home_dir = pa_get_home_dir_malloc();
+    if (!home_dir)
+        return -PA_ERR_NOENTITY;
+
+    *_r = pa_sprintf_malloc("%s" PA_PATH_SEP ".local" PA_PATH_SEP "share" PA_PATH_SEP "pulseaudio", home_dir);
+    pa_xfree(home_dir);
+    return 0;
+}
+
+int pa_get_data_dirs(pa_dynarray **_r) {
+    const char *e;
+    const char *def = "/usr/local/share/:/usr/share/";
+    const char *p;
+    const char *split_state = NULL;
+    char *n;
+    pa_dynarray *paths;
+
+    pa_assert(_r);
+
+    e = getenv("XDG_DATA_DIRS");
+    p = e && *e ? e : def;
+
+    paths = pa_dynarray_new((pa_free_cb_t) pa_xfree);
+
+    while ((n = pa_split(p, ":", &split_state))) {
+        char *path;
+
+        if (!pa_is_path_absolute(n)) {
+            pa_log_warn("Ignored non-absolute path '%s' in XDG_DATA_DIRS", n);
+            pa_xfree(n);
+            continue;
+        }
+
+        path = pa_sprintf_malloc("%s" PA_PATH_SEP "pulseaudio", n);
+        pa_xfree(n);
+        pa_dynarray_append(paths, path);
+    }
+
+    if (pa_dynarray_size(paths) == 0) {
+        pa_log_warn("XDG_DATA_DIRS contains no valid paths");
+        pa_dynarray_free(paths);
+        return -PA_ERR_INVALID;
+    }
+
+    *_r = paths;
     return 0;
 }
 
@@ -2189,13 +2267,97 @@ int pa_atoi(const char *s, int32_t *ret_i) {
     if (pa_atol(s, &l) < 0)
         return -1;
 
-    if ((int32_t) l != l) {
+    if (l < INT32_MIN || l > INT32_MAX) {
         errno = ERANGE;
         return -1;
     }
 
     *ret_i = (int32_t) l;
 
+    return 0;
+}
+
+enum numtype {
+    NUMTYPE_UINT,
+    NUMTYPE_INT,
+    NUMTYPE_DOUBLE,
+};
+
+/* A helper function for pa_atou() and friends. This does some common checks,
+ * because our number parsing is more strict than the strtoX functions.
+ *
+ * Leading zeros are stripped from integers so that they don't get parsed as
+ * octal (but "0x" is preserved for hexadecimal numbers). For NUMTYPE_INT the
+ * zero stripping may involve allocating a new string, in which case it's
+ * stored in tmp. Otherwise tmp is set to NULL. The caller needs to free tmp
+ * after they're done with ret. When parsing other types than NUMTYPE_INT the
+ * caller can pass NULL as tmp.
+ *
+ * The final string to parse is returned in ret. ret will point either inside
+ * s or to tmp. */
+static int prepare_number_string(const char *s, enum numtype type, char **tmp, const char **ret) {
+    const char *original = s;
+    bool negative = false;
+
+    pa_assert(s);
+    pa_assert(type != NUMTYPE_INT || tmp);
+    pa_assert(ret);
+
+    if (tmp)
+        *tmp = NULL;
+
+    /* The strtoX functions accept leading spaces, we don't. */
+    if (isspace((unsigned char) s[0]))
+        return -1;
+
+    /* The strtoX functions accept a plus sign, we don't. */
+    if (s[0] == '+')
+        return -1;
+
+    /* The strtoul and strtoull functions allow a minus sign even though they
+     * parse an unsigned number. In case of a minus sign the original negative
+     * number gets negated. We don't want that kind of behviour. */
+    if (type == NUMTYPE_UINT && s[0] == '-')
+        return -1;
+
+    /* The strtoX functions interpret the number as octal if it starts with
+     * a zero. We prefer to use base 10, so we strip all leading zeros (if the
+     * string starts with "0x", strtoul() interprets it as hexadecimal, which
+     * is fine, because it's unambiguous unlike octal).
+     *
+     * While stripping the leading zeros, we have to remember to also handle
+     * the case where the number is negative, which makes the zero skipping
+     * code somewhat complex. */
+
+    /* Doubles don't need zero stripping, we can finish now. */
+    if (type == NUMTYPE_DOUBLE)
+        goto finish;
+
+    if (s[0] == '-') {
+        negative = true;
+        s++; /* Skip the minus sign. */
+    }
+
+    /* Don't skip zeros if the string starts with "0x". */
+    if (s[0] == '0' && s[1] != 'x') {
+        while (s[0] == '0' && s[1])
+            s++; /* Skip zeros. */
+    }
+
+    if (negative) {
+        s--; /* Go back one step, we need the minus sign back. */
+
+        /* If s != original, then we have skipped some zeros and we need to replace
+         * the last skipped zero with a minus sign. */
+        if (s != original) {
+            *tmp = pa_xstrdup(s);
+            *tmp[0] = '-';
+            s = *tmp;
+        }
+    }
+
+finish:
+    *ret = s;
     return 0;
 }
 
@@ -2207,17 +2369,7 @@ int pa_atou(const char *s, uint32_t *ret_u) {
     pa_assert(s);
     pa_assert(ret_u);
 
-    /* strtoul() ignores leading spaces. We don't. */
-    if (isspace((unsigned char)*s)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    /* strtoul() accepts strings that start with a minus sign. In that case the
-     * original negative number gets negated, and strtoul() returns the negated
-     * result. We don't want that kind of behaviour. strtoul() also allows a
-     * leading plus sign, which is also a thing that we don't want. */
-    if (*s == '-' || *s == '+') {
+    if (prepare_number_string(s, NUMTYPE_UINT, NULL, &s) < 0) {
         errno = EINVAL;
         return -1;
     }
@@ -2233,7 +2385,7 @@ int pa_atou(const char *s, uint32_t *ret_u) {
         return -1;
     }
 
-    if ((uint32_t) l != l) {
+    if (l > UINT32_MAX) {
         errno = ERANGE;
         return -1;
     }
@@ -2243,23 +2395,50 @@ int pa_atou(const char *s, uint32_t *ret_u) {
     return 0;
 }
 
+/* Convert the string s to an unsigned 64 bit integer in *ret_u */
+int pa_atou64(const char *s, uint64_t *ret_u) {
+    char *x = NULL;
+    unsigned long long l;
+
+    pa_assert(s);
+    pa_assert(ret_u);
+
+    if (prepare_number_string(s, NUMTYPE_UINT, NULL, &s) < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    errno = 0;
+    l = strtoull(s, &x, 0);
+
+    /* If x doesn't point to the end of s, there was some trailing garbage in
+     * the string. If x points to s, no conversion was done (empty string). */
+    if (!x || *x || x == s || errno) {
+        if (!errno)
+            errno = EINVAL;
+        return -1;
+    }
+
+    if (l > UINT64_MAX) {
+        errno = ERANGE;
+        return -1;
+    }
+
+    *ret_u = (uint64_t) l;
+
+    return 0;
+}
+
 /* Convert the string s to a signed long integer in *ret_l. */
 int pa_atol(const char *s, long *ret_l) {
+    char *tmp;
     char *x = NULL;
     long l;
 
     pa_assert(s);
     pa_assert(ret_l);
 
-    /* strtol() ignores leading spaces. We don't. */
-    if (isspace((unsigned char)*s)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    /* strtol() accepts leading plus signs, but that's ugly, so we don't allow
-     * that. */
-    if (*s == '+') {
+    if (prepare_number_string(s, NUMTYPE_INT, &tmp, &s) < 0) {
         errno = EINVAL;
         return -1;
     }
@@ -2273,10 +2452,52 @@ int pa_atol(const char *s, long *ret_l) {
     if (!x || *x || x == s || errno) {
         if (!errno)
             errno = EINVAL;
+        pa_xfree(tmp);
         return -1;
     }
 
+    pa_xfree(tmp);
+
     *ret_l = l;
+
+    return 0;
+}
+
+/* Convert the string s to a signed 64 bit integer in *ret_l. */
+int pa_atoi64(const char *s, int64_t *ret_l) {
+    char *tmp;
+    char *x = NULL;
+    long long l;
+
+    pa_assert(s);
+    pa_assert(ret_l);
+
+    if (prepare_number_string(s, NUMTYPE_INT, &tmp, &s) < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    errno = 0;
+    l = strtoll(s, &x, 0);
+
+    /* If x doesn't point to the end of s, there was some trailing garbage in
+     * the string. If x points to s, no conversion was done (at least an empty
+     * string can trigger this). */
+    if (!x || *x || x == s || errno) {
+        if (!errno)
+            errno = EINVAL;
+        pa_xfree(tmp);
+        return -1;
+    }
+
+    pa_xfree(tmp);
+
+    *ret_l = l;
+
+    if (l < INT64_MIN || l > INT64_MAX) {
+        errno = ERANGE;
+        return -1;
+    }
 
     return 0;
 }
@@ -2296,15 +2517,7 @@ int pa_atod(const char *s, double *ret_d) {
     pa_assert(s);
     pa_assert(ret_d);
 
-    /* strtod() ignores leading spaces. We don't. */
-    if (isspace((unsigned char)*s)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    /* strtod() accepts leading plus signs, but that's ugly, so we don't allow
-     * that. */
-    if (*s == '+') {
+    if (prepare_number_string(s, NUMTYPE_DOUBLE, NULL, &s) < 0) {
         errno = EINVAL;
         return -1;
     }
@@ -2802,7 +3015,16 @@ void pa_set_env(const char *key, const char *value) {
     /* This is not thread-safe */
 
 #ifdef OS_IS_WIN32
-    SetEnvironmentVariable(key, value);
+    int kl = strlen(key);
+    int vl = strlen(value);
+    char *tmp = pa_xmalloc(kl+vl+2);
+    memcpy(tmp, key, kl);
+    memcpy(tmp+kl+1, value, vl);
+    tmp[kl] = '=';
+    tmp[kl+1+vl] = '\0';
+    putenv(tmp);
+    /* Even though it should be safe to free it on Windows, we don't want to
+     * rely on undocumented behaviour. */
 #else
     setenv(key, value, 1);
 #endif
@@ -2814,7 +3036,14 @@ void pa_unset_env(const char *key) {
     /* This is not thread-safe */
 
 #ifdef OS_IS_WIN32
-    SetEnvironmentVariable(key, NULL);
+    int kl = strlen(key);
+    char *tmp = pa_xmalloc(kl+2);
+    memcpy(tmp, key, kl);
+    tmp[kl] = '=';
+    tmp[kl+1] = '\0';
+    putenv(tmp);
+    /* Even though it should be safe to free it on Windows, we don't want to
+     * rely on undocumented behaviour. */
 #else
     unsetenv(key);
 #endif
@@ -3053,7 +3282,7 @@ char *pa_uname_string(void) {
     i.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     pa_assert_se(GetVersionEx(&i));
 
-    return pa_sprintf_malloc("Windows %d.%d (%d) %s", i.dwMajorVersion, i.dwMinorVersion, i.dwBuildNumber, i.szCSDVersion);
+    return pa_sprintf_malloc("Windows %lu.%lu (%lu) %s", i.dwMajorVersion, i.dwMinorVersion, i.dwBuildNumber, i.szCSDVersion);
 #endif
 }
 

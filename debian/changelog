@@ -1,3 +1,76 @@
+pulseaudio (15.0+dfsg1-1) experimental; urgency=medium
+
+  [ Felipe Sateler ]
+  * New upstream version 15.0+dfsg1
+    - Adjust bluez enablement option to feature.
+      The meson option changed from boolean to feature
+      and thus true/false to enabled/disabled
+
+  [ Laurent Bigonville ]
+  * Allow the package to build on non-linux architectures
+  * Re-add libtdb-dev to the BD on hurd as it builds properly now
+
+ -- Felipe Sateler <fsateler@debian.org>  Thu, 29 Jul 2021 08:46:15 -0400
+
+pulseaudio (14.99.2+dfsg1-1) experimental; urgency=medium
+
+  * New upstream version 14.99.2+dfsg1
+    - Drop patches applied upstream
+  * Fix uscan suffix mangling.
+    The correct way is to use repacksuffix and dversionmangle so that uscan
+    knows the new file has a different version.
+
+ -- Felipe Sateler <fsateler@debian.org>  Thu, 17 Jun 2021 09:16:54 -0400
+
+pulseaudio (14.99.1+dfsg1-3) experimental; urgency=medium
+
+  [ Laurent Bigonville ]
+  * debian/control: Add the needed Breaks/Replaces after moving the completion files
+
+ -- Felipe Sateler <fsateler@debian.org>  Mon, 14 Jun 2021 22:38:31 -0400
+
+pulseaudio (14.99.1+dfsg1-2) experimental; urgency=medium
+
+  * Add systemd build-dependency.
+    Build fails without it installed, and systemd integration configured.
+
+ -- Felipe Sateler <fsateler@debian.org>  Tue, 01 Jun 2021 08:39:50 -0400
+
+pulseaudio (14.99.1+dfsg1-1) experimental; urgency=medium
+
+  [ Kevin Locke ]
+  * Move shell completion scripts to pulseaudio-utils.
+    The shell completion scripts support commands from both the pulseaudio
+    package and pulseaudio-utils package, which may be installed without
+    pulseaudio (e.g. for use with PipeWire configured for PulseAudio
+    compatibility).  Ship the completions in pulseaudio-utils to cover this
+    case.  Note that the completion for the pulseaudio command will be
+    available if the pulseaudio package is installed, since it depends on
+    pulseaudio-utils.
+    Also move the Lintian override for script-not-executable and add one for
+    bash-completion-with-hashbang.  I'm in favor of fixing these, rather
+    than overriding them, but not sufficiently to pursue it right now.
+    (Closes: #803329)
+
+  [ Felipe Sateler ]
+  * Fix machine-readable format with the help of Config::Model
+  * New upstream release candidate
+    - Exclude non-free rfcs from upstream tarball
+  * Drop patches picked from upstream
+  * Change build system to use meson.
+    Autotools was dropped so the switch is necessary
+  * Don't link pulsecommon with gtk or glib.
+    This was the behaviour with previous autotools build system
+
+  [ Faidon Liambotis ]
+  * Create /etc/pulse/default.pa.d that can now be used for additional 
+    configuration snippets
+  * Validate manpages and desktop file.
+    For that we need the new build dependencies on libxml2-utils
+    (for xmllint) and desktop-file-utils (for desktop-file-validate)
+
+ -- Felipe Sateler <fsateler@debian.org>  Fri, 28 May 2021 21:04:18 -0400
+
 pulseaudio (14.2-3) UNRELEASED; urgency=medium
 
   [ Kevin Locke ]

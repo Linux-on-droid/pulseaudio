@@ -31,7 +31,7 @@ executable('pulseaudio',
   include_directories : [configinc, topinc],
   link_args : ['-ffast-math'],
   link_with : [libpulsecore, libpulsecommon, libpulse],
-  dependencies : [ltdl_dep, cap_dep, dbus_dep, libsystemd_dep, dl_dep, libintl_dep],
+  dependencies : [ltdl_dep, cap_dep, dbus_dep, libsystemd_dep, dl_dep, libintl_dep, platform_dep, platform_socket_dep],
   c_args : pa_c_args,
 )
 
@@ -45,6 +45,14 @@ if x11_dep.found()
     configuration : conf,
     install : true,
     install_dir : bindir,
+  )
+
+  configure_file(
+    input : 'start-pulseaudio-x11.in',
+    output : '00-pulseaudio-x11',
+    configuration : conf,
+    install : true,
+    install_dir : join_paths(sysconfdir, 'xdg', 'Xwayland-session.d'),
   )
 
   desktop_file = i18n.merge_file(
@@ -92,11 +100,9 @@ default_conf = configuration_data()
 default_conf.merge_from(cdata)
 default_conf.set('PA_BINARY', cdata.get_unquoted('PA_BINARY'))
 default_conf.set('PA_SOEXT', cdata.get_unquoted('PA_SOEXT'))
-default_conf.set10('HAVE_AF_UNIX', cc.has_header('sys/un.h'))
+default_conf.set10('HAVE_AF_UNIX', cc.has_header('sys/un.h') ? true : cc.has_header('winsock2.h'))
 default_conf.set10('OS_IS_WIN32', host_machine.system() == 'windows')
 default_conf.set10('HAVE_MKFIFO', cc.has_function('mkfifo'))
-# We don't support the deprecated GConf option in meson
-default_conf.set10('HAVE_GCONF', 0)
 
 default_template_file = configure_file(
   input : 'default.pa.in',
@@ -115,9 +121,7 @@ custom_target('default.pa',
 )
 
 system_conf = configuration_data()
-system_conf.merge_from(cdata)
-system_conf.set('PA_BINARY', cdata.get_unquoted('PA_BINARY'))
-system_conf.set('PA_SOEXT', cdata.get_unquoted('PA_SOEXT'))
+system_conf.merge_from(default_conf)
 
 system_template_file = configure_file(
   input : 'system.pa.in',
@@ -144,10 +148,20 @@ endif
 if systemd_dep.found()
   sd_user_service_conf = configuration_data()
   sd_user_service_conf.set('PA_BINARY', cdata.get_unquoted('PA_BINARY'))
+  sd_user_service_conf.set('PACTL_BINARY', join_paths(bindir, 'pactl'))
+  sd_user_service_conf.set('PA_X11_BINARY', join_paths(bindir, 'start-pulseaudio-x11'))
 
   sd_user_service_file = configure_file(
     input : 'systemd/user/pulseaudio.service.in',
     output : 'pulseaudio.service',
+    configuration : sd_user_service_conf,
+    install : true,
+    install_dir : systemduserunitdir,
+  )
+
+  sd_user_x11_service_file = configure_file(
+    input : 'systemd/user/pulseaudio-x11.service.in',
+    output : 'pulseaudio-x11.service',
     configuration : sd_user_service_conf,
     install : true,
     install_dir : systemduserunitdir,

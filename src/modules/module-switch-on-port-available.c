@@ -71,6 +71,9 @@ static bool profile_good_for_output(pa_card_profile *profile, pa_device_port *po
 
     card = profile->card;
 
+    if (pa_safe_streq(card->active_profile->name, "off"))
+        return true;
+
     if (!pa_safe_streq(card->active_profile->input_name, profile->input_name))
         return false;
 
@@ -103,6 +106,9 @@ static bool profile_good_for_input(pa_card_profile *profile, pa_device_port *por
 
     card = profile->card;
 
+    if (pa_safe_streq(card->active_profile->name, "off"))
+        return true;
+
     if (!pa_safe_streq(card->active_profile->output_name, profile->output_name))
         return false;
 
@@ -130,6 +136,11 @@ static int try_to_switch_profile(pa_device_port *port) {
     pa_card_profile *best_profile = NULL, *profile;
     void *state;
     unsigned best_prio = 0;
+
+    if (port->card->profile_is_sticky) {
+        pa_log_info("Keeping sticky card profile '%s'", port->card->active_profile->name);
+        return -1;
+    }
 
     pa_log_debug("Finding best profile for port %s, preferred = %s",
                  port->name, pa_strnull(port->preferred_profile));
@@ -384,6 +395,11 @@ static pa_hook_result_t card_profile_available_hook_callback(pa_core *c, pa_card
 
     if (!pa_streq(profile->name, card->active_profile->name))
         return PA_HOOK_OK;
+
+    if (card->profile_is_sticky) {
+        pa_log_info("Keeping sticky card profile '%s'", profile->name);
+        return PA_HOOK_OK;
+    }
 
     pa_log_debug("Active profile %s on card %s became unavailable, switching to another profile", profile->name, card->name);
     pa_card_set_profile(card, find_best_profile(card), false);

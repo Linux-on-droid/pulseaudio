@@ -4,6 +4,8 @@ project('pulseaudio', 'c', 'cpp',
         default_options : [ 'c_std=gnu11', 'cpp_std=c++11' ]
         )
 
+meson.add_dist_script('scripts/save-tarball-version.sh', meson.project_version())
+
 pa_version_str = meson.project_version()
 # For tarballs, the first split will do nothing, but for builds in git, we
 # split out suffixes when there are commits since the last tag
@@ -19,11 +21,11 @@ endif
 pa_version_major_minor = pa_version_major + '.' + pa_version_minor
 
 pa_api_version = 12
-pa_protocol_version = 34
+pa_protocol_version = 35
 
 # The stable ABI for client applications, for the version info x:y:z
 # always will hold x=z
-libpulse_version_info = [23, 0, 23]
+libpulse_version_info = [24, 0, 24]
 
 # A simplified, synchronous, ABI-stable interface for client
 # applications, for the version info x:y:z always will hold x=z
@@ -66,6 +68,11 @@ localedir = join_paths(prefix, get_option('localedir'))
 localstatedir = join_paths(prefix, get_option('localstatedir'))
 sysconfdir = join_paths(prefix, get_option('sysconfdir'))
 privlibdir = join_paths(libdir, 'pulseaudio')
+
+if host_machine.system() == 'windows'
+  # Windows only supports loading libraries from the same dir as the executable
+  privlibdir = bindir
+endif
 
 alsadatadir = get_option('alsadatadir')
 if alsadatadir == ''
@@ -135,6 +142,7 @@ cdata.set_quoted('PA_SRCDIR', join_paths(meson.current_source_dir(), 'src'))
 cdata.set_quoted('PA_BUILDDIR', meson.current_build_dir())
 cdata.set_quoted('PA_SOEXT', '.so')
 cdata.set_quoted('PA_DEFAULT_CONFIG_DIR', pulsesysconfdir)
+cdata.set('PA_DEFAULT_CONFIG_DIR_UNQUOTED', pulsesysconfdir)
 cdata.set_quoted('PA_BINARY', join_paths(bindir, 'pulseaudio'))
 cdata.set_quoted('PA_SYSTEM_RUNTIME_PATH', join_paths(localstatedir, 'run', 'pulse'))
 cdata.set_quoted('PA_SYSTEM_CONFIG_PATH', join_paths(localstatedir, 'lib', 'pulse'))
@@ -156,6 +164,15 @@ cdata.set('top_srcdir', meson.source_root())
 # First some defaults to keep config file generation happy
 cdata.set('HAVE_COREAUDIO', 0)
 cdata.set('HAVE_WAVEOUT', 0)
+cdata.set('OS_IS_FREEBSD', 0)
+
+platform_socket_dep = []
+platform_dep = []
+
+if host_machine.endian() == 'big'
+  cdata.set('WORDS_BIGENDIAN', 1)
+endif
+
 # FIXME: This was not tested. Maybe some flags should better be CFLAGS,
 # rather than ending up in the config.h file?
 if host_machine.system() == 'darwin'
@@ -163,7 +180,22 @@ if host_machine.system() == 'darwin'
   cdata.set('_DARWIN_C_SOURCE', '200112L') # Needed to get NSIG on Mac OS
 elif host_machine.system() == 'windows'
   cdata.set('OS_IS_WIN32', 1)
+  cdata.set('HAVE_WINDOWS_H', 1)
+  cdata.set('HAVE_WAVEOUT', 1)
+  cdata.set('HAVE_WINSOCK2_H', 1)
+  cdata.set('HAVE_WS2TCPIP_H', 1)
   cdata.set('WIN32_LEAN_AND_MEAN', 1) # Needed to avoid including unnecessary headers on Windows
+  cdata.set('gid_t', 'int')
+  cdata.set('uid_t', 'int')
+  ws2_32_dep = meson.get_compiler('c').find_library('ws2_32')
+  winsock_dep = meson.get_compiler('c').find_library('wsock32')
+  ole32_dep = meson.get_compiler('c').find_library('ole32')
+  ssp_dep = meson.get_compiler('c').find_library('ssp')
+  pcreposix_dep = meson.get_compiler('c').find_library('pcreposix')
+  platform_socket_dep = [ws2_32_dep, winsock_dep]
+  platform_dep = [ole32_dep, ssp_dep, pcreposix_dep]
+elif host_machine.system() == 'freebsd'
+  cdata.set('OS_IS_FREEBSD', 1)
 #elif host_machine.system() == 'solaris'
 #  # Apparently meson has no solaris support?
 #  # Needed to get declarations for msg_control and msg_controllen on Solaris
@@ -219,7 +251,6 @@ check_headers = [
   'sys/un.h',
   'sys/wait.h',
   'syslog.h',
-  'valgrind/memcheck.h',
   'xlocale.h',
 ]
 
@@ -230,9 +261,15 @@ foreach h : check_headers
   endif
 endforeach
 
+if cc.has_header('valgrind/memcheck.h', required: get_option('valgrind'))
+  cdata.set('HAVE_VALGRIND_MEMCHECK_H', 1)
+endif
+
 # FIXME: move this to the above set
-if cc.has_header('pthread.h')
-  cdata.set('HAVE_PTHREAD', 1)
+if host_machine.system() != 'windows'
+  if cc.has_header('pthread.h')
+    cdata.set('HAVE_PTHREAD', 1)
+  endif
 endif
 
 if cc.has_header_symbol('pthread.h', 'PTHREAD_PRIO_INHERIT')
@@ -292,16 +329,30 @@ check_functions = [
 foreach f : check_functions
   if cc.has_function(f)
     define = 'HAVE_' + f.underscorify().to_upper()
-    cdata.set(define, 1)
+
+    if f == 'posix_memalign' and host_machine.system() == 'windows'
+      message('Win32/mingw32 does not properly define posix_memalign.')
+    elif f == 'fork' and host_machine.system() == 'windows'
+      # __builtin_fork is defined and compiles properly, but calling __builtin_fork() does not.
+      # This causes Meson to think that Windows has a fork() which causes a link error...
+      message('Win32/mingw32 does not properly define fork.')
+    else
+      cdata.set(define, 1)
+    endif
   endif
 endforeach
 
-if cc.has_header_symbol('sys/syscall.h', 'SYS_memfd_create')
+if cc.has_header_symbol('sys/syscall.h', 'SYS_memfd_create') \
+  or cc.has_function('memfd_create')
   cdata.set('HAVE_MEMFD', 1)
 endif
 
 if cc.has_function('dgettext')
-  libintl_dep = []
+  if host_machine.system() != 'windows'
+    libintl_dep = []
+  else
+    libintl_dep = cc.find_library('intl')
+  endif
 else
   libintl_dep = cc.find_library('intl')
 endif
@@ -352,7 +403,12 @@ cdata.set('MESON_BUILD', 1)
 # On ELF systems we don't want the libraries to be unloaded since we don't clean them up properly,
 # so we request the nodelete flag to be enabled.
 # On other systems, we don't really know how to do that, but it's welcome if somebody can tell.
-nodelete_link_args = ['-Wl,-z,nodelete']
+# Windows doesn't support this flag.
+if host_machine.system() != 'windows'
+  nodelete_link_args = ['-Wl,-z,nodelete']
+else
+  nodelete_link_args = []
+endif
 
 # Code coverage
 
@@ -380,12 +436,12 @@ endforeach
 cap_dep = cc.find_library('cap', required : false)
 
 shm_dep = cc.find_library('rt', required : false)
-if shm_dep.found()
+if cc.has_function('shm_open', dependencies : shm_dep)
   cdata.set('HAVE_SHM_OPEN', 1)
 endif
 
 dl_dep = cc.find_library('dl', required : false)
-if dl_dep.found()
+if cc.has_function('dladdr', dependencies : dl_dep)
   cdata.set('HAVE_DLADDR', 1)
 endif
 
@@ -393,6 +449,8 @@ have_iconv = false
 if cc.has_function('iconv_open')
   iconv_dep = dependency('', required : false)
   have_iconv = true
+  # tell the libiconv header to pretend to be libc iconv
+  cdata.set('LIBICONV_PLUG', 1)
 else
   iconv_dep = cc.find_library('iconv', required : false)
   have_iconv = iconv_dep.found()
@@ -408,6 +466,9 @@ size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, si
     cdata.set('ICONV_CONST', 'const')
   endif
 endif
+
+# Used for backtraces on BSD
+execinfo_dep = cc.find_library('execinfo', required : false)
 
 # Atomic operations
 
@@ -504,8 +565,11 @@ if host_machine.cpu_family() == 'arm'
 endif
 # NEON checks are automatically done by the unstable-simd module
 
-# FIXME: make sure it's >= 2.2
-ltdl_dep = cc.find_library('ltdl', required : true)
+if get_option('daemon')
+  # FIXME: make sure it's >= 2.2
+  ltdl_dep = cc.find_library('ltdl', required : true)
+endif
+
 # FIXME: can meson support libtool -dlopen/-dlpreopen things?
 #        and do we still want to support this at all?
 cdata.set('DISABLE_LIBTOOL_PRELOAD', 1)
@@ -550,12 +614,15 @@ if dbus_dep.found()
   cdata.set('HAVE_DBUS', 1)
 endif
 
-gio_dep = dependency('gio-2.0', version : '>= 2.26.0', required : get_option('gsettings'))
-if gio_dep.found()
+gio_dep = dependency('gio-2.0', version : '>= 2.26.0')
+if get_option('gsettings').enabled()
+  assert(gio_dep.found(), 'GSettings support needs glib I/O library (GIO)')
   cdata.set('HAVE_GSETTINGS', 1)
+else
+  cdata.set('HAVE_GSETTINGS', 0)
 endif
 
-glib_dep = dependency('glib-2.0', version : '>= 2.4.0', required: get_option('glib'))
+glib_dep = dependency('glib-2.0', version : '>= 2.28.0', required: get_option('glib'))
 if glib_dep.found()
   cdata.set('HAVE_GLIB', 1)
 endif
@@ -601,6 +668,16 @@ if systemd_dep.found() and systemduserunitdir == ''
   systemduserunitdir = systemd_dep.get_pkgconfig_variable('systemduserunitdir')
 endif
 
+libelogind_dep = dependency('libelogind', required : get_option('elogind'))
+if libelogind_dep.found()
+  cdata.set('HAVE_SYSTEMD_LOGIN', 1)
+endif
+
+tcpwrap_dep = cc.find_library('wrap', required: get_option('tcpwrap'))
+if cc.has_header('tcpd.h') and cc.has_function('hosts_access', dependencies : tcpwrap_dep)
+  cdata.set('HAVE_LIBWRAP', 1)
+endif
+
 x11_dep = dependency('x11-xcb', required : get_option('x11'))
 if x11_dep.found()
   xcb_dep  = dependency('xcb',  required : true, version : '>= 1.6')
@@ -608,11 +685,13 @@ if x11_dep.found()
   sm_dep   = dependency('sm',   required : true)
   xtst_dep = dependency('xtst', required : true)
   cdata.set('HAVE_X11', 1)
+  if cc.has_function('XSetIOErrorExitHandler', dependencies: x11_dep)
+    cdata.set('HAVE_XSETIOERROREXITHANDLER', 1)
+  endif
 endif
 
 # Module dependencies
-
-if cc.has_header('sys/soundcard.h')
+if cc.has_header('sys/soundcard.h', required: get_option('oss-output'))
   cdata.set('HAVE_OSS_OUTPUT', 1)
   cdata.set('HAVE_OSS_WRAPPER', 1)
   cdata.set('PULSEDSP_LOCATION', pulsedsp_location)
@@ -625,10 +704,15 @@ endif
 avahi_dep = dependency('avahi-client', version : '>= 0.6.0', required : get_option('avahi'), disabler : true)
 if avahi_dep.found()
   cdata.set('HAVE_AVAHI', 1)
+else
+  cdata.set('HAVE_AVAHI', 0)
 endif
 
 sbc_dep = dependency('sbc', version : '>= 1.0', required : false)
-if get_option('bluez5')
+
+bluez_dep = dependency('bluez', required : get_option('bluez5'))
+
+if bluez_dep.found()
   assert(dbus_dep.found(), 'BlueZ requires D-Bus support')
   assert(sbc_dep.found(), 'BlueZ requires SBC support')
   cdata.set('HAVE_SBC', 1)
@@ -683,7 +767,17 @@ gstrtp_dep = dependency('gstreamer-rtp-1.0', required : get_option('gstreamer'))
 
 have_gstreamer = false
 if gst_dep.found() and gstapp_dep.found() and gstrtp_dep.found()
+  assert(gio_dep.found(), 'GStreamer-based RTP needs glib I/O library (GIO)')
   have_gstreamer = true
+endif
+
+bluez5_gst_dep = dependency('gstreamer-1.0', version : '>= 1.14', required : get_option('bluez5-gstreamer'))
+bluez5_gstapp_dep = dependency('gstreamer-app-1.0', required : get_option('bluez5-gstreamer'))
+have_bluez5_gstreamer = false
+if bluez5_gst_dep.found() and bluez5_gstapp_dep.found()
+  have_bluez5_gstreamer = true
+  cdata.set('HAVE_GSTLDAC', 1)
+  cdata.set('HAVE_GSTAPTX', 1)
 endif
 
 # These are required for the CMake file generation
@@ -699,7 +793,9 @@ check_dep = dependency('check', version : '>= 0.9.10', required : get_option('te
 
 # Subdirs
 
-subdir('doxygen')
+if get_option('doxygen')
+  subdir('doxygen')
+endif
 subdir('po')
 if get_option('man')
   subdir('man')
@@ -804,17 +900,19 @@ summary = [
 #  'CPPFLAGS:                      @0@'.format(${CPPFLAGS}),
 #  'LIBS:                          @0@'.format(${LIBS}),
   '',
+  'Enable pulseaudio daemon:      @0@'.format(get_option('daemon')),
+  '',
   'Enable memfd shared memory:    @0@'.format(cdata.has('HAVE_MEMFD')),
   'Enable X11:                    @0@'.format(x11_dep.found()),
-#  'Enable OSS Output:             @0@'.format(${ENABLE_OSS_OUTPUT}),
-#  'Enable OSS Wrapper:            @0@'.format(${ENABLE_OSS_WRAPPER}),
+  '  Safe X11 I/O errors:         @0@'.format(cdata.has('HAVE_XSETIOERROREXITHANDLER')),
+  'Enable OSS Output:             @0@'.format(cdata.has('HAVE_OSS_OUTPUT')),
+  'Enable OSS Wrapper:            @0@'.format(cdata.has('HAVE_OSS_WRAPPER')),
 #  'Enable EsounD:                 @0@'.format(${ENABLE_ESOUND}),
   'Enable Alsa:                   @0@'.format(alsa_dep.found()),
 #  'Enable CoreAudio:              @0@'.format(${ENABLE_COREAUDIO}),
 #  'Enable Solaris:                @0@'.format(${ENABLE_SOLARIS}),
 #  'Enable WaveOut:                @0@'.format(${ENABLE_WAVEOUT}),
   'Enable GLib 2:                 @0@'.format(glib_dep.found()),
-#  'Enable GConf:                  @0@'.format(${ENABLE_GCONF}),
   'Enable GSettings:              @0@'.format(gio_dep.found()),
   'Enable Gtk+ 3:                 @0@'.format(gtk_dep.found()),
   'Enable Avahi:                  @0@'.format(avahi_dep.found()),
@@ -822,13 +920,15 @@ summary = [
   'Enable Async DNS:              @0@'.format(asyncns_dep.found()),
   'Enable LIRC:                   @0@'.format(lirc_dep.found()),
   'Enable D-Bus:                  @0@'.format(dbus_dep.found()),
-  '  Enable BlueZ 5:              @0@'.format(get_option('bluez5')),
-  '    Enable native headsets:    @0@'.format(get_option('bluez5-native-headset')),
-  '    Enable  ofono headsets:    @0@'.format(get_option('bluez5-ofono-headset')),
+  '  Enable BlueZ 5:              @0@'.format(cdata.has('HAVE_BLUEZ_5')),
+  '    Enable native headsets:    @0@'.format(cdata.has('HAVE_BLUEZ_5_NATIVE_HEADSET')),
+  '    Enable  ofono headsets:    @0@'.format(cdata.has('HAVE_BLUEZ_5_OFONO_HEADSET')),
+  '    Enable GStreamer based codecs: @0@'.format(have_bluez5_gstreamer),
   'Enable udev:                   @0@'.format(udev_dep.found()),
   '  Enable HAL->udev compat:     @0@'.format(get_option('hal-compat')),
   'Enable systemd:                @0@'.format(libsystemd_dep.found()),
-#  'Enable TCP Wrappers:           @0@'.format(${ENABLE_TCPWRAP}),
+  'Enable elogind:                @0@'.format(libelogind_dep.found()),
+  'Enable TCP Wrappers:           @0@'.format(tcpwrap_dep.found()),
   'Enable libsamplerate:          @0@'.format(samplerate_dep.found()),
   'Enable IPv6:                   @0@'.format(get_option('ipv6')),
   'Enable OpenSSL (for Airtunes): @0@'.format(openssl_dep.found()),
@@ -840,6 +940,7 @@ summary = [
   'Enable SoXR (resampler):       @0@'.format(soxr_dep.found()),
   'Enable WebRTC echo canceller:  @0@'.format(webrtc_dep.found()),
   'Enable Gcov coverage:          @0@'.format(get_option('gcov')),
+  'Enable Valgrind:               @0@'.format(cdata.has('HAVE_VALGRIND_MEMCHECK_H')),
   'Enable man pages:              @0@'.format(get_option('man')),
   'Enable unit tests:             @0@'.format(get_option('tests')),
   '',
@@ -880,7 +981,7 @@ if host_machine.system() != 'windows'
     ]
     warning('\n' + '\n'.join(message))
   endif
-  if not udev_dep.found()
+  if host_machine.system() == 'linux' and not udev_dep.found()
     message = [
       'You do not have udev support enabled. It is strongly recommended',
       'that you enable udev support if your platform supports it as it is',

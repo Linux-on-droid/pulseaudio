@@ -1711,6 +1711,14 @@ static bool element_probe_volume(pa_alsa_element *e, snd_mixer_elem_t *me) {
     else
         e->has_dB = snd_mixer_selem_get_capture_dB_range(me, &min_dB, &max_dB) >= 0;
 
+    /* Assume decibel data to be incorrect if max_dB is negative. */
+    if (e->has_dB && max_dB < 0 && !e->db_fix) {
+        pa_alsa_mixer_id_to_string(buf, sizeof(buf), &e->alsa_id);
+        pa_log_warn("The decibel volume range for element %s (%li dB - %li dB) has negative maximum. "
+                    "Disabling the decibel range.", buf, min_dB, max_dB);
+        e->has_dB = false;
+    }
+
     /* Check that the kernel driver returns consistent limits with
      * both _get_*_dB_range() and _ask_*_vol_dB(). */
     if (e->has_dB && !e->db_fix) {
@@ -2809,6 +2817,9 @@ static int path_verify(pa_alsa_path *p) {
         { "multichannel-output",              N_("Multichannel Output"),          PA_DEVICE_PORT_TYPE_LINE },
         { "steelseries-arctis-output-game-common", N_("Game Output"),             PA_DEVICE_PORT_TYPE_HEADSET },
         { "steelseries-arctis-output-chat-common", N_("Chat Output"),             PA_DEVICE_PORT_TYPE_HEADSET },
+        { "analog-chat-output",               N_("Chat Output"),                  PA_DEVICE_PORT_TYPE_HEADSET },
+        { "analog-chat-input",                N_("Chat Input"),                   PA_DEVICE_PORT_TYPE_HEADSET },
+        { "virtual-surround-7.1",             N_("Virtual Surround 7.1"),         PA_DEVICE_PORT_TYPE_HEADPHONES },
     };
 
     pa_alsa_element *e;
@@ -2840,13 +2851,66 @@ static int path_verify(pa_alsa_path *p) {
     return 0;
 }
 
-static const char *get_default_paths_dir(void) {
+static char *get_path_config_path(const char *paths_dir, const char *fname) {
+    char *path_config_path;
+    char *dir;
+    char *data_home;
+    pa_dynarray *data_dirs;
+
+    if (paths_dir) {
+        path_config_path = pa_maybe_prefix_path(fname, paths_dir);
+        if (access(path_config_path, R_OK) == 0)
+            return path_config_path;
+        else
+            pa_xfree(path_config_path);
+    }
+
 #ifdef HAVE_RUNNING_FROM_BUILD_TREE
-    if (pa_run_from_build_tree())
-        return PA_SRCDIR "/modules/alsa/mixer/paths/";
-    else
+    if (pa_run_from_build_tree()) {
+        path_config_path = pa_maybe_prefix_path(fname, PA_SRCDIR "/modules/alsa/mixer/paths/");
+        if (access(path_config_path, R_OK) == 0)
+            return path_config_path;
+        else
+            pa_xfree(path_config_path);
+    }
 #endif
-        return PA_ALSA_PATHS_DIR;
+
+    if (pa_get_data_home_dir(&data_home) == 0) {
+        dir = pa_sprintf_malloc("%s" PA_PATH_SEP "alsa-mixer" PA_PATH_SEP "paths", data_home);
+        pa_xfree(data_home);
+
+        path_config_path = pa_maybe_prefix_path(fname, dir);
+        pa_xfree(dir);
+
+        if (access(path_config_path, R_OK) == 0)
+            return path_config_path;
+        else
+            pa_xfree(path_config_path);
+    }
+
+    if (pa_get_data_dirs(&data_dirs) == 0) {
+        int idx;
+        const char *n;
+
+        PA_DYNARRAY_FOREACH(n, data_dirs, idx) {
+            dir = pa_sprintf_malloc("%s" PA_PATH_SEP "alsa-mixer" PA_PATH_SEP "paths", n);
+            path_config_path = pa_maybe_prefix_path(fname, dir);
+            pa_xfree(dir);
+
+            if (access(path_config_path, R_OK) == 0) {
+                pa_dynarray_free(data_dirs);
+                return path_config_path;
+            }
+            else {
+                pa_xfree(path_config_path);
+            }
+        }
+
+        pa_dynarray_free(data_dirs);
+    }
+
+    path_config_path = pa_maybe_prefix_path(fname, PA_ALSA_PATHS_DIR);
+    return path_config_path;
 }
 
 pa_alsa_path* pa_alsa_path_new(const char *paths_dir, const char *fname, pa_alsa_direction_t direction) {
@@ -2913,10 +2977,9 @@ pa_alsa_path* pa_alsa_path_new(const char *paths_dir, const char *fname, pa_alsa
     items[2].data = &p->description;
     items[3].data = &mute_during_activation;
 
-    if (!paths_dir)
-        paths_dir = get_default_paths_dir();
+    fn = get_path_config_path(paths_dir, fname);
 
-    fn = pa_maybe_prefix_path(fname, paths_dir);
+    pa_log_info("Loading path config: %s", fn);
 
     r = pa_config_parse(fn, NULL, items, p->proplist, false, p);
     pa_xfree(fn);
@@ -3508,6 +3571,7 @@ finish:
                      * object. */
                     e->db_fix = pa_xnewdup(pa_alsa_decibel_fix, db_fix, 1);
                     e->db_fix->profile_set = NULL;
+                    e->db_fix->key = pa_xstrdup(db_fix->key);
                     e->db_fix->name = pa_xstrdup(db_fix->name);
                     e->db_fix->db_values = pa_xmemdup(db_fix->db_values, (db_fix->max_step - db_fix->min_step + 1) * sizeof(long));
                 }
@@ -4497,6 +4561,8 @@ static int mapping_verify(pa_alsa_mapping *m, const pa_channel_map *bonus) {
 
     static const struct description_map well_known_descriptions[] = {
         { "analog-mono",            N_("Analog Mono") },
+        { "analog-mono-left",       N_("Analog Mono (Left)") },
+        { "analog-mono-right",      N_("Analog Mono (Right)") },
         { "analog-stereo",          N_("Analog Stereo") },
         { "mono-fallback",          N_("Mono") },
         { "stereo-fallback",        N_("Stereo") },
@@ -4507,6 +4573,8 @@ static int mapping_verify(pa_alsa_mapping *m, const pa_channel_map *bonus) {
          * multichannel-input and multichannel-output. */
         { "analog-stereo-input",    N_("Analog Stereo") },
         { "analog-stereo-output",   N_("Analog Stereo") },
+        { "analog-stereo-headset",  N_("Headset") },
+        { "analog-stereo-speakerphone",  N_("Speakerphone") },
         { "multichannel-input",     N_("Multichannel") },
         { "multichannel-output",    N_("Multichannel") },
         { "analog-surround-21",     N_("Analog Surround 2.1") },
@@ -4663,9 +4731,12 @@ static int profile_verify(pa_alsa_profile *p) {
     static const struct description_map well_known_descriptions[] = {
         { "output:analog-mono+input:analog-mono",     N_("Analog Mono Duplex") },
         { "output:analog-stereo+input:analog-stereo", N_("Analog Stereo Duplex") },
+        { "output:analog-stereo-headset+input:analog-stereo-headset", N_("Headset") },
+        { "output:analog-stereo-speakerphone+input:analog-stereo-speakerphone", N_("Speakerphone") },
         { "output:iec958-stereo+input:iec958-stereo", N_("Digital Stereo Duplex (IEC958)") },
         { "output:multichannel-output+input:multichannel-input", N_("Multichannel Duplex") },
         { "output:unknown-stereo+input:unknown-stereo", N_("Stereo Duplex") },
+        { "output:analog-output-surround71+output:analog-output-chat+input:analog-input", N_("Mono Chat + 7.1 Surround") },
         { "off",                                      N_("Off") }
     };
     const char *description_key = p->description_key ? p->description_key : p->name;
@@ -5081,6 +5152,7 @@ void pa_alsa_profile_set_probe(
     pa_alsa_profile **pp, **probe_order;
     pa_alsa_mapping *m;
     pa_hashmap *broken_inputs, *broken_outputs, *used_paths;
+    pa_alsa_mapping *selected_fallback_input = NULL, *selected_fallback_output = NULL;
 
     pa_assert(ps);
     pa_assert(dev_id);
@@ -5103,11 +5175,16 @@ void pa_alsa_profile_set_probe(
         uint32_t idx;
         p = *pp;
 
-        /* Skip if fallback and already found something */
+        /* Skip if fallback and already found something, but still probe already selected fallbacks.
+         * If UCM is used then both fallback_input and fallback_output flags are false.
+         * If UCM is not used then there will be only a single entry in mappings.
+         */
         if (found_input && p->fallback_input)
-            continue;
+            if (selected_fallback_input == NULL || pa_idxset_get_by_index(p->input_mappings, 0) != selected_fallback_input)
+                continue;
         if (found_output && p->fallback_output)
-            continue;
+            if (selected_fallback_output == NULL || pa_idxset_get_by_index(p->output_mappings, 0) != selected_fallback_output)
+                continue;
 
         /* Skip if this is already marked that it is supported (i.e. from the config file) */
         if (!p->supported) {
@@ -5198,14 +5275,20 @@ void pa_alsa_profile_set_probe(
         if (p->output_mappings)
             PA_IDXSET_FOREACH(m, p->output_mappings, idx)
                 if (m->output_pcm) {
-                    found_output |= !p->fallback_output;
+                    found_output = true;
+                    if (p->fallback_output && selected_fallback_output == NULL) {
+                        selected_fallback_output = m;
+                    }
                     mapping_paths_probe(m, p, PA_ALSA_DIRECTION_OUTPUT, used_paths, mixers);
                 }
 
         if (p->input_mappings)
             PA_IDXSET_FOREACH(m, p->input_mappings, idx)
                 if (m->input_pcm) {
-                    found_input |= !p->fallback_input;
+                    found_input = true;
+                    if (p->fallback_input && selected_fallback_input == NULL) {
+                        selected_fallback_input = m;
+                    }
                     mapping_paths_probe(m, p, PA_ALSA_DIRECTION_INPUT, used_paths, mixers);
                 }
     }

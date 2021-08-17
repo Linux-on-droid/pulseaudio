@@ -128,6 +128,7 @@ static void reset_callbacks(pa_context *c) {
 pa_context *pa_context_new_with_proplist(pa_mainloop_api *mainloop, const char *name, const pa_proplist *p) {
     pa_context *c;
     pa_mem_type_t type;
+    const char *force_disable_shm_str;
 
     pa_assert(mainloop);
 
@@ -172,6 +173,16 @@ pa_context *pa_context_new_with_proplist(pa_mainloop_api *mainloop, const char *
 
     c->conf = pa_client_conf_new();
     pa_client_conf_load(c->conf, true, true);
+
+    force_disable_shm_str = pa_proplist_gets(c->proplist, PA_PROP_CONTEXT_FORCE_DISABLE_SHM);
+    if (force_disable_shm_str) {
+        int b = pa_parse_boolean(force_disable_shm_str);
+        if (b < 0) {
+            pa_log_warn("Ignored invalid value for '%s' property: %s", PA_PROP_CONTEXT_FORCE_DISABLE_SHM, force_disable_shm_str);
+        } else if (b) {
+            c->conf->disable_shm = true;
+        }
+    }
 
     c->srb_template.readfd = -1;
     c->srb_template.writefd = -1;
@@ -1016,12 +1027,22 @@ int pa_context_connect(
 
         /* Add TCP/IP on the localhost */
         if (c->conf->auto_connect_localhost) {
+#if defined(HAVE_IPV6) && !defined(OS_IS_WIN32)
+            /* FIXME: pa_socket_client does not support IPv6 on Windows */
             c->server_list = pa_strlist_prepend(c->server_list, "tcp6:[::1]");
+#endif
             c->server_list = pa_strlist_prepend(c->server_list, "tcp4:127.0.0.1");
         }
 
         /* The system wide instance via PF_LOCAL */
+#ifndef OS_IS_WIN32
         c->server_list = pa_strlist_prepend(c->server_list, PA_SYSTEM_RUNTIME_PATH PA_PATH_SEP PA_NATIVE_DEFAULT_UNIX_SOCKET);
+#else
+        /* see change_user in src/daemon/main.c */
+        char *run_path = pa_sprintf_malloc("%s" PA_PATH_SEP "run" PA_PATH_SEP PA_NATIVE_DEFAULT_UNIX_SOCKET, pa_win32_get_system_appdata());
+        c->server_list = pa_strlist_prepend(c->server_list, run_path);
+        pa_xfree(run_path);
+#endif
 
         /* The user instance via PF_LOCAL */
         c->server_list = prepend_per_user(c->server_list);

@@ -691,7 +691,7 @@ static char *modifier_name_to_role(const char *mod_name, bool *is_sink) {
 
     if (!sub || !*sub) {
         pa_xfree(sub);
-        pa_log_warn("Can't match media roles for modifer %s", mod_name);
+        pa_log_warn("Can't match media roles for modifier %s", mod_name);
         return NULL;
     }
 
@@ -962,10 +962,10 @@ static void probe_volumes(pa_hashmap *hash, bool is_sink, snd_pcm_t *pcm_handle,
 
         PA_HASHMAP_FOREACH_KV(profile, path, data->paths, state2) {
             if (pa_alsa_path_probe(path, NULL, mixer_handle, ignore_dB) < 0) {
-                pa_log_warn("Could not probe path: %s, using s/w volume", data->path->name);
+                pa_log_warn("Could not probe path: %s, using s/w volume", path->name);
                 pa_hashmap_remove(data->paths, profile);
             } else if (!path->has_volume) {
-                pa_log_warn("Path %s is not a volume control", data->path->name);
+                pa_log_warn("Path %s is not a volume control", path->name);
                 pa_hashmap_remove(data->paths, profile);
             } else
                 pa_log_debug("Set up h/w volume using '%s' for %s:%s", path->name, profile, port->name);
@@ -1538,6 +1538,32 @@ static void alsa_mapping_add_ucm_modifier(pa_alsa_mapping *m, pa_alsa_ucm_modifi
         pa_channel_map_init(&m->channel_map);
 }
 
+static pa_alsa_mapping* ucm_alsa_mapping_get(pa_alsa_ucm_config *ucm, pa_alsa_profile_set *ps, const char *verb_name, const char *device_str, bool is_sink) {
+    pa_alsa_mapping *m;
+    char *mapping_name;
+    size_t ucm_alibpref_len = 0;
+    const char *value;
+
+    /* find private alsa-lib's configuration device prefix */
+    if (snd_use_case_get(ucm->ucm_mgr, "_alibpref", &value) == 0) {
+        if (value[0] && pa_startswith(device_str, value))
+            ucm_alibpref_len = strlen(value);
+
+        free((void *)value);
+    }
+
+    mapping_name = pa_sprintf_malloc("Mapping %s: %s: %s", verb_name, device_str + ucm_alibpref_len, is_sink ? "sink" : "source");
+
+    m = pa_alsa_mapping_get(ps, mapping_name);
+
+    if (!m)
+        pa_log("No mapping for %s", mapping_name);
+
+    pa_xfree(mapping_name);
+
+    return m;
+}
+
 static int ucm_create_mapping_direction(
         pa_alsa_ucm_config *ucm,
         pa_alsa_profile_set *ps,
@@ -1549,19 +1575,14 @@ static int ucm_create_mapping_direction(
         bool is_sink) {
 
     pa_alsa_mapping *m;
-    char *mapping_name;
     unsigned priority, rate, channels;
 
-    mapping_name = pa_sprintf_malloc("Mapping %s: %s: %s", verb_name, device_str, is_sink ? "sink" : "source");
+    m = ucm_alsa_mapping_get(ucm, ps, verb_name, device_str, is_sink);
 
-    m = pa_alsa_mapping_get(ps, mapping_name);
-    if (!m) {
-        pa_log("No mapping for %s", mapping_name);
-        pa_xfree(mapping_name);
+    if (!m)
         return -1;
-    }
-    pa_log_debug("UCM mapping: %s dev %s", mapping_name, device_name);
-    pa_xfree(mapping_name);
+
+    pa_log_debug("UCM mapping: %s dev %s", m->name, device_name);
 
     priority = is_sink ? device->playback_priority : device->capture_priority;
     rate = is_sink ? device->playback_rate : device->capture_rate;
@@ -1606,18 +1627,13 @@ static int ucm_create_mapping_for_modifier(
         bool is_sink) {
 
     pa_alsa_mapping *m;
-    char *mapping_name;
 
-    mapping_name = pa_sprintf_malloc("Mapping %s: %s: %s", verb_name, device_str, is_sink ? "sink" : "source");
+    m = ucm_alsa_mapping_get(ucm, ps, verb_name, device_str, is_sink);
 
-    m = pa_alsa_mapping_get(ps, mapping_name);
-    if (!m) {
-        pa_log("no mapping for %s", mapping_name);
-        pa_xfree(mapping_name);
+    if (!m)
         return -1;
-    }
-    pa_log_info("ucm mapping: %s modifier %s", mapping_name, mod_name);
-    pa_xfree(mapping_name);
+
+    pa_log_info("UCM mapping: %s modifier %s", m->name, mod_name);
 
     if (!m->ucm_context.ucm_devices && !m->ucm_context.ucm_modifiers) {   /* new mapping */
         m->ucm_context.ucm_devices = pa_idxset_new(pa_idxset_trivial_hash_func, pa_idxset_trivial_compare_func);

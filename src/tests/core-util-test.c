@@ -26,7 +26,7 @@
 #include <pulse/xmalloc.h>
 #include <pulsecore/core-util.h>
 
-START_TEST (modargs_test_parse_boolean) {
+START_TEST (test_parse_boolean) {
     ck_assert_int_eq(pa_parse_boolean("true"), true);
     ck_assert_int_eq(pa_parse_boolean("yes"), true);
     ck_assert_int_eq(pa_parse_boolean("1"), true);
@@ -40,7 +40,7 @@ START_TEST (modargs_test_parse_boolean) {
 }
 END_TEST
 
-START_TEST (modargs_test_parse_volume) {
+START_TEST (test_parse_volume) {
     pa_volume_t value;
 
     // dB volumes
@@ -92,7 +92,7 @@ START_TEST (modargs_test_parse_volume) {
 }
 END_TEST
 
-START_TEST (modargs_test_atoi) {
+START_TEST (test_atoi) {
     int32_t value;
 
     // decimal
@@ -100,6 +100,10 @@ START_TEST (modargs_test_atoi) {
     ck_assert_int_eq(value, 100000);
     ck_assert_int_eq(pa_atoi("-100000", &value), 0);
     ck_assert_int_eq(value, -100000);
+    ck_assert_int_eq(pa_atoi("010", &value), 0);
+    ck_assert_int_eq(value, 10);
+    ck_assert_int_eq(pa_atoi("-010", &value), 0);
+    ck_assert_int_eq(value, -10);
 
     // hexadecimal
     ck_assert_int_eq(pa_atoi("0x100000", &value), 0);
@@ -111,15 +115,18 @@ START_TEST (modargs_test_atoi) {
     ck_assert_int_lt(pa_atoi("3.14", &value), 0);
     ck_assert_int_lt(pa_atoi("7*8", &value), 0);
     ck_assert_int_lt(pa_atoi("false", &value), 0);
+    ck_assert_int_lt(pa_atoi("10000000000", &value), 0);
 }
 END_TEST
 
-START_TEST (modargs_test_atou) {
+START_TEST (test_atou) {
     uint32_t value;
 
     // decimal
     ck_assert_int_eq(pa_atou("100000", &value), 0);
     ck_assert_int_eq(value, 100000);
+    ck_assert_int_eq(pa_atou("010", &value), 0);
+    ck_assert_int_eq(value, 10);
 
     // hexadecimal
     ck_assert_int_eq(pa_atou("0x100000", &value), 0);
@@ -131,10 +138,35 @@ START_TEST (modargs_test_atou) {
     ck_assert_int_lt(pa_atou("3.14", &value), 0);
     ck_assert_int_lt(pa_atou("7*8", &value), 0);
     ck_assert_int_lt(pa_atou("false", &value), 0);
+    ck_assert_int_lt(pa_atou("10000000000", &value), 0);
 }
 END_TEST
 
-START_TEST (modargs_test_atol) {
+START_TEST (test_atou64) {
+    uint64_t value;
+
+    // decimal
+    ck_assert_int_eq(pa_atou64("100000", &value), 0);
+    ck_assert_int_eq(value, 100000);
+    ck_assert_int_eq(pa_atou64("010", &value), 0);
+    ck_assert_int_eq(value, 10);
+    ck_assert_int_eq(pa_atou64("10000000000", &value), 0);
+    ck_assert_int_eq(value, 10000000000);
+
+    // hexadecimal
+    ck_assert_int_eq(pa_atou64("0x100000", &value), 0);
+    ck_assert_int_eq(value, 0x100000);
+
+    // invalid values
+    ck_assert_int_lt(pa_atou64("-100000", &value), 0);
+    ck_assert_int_lt(pa_atou64("-0x100000", &value), 0);
+    ck_assert_int_lt(pa_atou64("3.14", &value), 0);
+    ck_assert_int_lt(pa_atou64("7*8", &value), 0);
+    ck_assert_int_lt(pa_atou64("false", &value), 0);
+}
+END_TEST
+
+START_TEST (test_atol) {
     long value;
 
     // decimal
@@ -142,6 +174,10 @@ START_TEST (modargs_test_atol) {
     ck_assert_int_eq(value, 100000l);
     ck_assert_int_eq(pa_atol("-100000", &value), 0);
     ck_assert_int_eq(value, -100000l);
+    ck_assert_int_eq(pa_atol("010", &value), 0);
+    ck_assert_int_eq(value, 10);
+    ck_assert_int_eq(pa_atol("-010", &value), 0);
+    ck_assert_int_eq(value, -10);
 
     // hexadecimal
     ck_assert_int_eq(pa_atol("0x100000", &value), 0);
@@ -156,7 +192,35 @@ START_TEST (modargs_test_atol) {
 }
 END_TEST
 
-START_TEST (modargs_test_atod) {
+START_TEST (test_atoi64) {
+    int64_t value;
+
+    // decimal
+    ck_assert_int_eq(pa_atoi64("100000", &value), 0);
+    ck_assert_int_eq(value, 100000);
+    ck_assert_int_eq(pa_atoi64("-100000", &value), 0);
+    ck_assert_int_eq(value, -100000);
+    ck_assert_int_eq(pa_atoi64("010", &value), 0);
+    ck_assert_int_eq(value, 10);
+    ck_assert_int_eq(pa_atoi64("-010", &value), 0);
+    ck_assert_int_eq(value, -10);
+    ck_assert_int_eq(pa_atoi64("10000000000", &value), 0);
+    ck_assert_int_eq(value, 10000000000);
+
+    // hexadecimal
+    ck_assert_int_eq(pa_atoi64("0x100000", &value), 0);
+    ck_assert_int_eq(value, 0x100000);
+    ck_assert_int_eq(pa_atoi64("-0x100000", &value), 0);
+    ck_assert_int_eq(value, -0x100000);
+
+    // invalid values
+    ck_assert_int_lt(pa_atoi64("3.14", &value), 0);
+    ck_assert_int_lt(pa_atoi64("7*8", &value), 0);
+    ck_assert_int_lt(pa_atoi64("false", &value), 0);
+}
+END_TEST
+
+START_TEST (test_atod) {
     double value;
     double epsilon = 0.001;
 
@@ -177,7 +241,7 @@ START_TEST (modargs_test_atod) {
 }
 END_TEST
 
-START_TEST (modargs_test_replace) {
+START_TEST (test_replace) {
     char* value;
 
     value = pa_replace("abcde", "bcd", "XYZ");
@@ -198,22 +262,22 @@ START_TEST (modargs_test_replace) {
 }
 END_TEST
 
-START_TEST (modargs_test_replace_fail_1) {
+START_TEST (test_replace_fail_1) {
     pa_replace(NULL, "b", "bab");
 }
 END_TEST
 
-START_TEST (modargs_test_replace_fail_2) {
+START_TEST (test_replace_fail_2) {
     pa_replace("abe", NULL, "bab");
 }
 END_TEST
 
-START_TEST (modargs_test_replace_fail_3) {
+START_TEST (test_replace_fail_3) {
     pa_replace("abcde", "b", NULL);
 }
 END_TEST
 
-START_TEST (modargs_test_escape) {
+START_TEST (test_escape) {
     char* value;
 
     value = pa_escape("abcde", "bcd");
@@ -230,12 +294,12 @@ START_TEST (modargs_test_escape) {
 }
 END_TEST
 
-START_TEST (modargs_test_replace_fail_4) {
+START_TEST (test_replace_fail_4) {
     pa_replace("abe", "", "bab");
 }
 END_TEST
 
-START_TEST (modargs_test_unescape) {
+START_TEST (test_unescape) {
     char* value;
 
     value = pa_unescape(pa_xstrdup("a\\b\\c\\de"));
@@ -261,19 +325,21 @@ int main(int argc, char *argv[]) {
 
     tc = tcase_create("core-util");
     suite_add_tcase(s, tc);
-    tcase_add_test(tc, modargs_test_parse_boolean);
-    tcase_add_test(tc, modargs_test_parse_volume);
-    tcase_add_test(tc, modargs_test_atoi);
-    tcase_add_test(tc, modargs_test_atou);
-    tcase_add_test(tc, modargs_test_atol);
-    tcase_add_test(tc, modargs_test_atod);
-    tcase_add_test(tc, modargs_test_replace);
-    tcase_add_test_raise_signal(tc, modargs_test_replace_fail_1, SIGABRT);
-    tcase_add_test_raise_signal(tc, modargs_test_replace_fail_2, SIGABRT);
-    tcase_add_test_raise_signal(tc, modargs_test_replace_fail_3, SIGABRT);
-    tcase_add_test_raise_signal(tc, modargs_test_replace_fail_4, SIGABRT);
-    tcase_add_test(tc, modargs_test_escape);
-    tcase_add_test(tc, modargs_test_unescape);
+    tcase_add_test(tc, test_parse_boolean);
+    tcase_add_test(tc, test_parse_volume);
+    tcase_add_test(tc, test_atoi);
+    tcase_add_test(tc, test_atou);
+    tcase_add_test(tc, test_atou64);
+    tcase_add_test(tc, test_atol);
+    tcase_add_test(tc, test_atoi64);
+    tcase_add_test(tc, test_atod);
+    tcase_add_test(tc, test_replace);
+    tcase_add_test_raise_signal(tc, test_replace_fail_1, SIGABRT);
+    tcase_add_test_raise_signal(tc, test_replace_fail_2, SIGABRT);
+    tcase_add_test_raise_signal(tc, test_replace_fail_3, SIGABRT);
+    tcase_add_test_raise_signal(tc, test_replace_fail_4, SIGABRT);
+    tcase_add_test(tc, test_escape);
+    tcase_add_test(tc, test_unescape);
 
     sr = srunner_create(s);
     srunner_run_all(sr, CK_NORMAL);

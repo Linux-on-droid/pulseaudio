@@ -784,6 +784,10 @@ void pa_sink_unlink(pa_sink* s) {
         j = i;
     }
 
+    /* Unlink monitor source before unlinking the sink */
+    if (s->monitor_source)
+        pa_source_unlink(s->monitor_source);
+
     if (linked)
         /* It's important to keep the suspend cause unchanged when unlinking,
          * because if we remove the SESSION suspend cause here, the alsa sink
@@ -794,9 +798,6 @@ void pa_sink_unlink(pa_sink* s) {
         s->state = PA_SINK_UNLINKED;
 
     reset_callbacks(s);
-
-    if (s->monitor_source)
-        pa_source_unlink(s->monitor_source);
 
     if (linked) {
         pa_subscription_post(s->core, PA_SUBSCRIPTION_EVENT_SINK | PA_SUBSCRIPTION_EVENT_REMOVE, s->index);
@@ -3430,6 +3431,8 @@ int pa_sink_set_port(pa_sink *s, const char *name, bool save) {
         return 0;
     }
 
+    s->port_changing = true;
+
     if (s->set_port(s, port) < 0)
         return -PA_ERR_NOENTITY;
 
@@ -3446,6 +3449,8 @@ int pa_sink_set_port(pa_sink *s, const char *name, bool save) {
     pa_core_update_default_sink(s->core);
 
     pa_hook_fire(&s->core->hooks[PA_CORE_HOOK_SINK_PORT_CHANGED], s);
+
+    s->port_changing = false;
 
     return 0;
 }
@@ -3577,6 +3582,14 @@ unsigned pa_device_init_priority(pa_proplist *p) {
 
     pa_assert(p);
 
+    /* JACK sinks and sources get very high priority so that we'll switch the
+     * default devices automatically when jackd starts and
+     * module-jackdbus-detect creates the jack sink and source. */
+    if ((s = pa_proplist_gets(p, PA_PROP_DEVICE_API))) {
+        if (pa_streq(s, "jack"))
+            priority += 10000;
+    }
+
     if ((s = pa_proplist_gets(p, PA_PROP_DEVICE_CLASS))) {
 
         if (pa_streq(s, "sound"))
@@ -3609,10 +3622,18 @@ unsigned pa_device_init_priority(pa_proplist *p) {
 
     if ((s = pa_proplist_gets(p, PA_PROP_DEVICE_PROFILE_NAME))) {
 
-        if (pa_startswith(s, "analog-"))
+        if (pa_startswith(s, "analog-")) {
             priority += 9;
+
+            /* If an analog device has an intended role of "phone", it probably
+             * co-exists with another device that is meant for everything else,
+             * and that other device should have higher priority than the phone
+             * device. */
+            if (pa_str_in_list_spaces(pa_proplist_gets(p, PA_PROP_DEVICE_INTENDED_ROLES), "phone"))
+                priority -= 1;
+        }
         else if (pa_startswith(s, "iec958-"))
-            priority += 8;
+            priority += 7;
     }
 
     return priority;

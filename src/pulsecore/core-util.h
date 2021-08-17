@@ -37,6 +37,7 @@
 #include <pulsecore/i18n.h>
 #include <pulsecore/macro.h>
 #include <pulsecore/socket.h>
+#include <pulsecore/dynarray.h>
 
 #ifndef PACKAGE
 #error "Please include config.h before including this file!"
@@ -142,6 +143,8 @@ char *pa_get_state_dir(void);
 char *pa_get_home_dir_malloc(void);
 int pa_append_to_home_dir(const char *path, char **_r);
 int pa_get_config_home_dir(char **_r);
+int pa_get_data_home_dir(char **_r);
+int pa_get_data_dirs(pa_dynarray **_r);
 int pa_append_to_config_home_dir(const char *path, char **_r);
 char *pa_get_binary_name_malloc(void);
 char *pa_runtime_path(const char *fn);
@@ -151,6 +154,8 @@ int pa_atoi(const char *s, int32_t *ret_i);
 int pa_atou(const char *s, uint32_t *ret_u);
 int pa_atol(const char *s, long *ret_l);
 int pa_atod(const char *s, double *ret_d);
+int pa_atoi64(const char *s, int64_t *ret_l);
+int pa_atou64(const char *s, uint64_t *ret_u);
 
 size_t pa_snprintf(char *str, size_t size, const char *format, ...);
 size_t pa_vsnprintf(char *str, size_t size, const char *format, va_list ap);
@@ -305,6 +310,7 @@ bool pa_running_in_vm(void);
 
 #ifdef OS_IS_WIN32
 char *pa_win32_get_toplevel(HANDLE handle);
+char *pa_win32_get_system_appdata();
 #endif
 
 size_t pa_page_size(void);

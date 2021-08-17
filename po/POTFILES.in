@@ -7,6 +7,7 @@ src/daemon/ltdl-bind-now.c
 src/daemon/main.c
 src/daemon/pulseaudio.desktop.in
 src/daemon/systemd/user/pulseaudio.service.in
+src/daemon/systemd/user/pulseaudio-x11.service.in
 src/modules/alsa/alsa-mixer.c
 src/modules/alsa/alsa-sink.c
 src/modules/alsa/alsa-source.c
@@ -16,8 +17,6 @@ src/modules/alsa/module-alsa-sink.c
 src/modules/alsa/module-alsa-source.c
 src/modules/bluetooth/module-bluez5-device.c
 src/modules/echo-cancel/module-echo-cancel.c
-src/modules/gconf/gconf-helper.c
-src/modules/gconf/module-gconf.c
 src/modules/jack/module-jack-sink.c
 src/modules/jack/module-jack-source.c
 src/modules/macosx/module-coreaudio-device.c
@@ -96,7 +95,6 @@ src/pulsecore/core-subscribe.c
 src/pulsecore/core-util.c
 src/pulsecore/core-util.h
 src/pulsecore/dbus-util.c
-src/pulsecore/dllmain.c
 src/pulsecore/dynarray.c
 src/pulsecore/fdsem.c
 src/pulsecore/ffmpeg/resample2.c

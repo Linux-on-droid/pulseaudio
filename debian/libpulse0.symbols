@@ -97,6 +97,7 @@ libpulse.so.0 libpulse0 #MINVER#
  pa_context_remove_sample@PULSE_0 0.99.1
  pa_context_rttime_new@PULSE_0 0.99.1
  pa_context_rttime_restart@PULSE_0 0.99.1
+ pa_context_send_message_to_object@PULSE_0 14.99.1
  pa_context_set_card_profile_by_index@PULSE_0 0.99.1
  pa_context_set_card_profile_by_name@PULSE_0 0.99.1
  pa_context_set_default_sink@PULSE_0 0.99.1

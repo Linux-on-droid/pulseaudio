@@ -3,7 +3,6 @@ libpulsecommon_sources = [
   'pulse/error.c',
   'pulse/fork-detect.c',
   'pulse/format.c',
-  'pulse/json.c',
   'pulse/mainloop-api.c',
   'pulse/xmalloc.c',
   'pulse/proplist.c',
@@ -31,6 +30,7 @@ libpulsecommon_sources = [
   'pulsecore/iochannel.c',
   'pulsecore/ioline.c',
   'pulsecore/ipacl.c',
+  'pulsecore/json.c',
   'pulsecore/lock-autospawn.c',
   'pulsecore/log.c',
   'pulsecore/ratelimit.c',
@@ -38,7 +38,6 @@ libpulsecommon_sources = [
   'pulsecore/memblock.c',
   'pulsecore/memblockq.c',
   'pulsecore/memchunk.c',
-  'pulsecore/mutex-posix.c',
   'pulsecore/native-common.c',
   'pulsecore/once.c',
   'pulsecore/packet.c',
@@ -55,7 +54,6 @@ libpulsecommon_sources = [
   'pulsecore/random.c',
   'pulsecore/srbchannel.c',
   'pulsecore/sample-util.c',
-  'pulsecore/semaphore-posix.c',
   'pulsecore/shm.c',
   'pulsecore/bitset.c',
   'pulsecore/socket-client.c',
@@ -64,7 +62,6 @@ libpulsecommon_sources = [
   'pulsecore/strbuf.c',
   'pulsecore/strlist.c',
   'pulsecore/tagstruct.c',
-  'pulsecore/thread-posix.c',
   'pulsecore/time-smoother.c',
   'pulsecore/tokenizer.c',
   'pulsecore/usergroup.c',
@@ -76,7 +73,6 @@ libpulsecommon_headers = [
   'pulse/error.h',
   'pulse/fork-detect.h',
   'pulse/format.h',
-  'pulse/json.h',
   'pulse/mainloop-api.h',
   'pulse/xmalloc.h',
   'pulse/proplist.h',
@@ -107,6 +103,7 @@ libpulsecommon_headers = [
   'pulsecore/iochannel.h',
   'pulsecore/ioline.h',
   'pulsecore/ipacl.h',
+  'pulsecore/json.h',
   'pulsecore/llist.h',
   'pulsecore/lock-autospawn.h',
   'pulsecore/log.h',
@@ -175,6 +172,20 @@ if x11_dep.found()
 endif
 
 # FIXME: Do non-POSIX thread things
+if host_machine.system() == 'windows'
+  libpulsecommon_sources += [
+    'pulsecore/mutex-win32.c',
+    'pulsecore/poll-win32.c',
+    'pulsecore/semaphore-win32.c',
+    'pulsecore/thread-win32.c',
+  ]
+else
+  libpulsecommon_sources += [
+    'pulsecore/mutex-posix.c',
+    'pulsecore/semaphore-posix.c',
+    'pulsecore/thread-posix.c'
+  ]
+endif
 # FIXME: Do SIMD things
 
 libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
@@ -187,16 +198,20 @@ libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
   install_dir : privlibdir,
   dependencies : [
     libm_dep, thread_dep, dl_dep, shm_dep, iconv_dep, sndfile_dep, dbus_dep,
-    x11_dep, libsystemd_dep, glib_dep, gtk_dep, asyncns_dep, libintl_dep,
+    x11_dep, libsystemd_dep, glib_dep.partial_dependency(compile_args: true),
+    gtk_dep.partial_dependency(compile_args: true), asyncns_dep, libintl_dep,
+    platform_dep, tcpwrap_dep, platform_socket_dep, execinfo_dep,
   ],
   implicit_include_directories : false)
 
 libpulsecommon_dep = declare_dependency(link_with: libpulsecommon)
 
 subdir('pulse')
-subdir('pulsecore')
-subdir('daemon')
-subdir('modules')
+if get_option('daemon')
+  subdir('pulsecore')
+  subdir('daemon')
+  subdir('modules')
+endif
 if get_option('tests')
   subdir('tests')
 endif

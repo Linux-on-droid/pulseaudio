@@ -6,7 +6,10 @@ Uploaders: Sjoerd Simons <sjoerd@debian.org>,
     Felipe Sateler <fsateler@debian.org>,
     Sebastien Bacher <seb128@debian.org>
 Build-Depends: debhelper-compat (= 12),
+    meson,
+    ninja-build,
     check <!nocheck>,
+    desktop-file-utils <!nocheck>,
     dh-exec,
     dpkg-dev (>= 1.17.14),
     intltool,
@@ -29,13 +32,15 @@ Build-Depends: debhelper-compat (= 12),
     libspeexdsp-dev (>= 1.2~rc1),
     libssl-dev,
     libsystemd-dev [linux-any],
-    libtdb-dev [!hurd-any],
+    libtdb-dev,
     libudev-dev [linux-any],
     libwebrtc-audio-processing-dev (>= 0.2) [linux-any],
     libwrap0-dev,
     libx11-xcb-dev,
     libxcb1-dev,
-    libxtst-dev
+    libxml2-utils <!nocheck>,
+    libxtst-dev,
+    systemd [linux-any]
 Standards-Version: 4.5.0
 Rules-Requires-Root: no
 Vcs-Browser: https://salsa.debian.org/pulseaudio-team/pulseaudio
