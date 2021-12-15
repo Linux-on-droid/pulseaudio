@@ -29,6 +29,7 @@ endif
 # Libs should be in the multi-arch path, but the modules should be in the
 # normal directory as pulseaudio is foreign
 DEB_MESON_OPTIONS = \
+  -Ddoxygen=false \
   -Dx11=enabled \
   -Dhal-compat=false \
   -Dgsettings=enabled \
