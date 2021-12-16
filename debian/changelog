@@ -1,9 +1,20 @@
-pulseaudio (15.0+dfsg1-3) UNRELEASED; urgency=medium
+pulseaudio (15.0+dfsg1-3) unstable; urgency=medium
 
+  * Team upload.
+  [ Sebastien Bacher ]
   * debian/rules:
     - fix a typo in the glib build option
 
- -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 24 Nov 2021 09:52:06 +0100
+  [ Laurent Bigonville ]
+  * debian/rules: Explicitly disable building doxygen documentation
+    (Closes: #996335)
+  * debian/control: Move libpulse-mainloop-glib0 and libpulsedsp to libs
+  * debian/control: Bump Standards-Version to 4.6.0 (no further changes)
+
+  [ Helmut Grohne ]
+  * Fix nocheck FTBFS: Disable tests. (Closes: #993095)
+
+ -- Laurent Bigonville <bigon@debian.org>  Thu, 16 Dec 2021 12:33:25 +0100
 
 pulseaudio (15.0+dfsg1-2) unstable; urgency=medium
 
