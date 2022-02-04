@@ -95,7 +95,7 @@ pulseaudio (14.99.1+dfsg1-1) experimental; urgency=medium
     This was the behaviour with previous autotools build system
 
   [ Faidon Liambotis ]
-  * Create /etc/pulse/default.pa.d that can now be used for additional 
+  * Create /etc/pulse/default.pa.d that can now be used for additional
     configuration snippets
   * Validate manpages and desktop file.
     For that we need the new build dependencies on libxml2-utils
