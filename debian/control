@@ -5,7 +5,7 @@ Maintainer: Pulseaudio maintenance team <pkg-pulseaudio-devel@lists.alioth.debia
 Uploaders: Sjoerd Simons <sjoerd@debian.org>,
     Felipe Sateler <fsateler@debian.org>,
     Sebastien Bacher <seb128@debian.org>
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper-compat (= 13),
     meson,
     ninja-build,
     check <!nocheck>,
