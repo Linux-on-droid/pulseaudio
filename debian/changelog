@@ -1,3 +1,11 @@
+pulseaudio (15.0+dfsg1-4) UNRELEASED; urgency=medium
+
+  [ Diederik de Haas ]
+  * Create /etc/pulse/system.pa.d to store additional configuration snippets
+    for system.pa (Closes: #994708)
+
+ -- Felipe Sateler <fsateler@debian.org>  Thu, 16 Dec 2021 16:19:25 +0100
+
 pulseaudio (15.0+dfsg1-3) unstable; urgency=medium
 
   * Team upload.
