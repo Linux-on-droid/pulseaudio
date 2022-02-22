@@ -4,7 +4,18 @@ pulseaudio (15.0+dfsg1-4) UNRELEASED; urgency=medium
   * Create /etc/pulse/system.pa.d to store additional configuration snippets
     for system.pa (Closes: #994708)
 
- -- Felipe Sateler <fsateler@debian.org>  Thu, 16 Dec 2021 16:19:25 +0100
+  [ Laurent Bigonville ]
+  * Enable gstreamer support.  This is mainly needed to use different codecs
+    for Bluetooth headsets (Closes: #991597, #954434)
+  * Fix LDAC RTP payloading.  Without this, LDAC is not working with recent
+    Sony devices
+
+  [ Debian Janitor ]
+  * Remove 5 obsolete maintscript entries in 1 files.
+  * Bump debhelper from old 12 to 13. + debian/rules: Drop --fail-missing
+    argument to dh_missing, which is now the default.
+
+ -- Laurent Bigonville <bigon@debian.org>  Tue, 22 Feb 2022 14:46:39 +0100
 
 pulseaudio (15.0+dfsg1-3) unstable; urgency=medium
 
