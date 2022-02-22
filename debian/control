@@ -175,8 +175,7 @@ Package: pulseaudio-module-bluetooth
 Build-Profiles: <!stage1>
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}, bluez (>= 5.23)
-Recommends: gstreamer1.0-plugins-bad (>= 1.19),
-            gstreamer1.0-plugins-good (>= 1.19)
+Recommends: gstreamer1.0-plugins-bad (>= 1.19)
 Description: Bluetooth module for PulseAudio sound server
  PulseAudio, previously known as Polypaudio, is a sound server for POSIX and
  WIN32 systems. It is a drop in replacement for the ESD sound server with
