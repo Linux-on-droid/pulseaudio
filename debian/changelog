@@ -1,4 +1,4 @@
-pulseaudio (15.0+dfsg1-4) UNRELEASED; urgency=medium
+pulseaudio (15.0+dfsg1-4) unstable; urgency=medium
 
   [ Diederik de Haas ]
   * Create /etc/pulse/system.pa.d to store additional configuration snippets
@@ -15,7 +15,7 @@ pulseaudio (15.0+dfsg1-4) UNRELEASED; urgency=medium
   * Bump debhelper from old 12 to 13. + debian/rules: Drop --fail-missing
     argument to dh_missing, which is now the default.
 
- -- Laurent Bigonville <bigon@debian.org>  Tue, 22 Feb 2022 14:46:39 +0100
+ -- Laurent Bigonville <bigon@debian.org>  Tue, 22 Feb 2022 14:57:31 +0100
 
 pulseaudio (15.0+dfsg1-3) unstable; urgency=medium
 
