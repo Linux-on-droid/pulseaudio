@@ -46,7 +46,12 @@
 #include <pulsecore/socket-util.h>
 #include <pulsecore/thread.h>
 #include <pulsecore/thread-mq.h>
+
+#ifdef USE_SMOOTHER_2
+#include <pulsecore/time-smoother_2.h>
+#else
 #include <pulsecore/time-smoother.h>
+#endif
 
 #include "a2dp-codecs.h"
 #include "a2dp-codec-util.h"
@@ -103,6 +108,7 @@ struct userdata {
     pa_core *core;
 
     pa_hook_slot *device_connection_changed_slot;
+    pa_hook_slot *device_battery_level_changed_slot;
     pa_hook_slot *transport_state_changed_slot;
     pa_hook_slot *transport_sink_volume_changed_slot;
     pa_hook_slot *transport_source_volume_changed_slot;
@@ -137,7 +143,13 @@ struct userdata {
     uint64_t read_index;
     uint64_t write_index;
     pa_usec_t started_at;
+
+#ifdef USE_SMOOTHER_2
+    pa_smoother_2 *read_smoother;
+#else
     pa_smoother *read_smoother;
+#endif
+
     pa_memchunk write_memchunk;
 
     const pa_bt_codec *bt_codec;
@@ -186,8 +198,8 @@ static pa_bluetooth_form_factor_t form_factor_from_class(uint32_t class_of_devic
     };
 
     /*
-     * See Bluetooth Assigned Numbers:
-     * https://www.bluetooth.org/Technical/AssignedNumbers/baseband.htm
+     * See Bluetooth Assigned Numbers for Baseband
+     * https://www.bluetooth.com/specifications/assigned-numbers/baseband/
      */
     major = (class_of_device >> 8) & 0x1F;
     minor = (class_of_device >> 2) & 0x3F;
@@ -259,25 +271,48 @@ static void connect_ports(struct userdata *u, void *new_data, pa_direction_t dir
 
 static bool bt_prepare_encoder_buffer(struct userdata *u)
 {
-    size_t encoded_size, reserved_size;
+    size_t encoded_size, reserved_size, encoded_frames;
     pa_assert(u);
     pa_assert(u->bt_codec);
 
     /* If socket write MTU is less than encoded frame size, there could be
      * up to one write MTU of data left in encoder buffer from previous round.
      *
-     * Reserve space for 2 encoded frames to cover that.
+     * Reserve space for at least 2 encoded frames to cover that.
      *
      * Note for A2DP codecs it is expected that size of encoded frame is less
      * than write link MTU. Therefore each encoded frame is sent out completely
      * and there is no used space in encoder buffer before next encoder call.
+     *
+     * For SCO socket all writes will be of MTU size to match payload length
+     * of HCI packet. Depending on selected USB Alternate Setting the payload
+     * length of HCI packet may exceed encoded frame size. For mSBC frame size
+     * is 60 bytes, payload length of HCI packet in USB Alts 3 is 72 byte,
+     * in USB Alts 5 it is 144 bytes.
+     *
+     * Reserve space for up to 1 + MTU / (encoded frame size) encoded frames
+     * to cover that.
+     *
+     * Note for current linux kernel (up to 5.13.x at least) there is no way to
+     * reliably detect socket MTU size. For now we just set SCO socket MTU to be
+     * large enough to cover all known sizes (largest is USB ALts 5 with 144 bytes)
+     * and adjust SCO write size to be equal to last SCO read size. This makes
+     * write size less or equal to MTU size. Reserving the same number of encoded
+     * frames to cover full MTU is still enough.
+     * See also https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/merge_requests/254#note_779802
      */
+
     if (u->bt_codec->get_encoded_block_size)
         encoded_size = u->bt_codec->get_encoded_block_size(u->encoder_info, u->write_block_size);
     else
         encoded_size = u->write_block_size;
 
-    reserved_size = 2 * encoded_size;
+    encoded_frames = u->write_link_mtu / u->write_block_size + 1;
+
+    if (encoded_frames < 2)
+        encoded_frames = 2;
+
+    reserved_size = encoded_frames * encoded_size;
 
     if (u->encoder_buffer_size < reserved_size) {
         u->encoder_buffer = pa_xrealloc(u->encoder_buffer, reserved_size);
@@ -504,8 +539,13 @@ static int bt_process_push(struct userdata *u) {
     }
 
     u->read_index += (uint64_t) memchunk.length;
-    pa_smoother_put(u->read_smoother, tstamp, pa_bytes_to_usec(u->read_index, &u->decoder_sample_spec));
-    pa_smoother_resume(u->read_smoother, tstamp, true);
+#ifdef USE_SMOOTHER_2
+        pa_smoother_2_resume(u->read_smoother, tstamp);
+        pa_smoother_2_put(u->read_smoother, tstamp, u->read_index);
+#else
+        pa_smoother_put(u->read_smoother, tstamp, pa_bytes_to_usec(u->read_index, &u->decoder_sample_spec));
+        pa_smoother_resume(u->read_smoother, tstamp, true);
+#endif
 
     /* Decoding of data may result in empty buffer, in this case
      * do not post empty audio samples. It may happen due to algorithmic
@@ -565,7 +605,11 @@ static void teardown_stream(struct userdata *u) {
     }
 
     if (u->read_smoother) {
+#ifdef USE_SMOOTHER_2
+        pa_smoother_2_free(u->read_smoother);
+#else
         pa_smoother_free(u->read_smoother);
+#endif
         u->read_smoother = NULL;
     }
 
@@ -722,7 +766,11 @@ static int setup_stream(struct userdata *u) {
     u->stream_setup_done = true;
 
     if (u->source)
+#ifdef USE_SMOOTHER_2
+        u->read_smoother = pa_smoother_2_new(5*PA_USEC_PER_SEC, pa_rtclock_now(), pa_frame_size(&u->decoder_sample_spec), u->decoder_sample_spec.rate);
+#else
         u->read_smoother = pa_smoother_new(PA_USEC_PER_SEC, 2*PA_USEC_PER_SEC, true, true, 10, pa_rtclock_now(), true);
+#endif
 
     return 0;
 }
@@ -788,13 +836,19 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
     switch (code) {
 
         case PA_SOURCE_MESSAGE_GET_LATENCY: {
+#ifndef USE_SMOOTHER_2
             int64_t wi, ri;
+#endif
 
             if (u->read_smoother) {
+#ifdef USE_SMOOTHER_2
+                *((int64_t*) data) = u->source->thread_info.fixed_latency - pa_smoother_2_get_delay(u->read_smoother, pa_rtclock_now(), u->read_index);
+#else
                 wi = pa_smoother_get(u->read_smoother, pa_rtclock_now());
                 ri = pa_bytes_to_usec(u->read_index, &u->decoder_sample_spec);
 
                 *((int64_t*) data) = u->source->thread_info.fixed_latency + wi - ri;
+#endif
             } else
                 *((int64_t*) data) = 0;
 
@@ -839,8 +893,11 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_
                 transport_release(u);
 
             if (u->read_smoother)
+#ifdef USE_SMOOTHER_2
+                pa_smoother_2_pause(u->read_smoother, pa_rtclock_now());
+#else
                 pa_smoother_pause(u->read_smoother, pa_rtclock_now());
-
+#endif
             break;
 
         case PA_SOURCE_IDLE:
@@ -1018,17 +1075,26 @@ static int sink_process_msg(pa_msgobject *o, int code, void *data, int64_t offse
     switch (code) {
 
         case PA_SINK_MESSAGE_GET_LATENCY: {
-            int64_t wi = 0, ri = 0;
+            int64_t wi, ri, delay = 0;
 
             if (u->read_smoother) {
+#ifdef USE_SMOOTHER_2
+                /* This is only used for SCO where encoder and decoder sample specs are
+                 * equal and output timing is based on the source. Therefore we can pass
+                 * the write index without conversion. */
+                delay = pa_smoother_2_get_delay(u->read_smoother, pa_rtclock_now(), u->write_index + u->write_block_size);
+#else
                 ri = pa_smoother_get(u->read_smoother, pa_rtclock_now());
                 wi = pa_bytes_to_usec(u->write_index + u->write_block_size, &u->encoder_sample_spec);
+                delay = wi - ri;
+#endif
             } else if (u->started_at) {
                 ri = pa_rtclock_now() - u->started_at;
                 wi = pa_bytes_to_usec(u->write_index, &u->encoder_sample_spec);
+                delay = wi - ri;
             }
 
-            *((int64_t*) data) = u->sink->thread_info.fixed_latency + wi - ri;
+            *((int64_t*) data) = u->sink->thread_info.fixed_latency + delay;
 
             return 0;
         }
@@ -1771,7 +1837,11 @@ static void stop_thread(struct userdata *u) {
     }
 
     if (u->read_smoother) {
+#ifdef USE_SMOOTHER_2
+        pa_smoother_2_free(u->read_smoother);
+#else
         pa_smoother_free(u->read_smoother);
+#endif
         u->read_smoother = NULL;
     }
 
@@ -2157,6 +2227,12 @@ static int add_card(struct userdata *u) {
     data.name = pa_sprintf_malloc("bluez_card.%s", d->address);
     data.namereg_fail = false;
 
+    if (d->has_battery_level) {
+        // See device_battery_level_changed_cb
+        uint8_t level = d->battery_level;
+        pa_proplist_setf(data.proplist, "bluetooth.battery", "%d%%", level);
+    }
+
     create_card_ports(u, data.ports);
 
     PA_HASHMAP_FOREACH(uuid, d->uuids, state) {
@@ -2165,8 +2241,18 @@ static int add_card(struct userdata *u) {
         if (uuid_to_profile(uuid, &profile) < 0)
             continue;
 
-        if (pa_hashmap_get(data.profiles, pa_bluetooth_profile_to_string(profile)))
+        pa_log_debug("Trying to create profile %s (%s) for device %s (%s)",
+                     pa_bluetooth_profile_to_string(profile), uuid, d->alias, d->address);
+
+        if (pa_hashmap_get(data.profiles, pa_bluetooth_profile_to_string(profile))) {
+            pa_log_debug("%s already exists", pa_bluetooth_profile_to_string(profile));
             continue;
+        }
+
+        if (!pa_bluetooth_device_supports_profile(d, profile)) {
+            pa_log_debug("%s is not supported by the device or adapter", pa_bluetooth_profile_to_string(profile));
+            continue;
+        }
 
         cp = create_card_profile(u, profile, data.ports);
         pa_hashmap_put(data.profiles, cp->name, cp);
@@ -2291,6 +2377,25 @@ static pa_hook_result_t device_connection_changed_cb(pa_bluetooth_discovery *y, 
 
     pa_log_debug("Unloading module for device %s", d->path);
     pa_module_unload(u->module, true);
+
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t device_battery_level_changed_cb(pa_bluetooth_discovery *y, const pa_bluetooth_device *d, struct userdata *u) {
+    uint8_t level;
+
+    pa_assert(d);
+    pa_assert(u);
+
+    if (d != u->device)
+        return PA_HOOK_OK;
+
+    if (d->has_battery_level) {
+        level = d->battery_level;
+        pa_proplist_setf(u->card->proplist, "bluetooth.battery", "%d%%", level);
+    } else {
+        pa_proplist_unset(u->card->proplist, "bluetooth.battery");
+    }
 
     return PA_HOOK_OK;
 }
@@ -2464,10 +2569,10 @@ static int bluez5_device_message_handler(const char *object_path, const char *me
     pa_bluetooth_profile_t profile;
     const pa_a2dp_endpoint_conf *endpoint_conf;
     const char *codec_name;
-    struct userdata *u;
+    struct userdata *u = userdata;
     bool is_a2dp_sink;
 
-    pa_assert(u = (struct userdata *)userdata);
+    pa_assert(u);
     pa_assert(message);
     pa_assert(response);
 
@@ -2691,6 +2796,10 @@ int pa__init(pa_module* m) {
         pa_hook_connect(pa_bluetooth_discovery_hook(u->discovery, PA_BLUETOOTH_HOOK_DEVICE_CONNECTION_CHANGED),
                         PA_HOOK_NORMAL, (pa_hook_cb_t) device_connection_changed_cb, u);
 
+    u->device_battery_level_changed_slot =
+        pa_hook_connect(pa_bluetooth_discovery_hook(u->discovery, PA_BLUETOOTH_HOOK_DEVICE_BATTERY_LEVEL_CHANGED),
+                        PA_HOOK_NORMAL, (pa_hook_cb_t) device_battery_level_changed_cb, u);
+
     u->transport_state_changed_slot =
         pa_hook_connect(pa_bluetooth_discovery_hook(u->discovery, PA_BLUETOOTH_HOOK_TRANSPORT_STATE_CHANGED),
                         PA_HOOK_NORMAL, (pa_hook_cb_t) transport_state_changed_cb, u);
@@ -2766,6 +2875,9 @@ void pa__done(pa_module *m) {
 
     if (u->device_connection_changed_slot)
         pa_hook_slot_free(u->device_connection_changed_slot);
+
+    if (u->device_battery_level_changed_slot)
+        pa_hook_slot_free(u->device_battery_level_changed_slot);
 
     if (u->transport_state_changed_slot)
         pa_hook_slot_free(u->transport_state_changed_slot);

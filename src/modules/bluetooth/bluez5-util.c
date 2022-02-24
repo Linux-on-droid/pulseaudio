@@ -50,6 +50,7 @@
 #define A2DP_OBJECT_MANAGER_PATH "/MediaEndpoint"
 #define A2DP_SOURCE_ENDPOINT A2DP_OBJECT_MANAGER_PATH "/A2DPSource"
 #define A2DP_SINK_ENDPOINT A2DP_OBJECT_MANAGER_PATH "/A2DPSink"
+#define PULSEAUDIO_BASE_PATH "/org/pulseaudio"
 
 #define OBJECT_MANAGER_INTROSPECT_XML                                          \
     DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE                                  \
@@ -139,6 +140,7 @@ struct pa_bluetooth_discovery {
     pa_hashmap *adapters;
     pa_hashmap *devices;
     pa_hashmap *transports;
+    pa_bluetooth_profile_status_t profiles_status[PA_BLUETOOTH_PROFILE_COUNT];
 
     int headset_backend;
     pa_bluetooth_backend *ofono_backend, *native_backend;
@@ -188,6 +190,14 @@ static const char *check_variant_property(DBusMessageIter *i) {
     }
 
     return key;
+}
+
+pa_bluetooth_profile_status_t profile_status_get(pa_bluetooth_discovery *y, pa_bluetooth_profile_t profile) {
+    return y->profiles_status[profile];
+}
+
+void profile_status_set(pa_bluetooth_discovery *y, pa_bluetooth_profile_t profile, pa_bluetooth_profile_status_t status) {
+    y->profiles_status[profile] = status;
 }
 
 pa_bluetooth_transport *pa_bluetooth_transport_new(pa_bluetooth_device *d, const char *owner, const char *path,
@@ -244,8 +254,19 @@ static const char *transport_state_to_string(pa_bluetooth_transport_state_t stat
     return "invalid";
 }
 
-static bool device_supports_profile(pa_bluetooth_device *device, pa_bluetooth_profile_t profile) {
-    bool show_hfp, show_hsp;
+bool pa_bluetooth_device_supports_profile(const pa_bluetooth_device *device, pa_bluetooth_profile_t profile) {
+    bool show_hfp, show_hsp, r;
+
+    pa_assert(device);
+
+    /* While discovery is being released adapters will be removed from devices,
+     * and there are no profiles to support without adapter.
+     */
+    if (!device->adapter) {
+        pa_log_debug("Device %s (%s) has no adapter to support profile %s",
+                device->alias, device->address, pa_bluetooth_profile_to_string(profile));
+        return false;
+    }
 
     if (device->enable_hfp_hf) {
         show_hfp = pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HFP_HF);
@@ -257,24 +278,45 @@ static bool device_supports_profile(pa_bluetooth_device *device, pa_bluetooth_pr
 
     switch (profile) {
         case PA_BLUETOOTH_PROFILE_A2DP_SINK:
-            return !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_A2DP_SINK);
+            r = !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_A2DP_SINK) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_A2DP_SOURCE));
+            break;
         case PA_BLUETOOTH_PROFILE_A2DP_SOURCE:
-            return !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_A2DP_SOURCE);
+            r = !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_A2DP_SOURCE) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_A2DP_SINK));
+            break;
         case PA_BLUETOOTH_PROFILE_HSP_HS:
-            return show_hsp
-                && ( !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_HS)
-                  || !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_HS_ALT));
+            r = show_hsp
+                && ( !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_HS) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_HSP_AG)) ||
+                   !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_HS_ALT) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_HSP_AG)) );
+            break;
         case PA_BLUETOOTH_PROFILE_HSP_AG:
-            return !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_AG);
+            r = !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_AG) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_HSP_HS)) ||
+                   !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HSP_AG) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_HSP_HS_ALT));
+            break;
         case PA_BLUETOOTH_PROFILE_HFP_HF:
-            return show_hfp && !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HFP_HF);
+            r = show_hfp
+                && !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HFP_HF) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_HFP_AG));
+            break;
         case PA_BLUETOOTH_PROFILE_HFP_AG:
-            return !!pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HFP_AG);
+            r = !!(pa_hashmap_get(device->uuids, PA_BLUETOOTH_UUID_HFP_AG) &&
+                      pa_hashmap_get(device->adapter->uuids, PA_BLUETOOTH_UUID_HFP_HF));
+            break;
         case PA_BLUETOOTH_PROFILE_OFF:
+        default:
             pa_assert_not_reached();
+            break;
     }
 
-    pa_assert_not_reached();
+    pa_log_debug("Checking if device %s (%s) supports profile %s: %s",
+                 device->alias, device->address, pa_bluetooth_profile_to_string(profile), r ? "true" : "false");
+
+    return r;
 }
 
 static bool device_is_profile_connected(pa_bluetooth_device *device, pa_bluetooth_profile_t profile) {
@@ -289,7 +331,7 @@ static unsigned device_count_disconnected_profiles(pa_bluetooth_device *device) 
     unsigned count = 0;
 
     for (profile = 0; profile < PA_BLUETOOTH_PROFILE_COUNT; profile++) {
-        if (!device_supports_profile(device, profile))
+        if (!pa_bluetooth_device_supports_profile(device, profile))
             continue;
 
         if (!device_is_profile_connected(device, profile))
@@ -322,7 +364,7 @@ static void wait_for_profiles_cb(pa_mainloop_api *api, pa_time_event* event, con
         if (device_is_profile_connected(device, profile))
             continue;
 
-        if (!device_supports_profile(device, profile))
+        if (!pa_bluetooth_device_supports_profile(device, profile))
             continue;
 
         if (first)
@@ -868,6 +910,100 @@ bool pa_bluetooth_device_any_transport_connected(const pa_bluetooth_device *d) {
     return false;
 }
 
+/* Returns a path containing /org/pulseaudio + /bluez/hciXX */
+static char *adapter_battery_provider_path(pa_bluetooth_adapter *d) {
+    const char *devname = d->path + sizeof("/org") - 1;
+    return pa_sprintf_malloc(PULSEAUDIO_BASE_PATH "%s", devname);
+}
+
+/* Returns a path containing /org/pulseaudio + /bluez/hciXX/dev_XX_XX_XX_XX_XX_XX */
+static char *device_battery_provider_path(pa_bluetooth_device *d) {
+    const char *devname = d->path + sizeof("/org") - 1;
+    return pa_sprintf_malloc(PULSEAUDIO_BASE_PATH "%s", devname);
+}
+
+static void append_battery_provider(pa_bluetooth_device *d, DBusMessageIter *object);
+static void append_battery_provider_properties(pa_bluetooth_device *d, DBusMessageIter *object, bool only_percentage);
+
+void pa_bluetooth_device_report_battery_level(pa_bluetooth_device *d, uint8_t level, const char *reporting_source) {
+    bool had_battery_provider = d->has_battery_level;
+    d->has_battery_level = true;
+    d->battery_level = level;
+    pa_assert_se(d->battery_source = reporting_source);
+
+    pa_hook_fire(&d->discovery->hooks[PA_BLUETOOTH_HOOK_DEVICE_BATTERY_LEVEL_CHANGED], d);
+
+    if (!had_battery_provider) {
+        DBusMessage *m;
+        DBusMessageIter iter;
+        char *provider_path;
+
+        if (!d->adapter->battery_provider_registered) {
+            pa_log_debug("No battery provider registered on adapter of %s", d->path);
+            return;
+        }
+
+        provider_path = adapter_battery_provider_path(d->adapter);
+
+        pa_log_debug("Registering new battery for %s with level %d", d->path, level);
+
+        pa_assert_se(m = dbus_message_new_signal(provider_path, DBUS_INTERFACE_OBJECT_MANAGER, "InterfacesAdded"));
+        dbus_message_iter_init_append(m, &iter);
+        append_battery_provider(d, &iter);
+        pa_assert_se(dbus_connection_send(pa_dbus_connection_get(d->discovery->connection), m, NULL));
+
+        pa_xfree(provider_path);
+    } else {
+        DBusMessage *m;
+        DBusMessageIter iter;
+        char *battery_path = device_battery_provider_path(d);
+
+        pa_log_debug("Notifying battery Percentage for %s changed %d", battery_path, level);
+
+        pa_assert_se(m = dbus_message_new_signal(battery_path, DBUS_INTERFACE_PROPERTIES, "PropertiesChanged"));
+        dbus_message_iter_init_append(m, &iter);
+        append_battery_provider_properties(d, &iter, true);
+        pa_assert_se(dbus_connection_send(pa_dbus_connection_get(d->discovery->connection), m, NULL));
+        pa_xfree(battery_path);
+    }
+}
+
+/* Notify BlueZ that we're no longer providing battery info for this device */
+void pa_bluetooth_device_deregister_battery(pa_bluetooth_device *d) {
+    static const char *interface_name = BLUEZ_BATTERY_PROVIDER_INTERFACE;
+    DBusMessage *m;
+    DBusMessageIter iter, array;
+    char *battery_path, *provider_path;
+
+    if (!d->has_battery_level)
+        return;
+
+    d->has_battery_level = false;
+    pa_hook_fire(&d->discovery->hooks[PA_BLUETOOTH_HOOK_DEVICE_BATTERY_LEVEL_CHANGED], d);
+
+    if (!d->adapter->battery_provider_registered)
+        return;
+
+    battery_path = device_battery_provider_path(d);
+    provider_path = adapter_battery_provider_path(d->adapter);
+
+    pa_log_debug("Deregistering battery provider %s", battery_path);
+
+    pa_assert_se(m = dbus_message_new_signal(provider_path, DBUS_INTERFACE_OBJECT_MANAGER, "InterfacesRemoved"));
+    dbus_message_iter_init_append(m, &iter);
+    pa_assert_se(dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH, &battery_path));
+    pa_assert_se(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array));
+    pa_assert_se(dbus_message_iter_append_basic(&array, DBUS_TYPE_STRING, &interface_name));
+    pa_assert_se(dbus_message_iter_close_container(&iter, &array));
+
+    pa_assert_se(dbus_connection_send(pa_dbus_connection_get(d->discovery->connection), m, NULL));
+    d->has_battery_level = false;
+
+    pa_xfree(battery_path);
+    pa_xfree(provider_path);
+}
+
+
 static int transport_state_from_string(const char* value, pa_bluetooth_transport_state_t *state) {
     pa_assert(value);
     pa_assert(state);
@@ -1164,6 +1300,179 @@ static void device_set_adapter(pa_bluetooth_device *device, pa_bluetooth_adapter
     device_update_valid(device);
 }
 
+static void append_battery_provider_properties(pa_bluetooth_device *d, DBusMessageIter *entry, bool only_percentage) {
+    static const char *interface_name = BLUEZ_BATTERY_PROVIDER_INTERFACE;
+    DBusMessageIter dict;
+
+    pa_assert_se(dbus_message_iter_append_basic(entry, DBUS_TYPE_STRING, &interface_name));
+
+    pa_assert_se(dbus_message_iter_open_container(entry, DBUS_TYPE_ARRAY,
+                                                 DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+                                                 DBUS_TYPE_STRING_AS_STRING
+                                                 DBUS_TYPE_VARIANT_AS_STRING
+                                                 DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+                                                 &dict));
+
+    pa_dbus_append_basic_variant_dict_entry(&dict, "Percentage", DBUS_TYPE_BYTE, &d->battery_level);
+
+    if (!only_percentage) {
+        pa_assert(d->battery_source);
+        pa_dbus_append_basic_variant_dict_entry(&dict, "Device", DBUS_TYPE_OBJECT_PATH, &d->path);
+        pa_dbus_append_basic_variant_dict_entry(&dict, "Source", DBUS_TYPE_STRING, &d->battery_source);
+    }
+
+    pa_assert_se(dbus_message_iter_close_container(entry, &dict));
+}
+
+static void append_battery_provider(pa_bluetooth_device *d, DBusMessageIter *object) {
+    char *battery_path = device_battery_provider_path(d);
+    DBusMessageIter array, entry;
+
+    pa_assert_se(dbus_message_iter_append_basic(object, DBUS_TYPE_OBJECT_PATH, &battery_path));
+
+    pa_assert_se(dbus_message_iter_open_container(object, DBUS_TYPE_ARRAY,
+                                                  DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+                                                  DBUS_TYPE_STRING_AS_STRING
+                                                  DBUS_TYPE_ARRAY_AS_STRING
+                                                  DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+                                                  DBUS_TYPE_STRING_AS_STRING
+                                                  DBUS_TYPE_VARIANT_AS_STRING
+                                                  DBUS_DICT_ENTRY_END_CHAR_AS_STRING
+                                                  DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+                                                  &array));
+
+    pa_assert_se(dbus_message_iter_open_container(&array, DBUS_TYPE_DICT_ENTRY, NULL, &entry));
+    append_battery_provider_properties(d, &entry, false);
+    pa_assert_se(dbus_message_iter_close_container(&array, &entry));
+    pa_assert_se(dbus_message_iter_close_container(object, &array));
+
+    pa_xfree(battery_path);
+}
+
+static DBusHandlerResult battery_provider_handler(DBusConnection *c, DBusMessage *m, void *userdata) {
+    pa_bluetooth_adapter *a = userdata;
+    DBusMessage *r = NULL;
+    const char *path, *interface, *member;
+
+    pa_assert(a);
+
+    path = dbus_message_get_path(m);
+    interface = dbus_message_get_interface(m);
+    member = dbus_message_get_member(m);
+
+    pa_log_debug("%s %s %s", path, interface, member);
+
+    if (dbus_message_is_method_call(m, DBUS_INTERFACE_OBJECT_MANAGER, "GetManagedObjects")) {
+        DBusMessageIter iter, array, object;
+        pa_bluetooth_device *d;
+        void *state;
+
+        pa_assert_se(r = dbus_message_new_method_return(m));
+
+        dbus_message_iter_init_append(r, &iter);
+        pa_assert_se(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
+                                                      DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+                                                      DBUS_TYPE_OBJECT_PATH_AS_STRING
+                                                      DBUS_TYPE_ARRAY_AS_STRING
+                                                      DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+                                                      DBUS_TYPE_STRING_AS_STRING
+                                                      DBUS_TYPE_ARRAY_AS_STRING
+                                                      DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+                                                      DBUS_TYPE_STRING_AS_STRING
+                                                      DBUS_TYPE_VARIANT_AS_STRING
+                                                      DBUS_DICT_ENTRY_END_CHAR_AS_STRING
+                                                      DBUS_DICT_ENTRY_END_CHAR_AS_STRING
+                                                      DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+                                                      &array));
+
+        PA_HASHMAP_FOREACH(d, a->discovery->devices, state) {
+
+            if (d->has_battery_level) {
+                pa_log_debug("%s: battery level  = %d", d->path, d->battery_level);
+                pa_assert_se(dbus_message_iter_open_container(&array, DBUS_TYPE_DICT_ENTRY, NULL, &object));
+                append_battery_provider(d, &object);
+                pa_assert_se(dbus_message_iter_close_container(&array, &object));
+            }
+        }
+
+        pa_assert_se(dbus_message_iter_close_container(&iter, &array));
+    } else
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+    pa_assert_se(dbus_connection_send(c, r, NULL));
+    dbus_message_unref(r);
+
+    return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+static void adapter_register_battery_provider(pa_bluetooth_adapter *a) {
+    DBusMessage *m, *r;
+    DBusError error;
+
+    static const DBusObjectPathVTable vtable_profile = {
+        .message_function = battery_provider_handler,
+    };
+
+    char *provider_path = adapter_battery_provider_path(a);
+
+    pa_log_debug("Registering battery provider for %s at %s", a->path, provider_path);
+
+    pa_assert_se(dbus_connection_register_object_path(pa_dbus_connection_get(a->discovery->connection), provider_path, &vtable_profile, a));
+
+    pa_assert_se(m = dbus_message_new_method_call(BLUEZ_SERVICE, a->path, BLUEZ_BATTERY_PROVIDER_MANAGER_INTERFACE, "RegisterBatteryProvider"));
+    pa_assert_se(dbus_message_append_args(m, DBUS_TYPE_OBJECT_PATH, &provider_path, DBUS_TYPE_INVALID));
+
+    dbus_error_init(&error);
+    if (!(r = dbus_connection_send_with_reply_and_block(pa_dbus_connection_get(a->discovery->connection), m, -1, &error))) {
+        if (dbus_error_has_name(&error, DBUS_ERROR_UNKNOWN_METHOD))
+            pa_log_notice("Could not find " BLUEZ_BATTERY_PROVIDER_MANAGER_INTERFACE
+                          ".RegisterBatteryProvider(), is bluetoothd started with experimental features enabled (-E flag)?");
+        else
+            pa_log_warn(BLUEZ_BATTERY_PROVIDER_MANAGER_INTERFACE ".RegisterBatteryProvider() Failed: %s:%s", error.name, error.message);
+        dbus_error_free(&error);
+        dbus_connection_unregister_object_path(pa_dbus_connection_get(a->discovery->connection), provider_path);
+    } else {
+        dbus_message_unref(r);
+        a->battery_provider_registered = true;
+    }
+
+    dbus_message_unref(m);
+    pa_xfree(provider_path);
+}
+
+static void adapter_deregister_battery_provider(pa_bluetooth_adapter *a) {
+    DBusMessage *m, *r;
+    DBusError error;
+    char *provider_path;
+
+    if (!a->battery_provider_registered) {
+        pa_log_debug("No battery provider registered for %s", a->path);
+        return;
+    }
+
+    provider_path = adapter_battery_provider_path(a);
+
+    pa_log_debug("Deregistering battery provider at %s", provider_path);
+
+    pa_assert_se(m = dbus_message_new_method_call(BLUEZ_SERVICE, a->path, BLUEZ_BATTERY_PROVIDER_MANAGER_INTERFACE, "UnregisterBatteryProvider"));
+    pa_assert_se(dbus_message_append_args(m, DBUS_TYPE_OBJECT_PATH, &provider_path, DBUS_TYPE_INVALID));
+
+    dbus_error_init(&error);
+    if (!(r = dbus_connection_send_with_reply_and_block(pa_dbus_connection_get(a->discovery->connection), m, -1, &error))) {
+        pa_log_error(BLUEZ_BATTERY_PROVIDER_MANAGER_INTERFACE ".UnregisterBatteryProvider() Failed: %s:%s", error.name, error.message);
+        dbus_error_free(&error);
+    } else {
+        dbus_message_unref(r);
+        a->battery_provider_registered = false;
+    }
+
+    dbus_message_unref(m);
+
+    dbus_connection_unregister_object_path(pa_dbus_connection_get(a->discovery->connection), provider_path);
+
+    pa_xfree(provider_path);
+}
+
 static pa_bluetooth_adapter* adapter_create(pa_bluetooth_discovery *y, const char *path) {
     pa_bluetooth_adapter *a;
 
@@ -1173,6 +1482,7 @@ static pa_bluetooth_adapter* adapter_create(pa_bluetooth_discovery *y, const cha
     a = pa_xnew0(pa_bluetooth_adapter, 1);
     a->discovery = y;
     a->path = pa_xstrdup(path);
+    a->uuids = pa_hashmap_new_full(pa_idxset_string_hash_func, pa_idxset_string_compare_func, NULL, pa_xfree);
 
     pa_hashmap_put(y->adapters, a->path, a);
 
@@ -1186,10 +1496,13 @@ static void adapter_free(pa_bluetooth_adapter *a) {
     pa_assert(a);
     pa_assert(a->discovery);
 
+    adapter_deregister_battery_provider(a);
+
     PA_HASHMAP_FOREACH(d, a->discovery->devices, state)
         if (d->adapter == a)
             device_set_adapter(d, NULL);
 
+    pa_hashmap_free(a->uuids);
     pa_xfree(a->path);
     pa_xfree(a->address);
     pa_xfree(a);
@@ -1373,6 +1686,31 @@ static void parse_adapter_properties(pa_bluetooth_adapter *a, DBusMessageIter *i
             dbus_message_iter_get_basic(&variant_i, &value);
             a->address = pa_xstrdup(value);
             a->valid = true;
+        } else if (dbus_message_iter_get_arg_type(&variant_i) == DBUS_TYPE_ARRAY) {
+            DBusMessageIter ai;
+            dbus_message_iter_recurse(&variant_i, &ai);
+
+            if (dbus_message_iter_get_arg_type(&ai) == DBUS_TYPE_STRING && pa_streq(key, "UUIDs")) {
+                pa_hashmap_remove_all(a->uuids);
+                while (dbus_message_iter_get_arg_type(&ai) != DBUS_TYPE_INVALID) {
+                    const char *value;
+                    char *uuid;
+
+                    dbus_message_iter_get_basic(&ai, &value);
+
+                    if (pa_hashmap_get(a->uuids, value)) {
+                        dbus_message_iter_next(&ai);
+                        continue;
+                    }
+
+                    uuid = pa_xstrdup(value);
+                    pa_hashmap_put(a->uuids, uuid, uuid);
+
+                    pa_log_debug("%s: %s", key, value);
+                    dbus_message_iter_next(&ai);
+                }
+                pa_hook_fire(pa_bluetooth_discovery_hook(a->discovery, PA_BLUETOOTH_HOOK_ADAPTER_UUIDS_CHANGED), a);
+            }
         }
 
         dbus_message_iter_next(&element_i);
@@ -1720,6 +2058,7 @@ static void parse_interfaces_and_properties(pa_bluetooth_discovery *y, DBusMessa
                 return;
 
             register_application(a);
+            adapter_register_battery_provider(a);
         } else if (pa_streq(interface, BLUEZ_DEVICE_INTERFACE)) {
 
             if ((d = pa_hashmap_get(y->devices, path))) {
@@ -1775,7 +2114,7 @@ void pa_bluetooth_discovery_set_ofono_running(pa_bluetooth_discovery *y, bool is
         pa_bluetooth_device *d;
 
         PA_HASHMAP_FOREACH(d, y->devices, state) {
-            if (device_supports_profile(d, PA_BLUETOOTH_PROFILE_HFP_AG) || device_supports_profile(d, PA_BLUETOOTH_PROFILE_HFP_HF)) {
+            if (pa_bluetooth_device_supports_profile(d, PA_BLUETOOTH_PROFILE_HFP_AG) || pa_bluetooth_device_supports_profile(d, PA_BLUETOOTH_PROFILE_HFP_HF)) {
                 DBusMessage *m;
 
                 pa_assert_se(m = dbus_message_new_method_call(BLUEZ_SERVICE, d->path, BLUEZ_DEVICE_INTERFACE, "Disconnect"));

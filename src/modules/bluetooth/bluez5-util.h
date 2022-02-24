@@ -27,6 +27,8 @@
 
 #define BLUEZ_SERVICE "org.bluez"
 #define BLUEZ_ADAPTER_INTERFACE BLUEZ_SERVICE ".Adapter1"
+#define BLUEZ_BATTERY_PROVIDER_INTERFACE BLUEZ_SERVICE ".BatteryProvider1"
+#define BLUEZ_BATTERY_PROVIDER_MANAGER_INTERFACE BLUEZ_SERVICE ".BatteryProviderManager1"
 #define BLUEZ_DEVICE_INTERFACE BLUEZ_SERVICE ".Device1"
 #define BLUEZ_MEDIA_ENDPOINT_INTERFACE BLUEZ_SERVICE ".MediaEndpoint1"
 #define BLUEZ_MEDIA_INTERFACE BLUEZ_SERVICE ".Media1"
@@ -62,8 +64,10 @@ typedef struct pa_bluetooth_discovery pa_bluetooth_discovery;
 typedef struct pa_bluetooth_backend pa_bluetooth_backend;
 
 typedef enum pa_bluetooth_hook {
+    PA_BLUETOOTH_HOOK_ADAPTER_UUIDS_CHANGED,            /* Call data: pa_bluetooth_adapter */
     PA_BLUETOOTH_HOOK_DEVICE_CONNECTION_CHANGED,        /* Call data: pa_bluetooth_device */
     PA_BLUETOOTH_HOOK_DEVICE_UNLINK,                    /* Call data: pa_bluetooth_device */
+    PA_BLUETOOTH_HOOK_DEVICE_BATTERY_LEVEL_CHANGED,     /* Call data: pa_bluetooth_device */
     PA_BLUETOOTH_HOOK_TRANSPORT_STATE_CHANGED,          /* Call data: pa_bluetooth_transport */
     PA_BLUETOOTH_HOOK_TRANSPORT_SOURCE_VOLUME_CHANGED,  /* Call data: pa_bluetooth_transport */
     PA_BLUETOOTH_HOOK_TRANSPORT_SINK_VOLUME_CHANGED,    /* Call data: pa_bluetooth_transport */
@@ -80,6 +84,13 @@ typedef enum profile {
     PA_BLUETOOTH_PROFILE_OFF
 } pa_bluetooth_profile_t;
 #define PA_BLUETOOTH_PROFILE_COUNT PA_BLUETOOTH_PROFILE_OFF
+
+typedef enum pa_bluetooth_profile_status {
+  PA_BLUETOOTH_PROFILE_STATUS_INACTIVE,
+  PA_BLUETOOTH_PROFILE_STATUS_ACTIVE,
+  PA_BLUETOOTH_PROFILE_STATUS_REGISTERING,
+  PA_BLUETOOTH_PROFILE_STATUS_REGISTERED
+} pa_bluetooth_profile_status_t;
 
 typedef enum pa_bluetooth_transport_state {
     PA_BLUETOOTH_TRANSPORT_STATE_DISCONNECTED,
@@ -150,15 +161,21 @@ struct pa_bluetooth_device {
     pa_bluetooth_transport *transports[PA_BLUETOOTH_PROFILE_COUNT];
 
     pa_time_event *wait_for_profiles_timer;
+
+    bool has_battery_level;
+    uint8_t battery_level;
+    const char *battery_source;
 };
 
 struct pa_bluetooth_adapter {
     pa_bluetooth_discovery *discovery;
     char *path;
     char *address;
+    pa_hashmap *uuids; /* char* -> char* (hashmap-as-a-set) */
 
     bool valid;
     bool application_registered;
+    bool battery_provider_registered;
 };
 
 #ifdef HAVE_BLUEZ_5_OFONO_HEADSET
@@ -183,6 +200,9 @@ static inline void pa_bluetooth_native_backend_free(pa_bluetooth_backend *b) {}
 static inline void pa_bluetooth_native_backend_enable_shared_profiles(pa_bluetooth_backend *b, bool enable) {}
 #endif
 
+pa_bluetooth_profile_status_t profile_status_get(pa_bluetooth_discovery *y, pa_bluetooth_profile_t profile);
+void profile_status_set(pa_bluetooth_discovery *y, pa_bluetooth_profile_t profile, pa_bluetooth_profile_status_t status);
+
 pa_bluetooth_transport *pa_bluetooth_transport_new(pa_bluetooth_device *d, const char *owner, const char *path,
                                                    pa_bluetooth_profile_t p, const uint8_t *config, size_t size);
 
@@ -195,8 +215,11 @@ void pa_bluetooth_transport_unlink(pa_bluetooth_transport *t);
 void pa_bluetooth_transport_free(pa_bluetooth_transport *t);
 void pa_bluetooth_transport_load_a2dp_sink_volume(pa_bluetooth_transport *t);
 
+bool pa_bluetooth_device_supports_profile(const pa_bluetooth_device *device, pa_bluetooth_profile_t profile);
 bool pa_bluetooth_device_any_transport_connected(const pa_bluetooth_device *d);
 bool pa_bluetooth_device_switch_codec(pa_bluetooth_device *device, pa_bluetooth_profile_t profile, pa_hashmap *capabilities_hashmap, const pa_a2dp_endpoint_conf *endpoint_conf, void (*codec_switch_cb)(bool, pa_bluetooth_profile_t profile, void *), void *userdata);
+void pa_bluetooth_device_report_battery_level(pa_bluetooth_device *d, uint8_t level, const char *reporting_source);
+void pa_bluetooth_device_deregister_battery(pa_bluetooth_device *d);
 
 pa_bluetooth_device* pa_bluetooth_discovery_get_device_by_path(pa_bluetooth_discovery *y, const char *path);
 pa_bluetooth_device* pa_bluetooth_discovery_get_device_by_address(pa_bluetooth_discovery *y, const char *remote, const char *local);

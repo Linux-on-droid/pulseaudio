@@ -57,12 +57,12 @@ libpulsecommon_sources = [
   'pulsecore/shm.c',
   'pulsecore/bitset.c',
   'pulsecore/socket-client.c',
-  'pulsecore/socket-server.c',
   'pulsecore/socket-util.c',
   'pulsecore/strbuf.c',
   'pulsecore/strlist.c',
   'pulsecore/tagstruct.c',
   'pulsecore/time-smoother.c',
+  'pulsecore/time-smoother_2.c',
   'pulsecore/tokenizer.c',
   'pulsecore/usergroup.c',
   'pulsecore/sndfile-util.c',
@@ -136,13 +136,13 @@ libpulsecommon_headers = [
   'pulsecore/shm.h',
   'pulsecore/bitset.h',
   'pulsecore/socket-client.h',
-  'pulsecore/socket-server.h',
   'pulsecore/socket-util.h',
   'pulsecore/strbuf.h',
   'pulsecore/strlist.h',
   'pulsecore/tagstruct.h',
   'pulsecore/thread.h',
   'pulsecore/time-smoother.h',
+  'pulsecore/time-smoother_2.h',
   'pulsecore/tokenizer.h',
   'pulsecore/usergroup.h',
   'pulsecore/sndfile-util.h',
@@ -188,25 +188,32 @@ else
 endif
 # FIXME: Do SIMD things
 
-libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
-  libpulsecommon_sources,
-  libpulsecommon_headers,
-  include_directories : [configinc, topinc],
-  c_args : [pa_c_args],
-  link_args : [nodelete_link_args],
-  install : true,
-  install_dir : privlibdir,
-  dependencies : [
-    libm_dep, thread_dep, dl_dep, shm_dep, iconv_dep, sndfile_dep, dbus_dep,
-    x11_dep, libsystemd_dep, glib_dep.partial_dependency(compile_args: true),
-    gtk_dep.partial_dependency(compile_args: true), asyncns_dep, libintl_dep,
-    platform_dep, tcpwrap_dep, platform_socket_dep, execinfo_dep,
-  ],
-  implicit_include_directories : false)
+if not get_option('client')
+  libpulsecommon_dep = cc.find_library('pulsecommon-' + pa_version_major_minor, dirs : privlibdir, required : true)
+  libpulse_dep = dependency('libpulse', required : true)
+  libpulse_simple_dep = dependency('libpulse-simple', required : true)
+else
+  libpulsecommon = shared_library('pulsecommon-' + pa_version_major_minor,
+    libpulsecommon_sources,
+    libpulsecommon_headers,
+    include_directories : [configinc, topinc],
+    c_args : [pa_c_args],
+    link_args : [nodelete_link_args],
+    install : true,
+    install_dir : privlibdir,
+    dependencies : [
+      libm_dep, thread_dep, dl_dep, shm_dep, iconv_dep, sndfile_dep, dbus_dep,
+      x11_dep, libsystemd_dep, glib_dep.partial_dependency(compile_args: true),
+      gtk_dep.partial_dependency(compile_args: true), asyncns_dep, libintl_dep,
+      platform_dep, platform_socket_dep, execinfo_dep,
+    ],
+    implicit_include_directories : false)
 
-libpulsecommon_dep = declare_dependency(link_with: libpulsecommon)
+  libpulsecommon_dep = declare_dependency(link_with: libpulsecommon)
 
-subdir('pulse')
+  subdir('pulse')
+endif
+
 if get_option('daemon')
   subdir('pulsecore')
   subdir('daemon')
