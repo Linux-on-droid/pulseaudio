@@ -1,4 +1,4 @@
-pulseaudio (15.99.1+dfsg1-1) UNRELEASED; urgency=medium
+pulseaudio (15.99.1+dfsg1-1) experimental; urgency=medium
 
   * New upstream candidate
   * d/p/0002-bluetooth-ldac-Fix-RTP-payloading-of-encoded-packet.patch:
@@ -19,7 +19,7 @@ pulseaudio (15.99.1+dfsg1-1) UNRELEASED; urgency=medium
   * Bump debhelper from old 12 to 13. + debian/rules: Drop --fail-missing
     argument to dh_missing, which is now the default.
 
- -- Sebastien Bacher <seb128@ubuntu.com>  Thu, 24 Feb 2022 21:58:10 +0100
+ -- Sebastien Bacher <seb128@ubuntu.com>  Thu, 24 Feb 2022 22:03:52 +0100
 
 pulseaudio (15.0+dfsg1-3) unstable; urgency=medium
 
