@@ -250,6 +250,9 @@ static pa_hook_result_t device_unlink_cb(pa_bluetooth_discovery *y, const pa_blu
     pa_assert(d);
     pa_assert(card);
 
+    if (d != card->transport->device)
+        return PA_HOOK_OK;
+
     hf_audio_agent_card_removed(card->backend, card->path);
 
     return PA_HOOK_OK;
@@ -330,13 +333,15 @@ static int hf_audio_agent_transport_acquire(pa_bluetooth_transport *t, bool opti
      * value from the Isoc USB endpoint in use by btusb and should be
      * made available to userspace by the Bluetooth kernel subsystem.
      *
-     * Set initial MTU to max size which is reported to be working (60 bytes)
-     * See also pa_bluetooth_transport::last_read_size handling.
+     * Set initial MTU to max known payload length of HCI packet
+     * in USB Alternate Setting 5 (144 bytes)
+     * See also pa_bluetooth_transport::last_read_size handling
+     * and comment about MTU size in bt_prepare_encoder_buffer()
      */
     if (imtu)
-        *imtu = 60;
+        *imtu = 144;
     if (omtu)
-        *omtu = 60;
+        *omtu = 144;
 
     err = socket_accept(card->fd);
     if (err < 0) {

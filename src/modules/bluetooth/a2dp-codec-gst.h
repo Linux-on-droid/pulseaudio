@@ -43,15 +43,15 @@ struct gst_info {
         const a2dp_ldac_t *ldac_config;
     } a2dp_codec_t;
 
-    GstElement *app_src, *app_sink;
-    GstElement *pipeline;
-    GstAdapter *sink_adapter;
-
-    pa_fdsem *sample_ready_fdsem;
+    /* The appsink element that accumulates encoded/decoded buffers */
+    GstElement *app_sink;
+    GstElement *bin;
+    /* The sink pad to push to-be-encoded/decoded buffers into */
+    GstPad *pad_sink;
 
     uint16_t seq_num;
 };
 
 bool gst_codec_init(struct gst_info *info, bool for_encoding, GstElement *transcoder);
-size_t gst_transcode_buffer(void *codec_info, const uint8_t *input_buffer, size_t input_size, uint8_t *output_buffer, size_t output_size, size_t *processed);
+size_t gst_transcode_buffer(void *codec_info, uint32_t timestamp, const uint8_t *input_buffer, size_t input_size, uint8_t *output_buffer, size_t output_size, size_t *processed);
 void gst_codec_deinit(void *codec_info);

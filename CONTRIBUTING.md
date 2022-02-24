@@ -28,10 +28,10 @@ Please take a look at the [coding style
 documentation](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/CodingStyle/)
 on our wiki.
 
-## Commit messagse
+## Commit messages
 
 We follow the standard git commit message format of a summary on the first line
-(<=50 characterss for preference, <=72 characters otherwise), followed by a new
+(<=50 characters for preference, <=72 characters otherwise), followed by a new
 line, followed by a detailed commit message. An additional line at the end may
 link to an issue being fixed by this MR.
 

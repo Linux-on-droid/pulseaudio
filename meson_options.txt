@@ -1,6 +1,9 @@
 option('daemon',
        type : 'boolean', value : true,
        description : 'Enable building and installation of pulseaudio daemon and supporting configuration files')
+option('client',
+       type : 'boolean', value : true,
+       description : 'Build and install pulseaudio client libraries and utilities')
 option('doxygen',
        type : 'boolean', value : true,
        description : 'Enable building and installation of documentation generated with doxygen')
@@ -112,7 +115,7 @@ option('gsettings',
        type : 'feature', value : 'auto',
        description : 'Optional GSettings support')
 option('gstreamer',
-       type : 'feature', value : 'disabled',
+       type : 'feature', value : 'auto',
        description : 'Optional GStreamer dependency for media-related functionality')
 option('gtk',
        type : 'feature', value : 'auto',
@@ -162,6 +165,9 @@ option('valgrind',
 option('x11',
        type : 'feature', value : 'auto',
        description : 'Optional X11 support')
+option('enable-smoother-2',
+       type : 'boolean', value : 'true',
+       description : 'Use alternative time smoother implementation')
 
 # Echo cancellation
 
