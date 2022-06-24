@@ -771,6 +771,8 @@ static int sink_input_process_msg(pa_msgobject *obj, int code, void *data, int64
             /* Add content of memblockq's to sink latency */
             o->latency_snapshot.sink_latency = pa_sink_get_latency_within_thread(o->sink, true) +
                                                pa_bytes_to_usec(length, &o->sink->sample_spec);
+            /* Add resampler latency */
+            o->latency_snapshot.sink_latency += pa_resampler_get_delay_usec(o->sink_input->thread_info.resampler);
 
             o->latency_snapshot.timestamp = pa_rtclock_now();
 
@@ -1070,7 +1072,7 @@ static int sink_process_msg(pa_msgobject *o, int code, void *data, int64_t offse
             size_t latency;
 
             latency = pa_usec_to_bytes((pa_usec_t)offset,  &u->sink->sample_spec);
-            pa_smoother_2_put(u->thread_info.smoother, pa_rtclock_now(), (int64_t)u->thread_info.counter - latency);
+            pa_smoother_2_put(u->thread_info.smoother, u->thread_info.snapshot_time, (int64_t)u->thread_info.snapshot_counter - latency);
 #else
             pa_usec_t x, y, latency = (pa_usec_t) offset;
 
