@@ -1,2 +1,1 @@
 pulseaudio-utils: bash-completion-with-hashbang usr/share/bash-completion/completions/pulseaudio (/bin/bash)
-pulseaudio-utils: script-not-executable [usr/share/bash-completion/completions/pulseaudio]
