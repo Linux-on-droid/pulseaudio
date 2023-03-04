@@ -1,0 +1,29 @@
+From: Gioele Barabucci <gioele@svario.it>
+Date: Sat, 4 Mar 2023 10:00:34 +0100
+Subject: daemon/meson.build: Install dbus policy in /usr, not /etc
+Forwarded: https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/merge_requests/783
+
+From https://bugs.debian.org/1006631:
+
+> dbus supports policy files in both `/usr/share/dbus-1/system.d` and
+> `/etc/dbus-1/systemd`. [The] recently released dbus 1.14.0, officially
+> deprecates installing packages' default policies into `/etc/dbus-1/systemd`,
+> instead reserving it for the sysadmin. This is the same idea as the
+> difference between `/usr/lib/udev/rules.d` and `/etc/udev/rules.d`.
+---
+ src/daemon/meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/daemon/meson.build b/src/daemon/meson.build
+index e8f70a4..31e36ec 100644
+--- a/src/daemon/meson.build
++++ b/src/daemon/meson.build
+@@ -141,7 +141,7 @@ custom_target('system.pa',
+ 
+ if dbus_dep.found()
+   install_data('pulseaudio-system.conf',
+-    install_dir : join_paths(sysconfdir, 'dbus-1', 'system.d')
++    install_dir : join_paths(datadir, 'dbus-1', 'system.d')
+   )
+ endif
+ 

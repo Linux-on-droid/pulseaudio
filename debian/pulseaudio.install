@@ -3,7 +3,6 @@
 etc/pulse/default.pa
 etc/pulse/system.pa
 etc/pulse/daemon.conf
-etc/dbus-1/system.d/pulseaudio-system.conf
 etc/xdg/autostart/pulseaudio.desktop
 etc/xdg/Xwayland-session.d/00-pulseaudio-x11
 [linux-any] lib/udev/rules.d/90-pulseaudio.rules
@@ -82,6 +81,7 @@ usr/lib/pulse-*/modules/module-allow-passthrough.so
 [linux-any] usr/lib/pulse-*/modules/module-systemd-login.so
 [linux-any] usr/lib/systemd/user/pulseaudio.*
 [linux-any] usr/lib/systemd/user/pulseaudio-x11.*
+usr/share/dbus-1/system.d/pulseaudio-system.conf
 usr/share/locale
 usr/share/man/man1/pulseaudio.1
 usr/share/man/man5/default.pa.5
