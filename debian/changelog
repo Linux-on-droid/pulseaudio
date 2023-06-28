@@ -1,3 +1,11 @@
+pulseaudio (16.1+dfsg1-3) UNRELEASED; urgency=medium
+
+  * debian/rules:
+    - fix a $LIB escaping issue in the pulsedsp-location option which
+      is making padsp hit an error (Closes: #1028329)
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 28 Jun 2023 13:03:29 +0200
+
 pulseaudio (16.1+dfsg1-2) unstable; urgency=medium
 
   * Team upload
