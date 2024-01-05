@@ -1,10 +1,34 @@
-pulseaudio (16.1+dfsg1-3) UNRELEASED; urgency=medium
+pulseaudio (16.1+dfsg1-3) unstable; urgency=medium
 
+  * Team upload
+
+  [ Sebastien Bacher ]
   * debian/rules:
     - fix a $LIB escaping issue in the pulsedsp-location option which
       is making padsp hit an error (Closes: #1028329)
 
- -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 28 Jun 2023 13:03:29 +0200
+  [ Kai-Heng Feng ]
+  * Add patch to send more initial frames to improve Bluetooth input and output
+    (LP: #2007331)
+
+  [ Gioele Barabucci ]
+  * Install dbus policy in /usr instead of /etc (Closes: #1032339)
+
+  [ Gianfranco Costamagna ]
+  * Build-Depend on liblirc-dev instead of liblircclient-dev (Closes: #1059976)
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster (oldstable)
+
+  [ Jeremy Bicha ]
+  * Drop obsolete package description reference to GConf
+  * Update lintian override info to new format
+  * Update standards version to 4.6.2, no changes needed
+
+  [ Gabor Karsay ]
+  * Remove unused Lintian override
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Fri, 05 Jan 2024 10:59:38 -0500
 
 pulseaudio (16.1+dfsg1-2) unstable; urgency=medium
 
