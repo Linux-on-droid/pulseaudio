@@ -156,7 +156,6 @@ Description: GSettings module for PulseAudio sound server
  much better latency, mixing/re-sampling quality and overall architecture.
  .
  This module enables PulseAudio to store additional configuration in GSettings.
- It supersedes the gconf module.
  .
  The module is called module-gsettings.
 
