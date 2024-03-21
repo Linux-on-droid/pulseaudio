@@ -1,3 +1,11 @@
+pulseaudio (16.1+dfsg1-4) unstable; urgency=medium
+
+  * Team upload
+  * Selectively disable libpulsedsp & padsp on 32-bit non-i386 architectures.
+    Thanks to Simon McVittie, Steve Langasek (Closes: #1067247)
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Thu, 21 Mar 2024 15:35:29 -0400
+
 pulseaudio (16.1+dfsg1-3) unstable; urgency=medium
 
   * Team upload
