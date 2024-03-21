@@ -88,7 +88,7 @@ Description: PulseAudio sound server
 
 Package: pulseaudio-utils
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libpulsedsp
+Depends: ${shlibs:Depends}, ${misc:Depends}, libpulsedsp [amd64 arm64 i386 mips64el ppc64el riscv64 s390x alpha hurd-amd64 ia64 loong64 ppc64 sparc64 x32]
 Suggests: avahi-daemon, pulseaudio
 Breaks: pulseaudio (<< 14.2-3~)
 Replaces: pulseaudio (<< 14.2-3~)
@@ -247,7 +247,7 @@ Description: PulseAudio client development headers and libraries
 
 Package: libpulsedsp
 Section: libs
-Architecture: any
+Architecture: amd64 arm64 i386 mips64el ppc64el riscv64 s390x alpha hurd-amd64 ia64 loong64 ppc64 sparc64 x32
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}

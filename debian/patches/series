@@ -1,3 +1,4 @@
 disable-autospawn.patch
 dbus-policy-usr.patch
 bluetooth-send-more-frames.patch
+selectively-disable-libpulsedsp.patch
