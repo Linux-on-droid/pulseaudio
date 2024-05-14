@@ -82,7 +82,7 @@ Description: PulseAudio sound server
 
 Package: pulseaudio-utils
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libpulsedsp
+Depends: ${shlibs:Depends}, ${misc:Depends}, libpulsedsp [amd64 arm64 i386 mips64el ppc64el riscv64 s390x alpha hurd-amd64 ia64 loong64 ppc64 sparc64 x32]
 Suggests: avahi-daemon, pulseaudio
 Description: Command line tools for the PulseAudio sound server
  PulseAudio, previously known as Polypaudio, is a sound server for POSIX and
@@ -251,7 +251,7 @@ Description: PulseAudio client development headers and libraries (out of tree mo
  This packages provides support for building out-of-tree modules.
 
 Package: libpulsedsp
-Architecture: any
+Architecture: amd64 arm64 i386 mips64el ppc64el riscv64 s390x alpha hurd-amd64 ia64 loong64 ppc64 sparc64 x32
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}

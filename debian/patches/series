@@ -1,2 +1,3 @@
 disable-autospawn.patch
 tests-fix-use-of-uninitialized-variable-cpu_info.patch
+selectively-disable-libpulsedsp.patch
