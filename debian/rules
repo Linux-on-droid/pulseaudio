@@ -34,6 +34,10 @@ ifeq ($(words $(sort $(filter stage1,$(DEB_BUILD_PROFILES)))),1)
   DEB_CONFIGURE_EXTRA_FLAGS += --disable-bluez5
 endif
 
+ifneq (,$(filter $(DEB_HOST_ARCH),armhf))
+  DEB_CONFIGURE_EXTRA_FLAGS += --disable-oss-wrapper
+endif
+
 %:
 	dh $@
 
