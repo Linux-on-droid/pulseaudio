@@ -56,6 +56,9 @@ ifeq ($(DEB_HOST_ARCH_OS),linux)
 		$(CURDIR)/debian/tmp/usr/share/alsa/alsa.conf.d
 	cp -a $(CURDIR)/debian/pulse-alsa.conf $(CURDIR)/debian/tmp/usr/share/alsa
 endif
+ifneq (,$(filter $(DEB_HOST_ARCH),armhf))
+	rm -f debian/tmp/usr/share/man/man1/padsp.1
+endif
 ifneq (,$(filter $(DEB_HOST_ARCH),amd64 arm64 i386 mips64el ppc64el riscv64 s390x alpha hurd-amd64 ia64 loong64 ppc64 sparc64 x32))
 	dh_install -ppulseaudio-utils debian/tmp/usr/bin/padsp
 	dh_install -ppulseaudio-utils debian/tmp/usr/share/man/man1/padsp.1
