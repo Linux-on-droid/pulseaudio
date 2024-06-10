@@ -1,3 +1,12 @@
+pulseaudio (16.1+dfsg1-5.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Switch Build-Depends to systemd-dev, fixing FTBFS. (Closes: #1060474)
+  * Install systemd masking symlink and udev rule into /usr (DEP17).
+    (Closes: #1072960)
+
+ -- Chris Hofstaedtler <zeha@debian.org>  Mon, 10 Jun 2024 23:50:35 +0200
+
 pulseaudio (16.1+dfsg1-5) unstable; urgency=medium
 
   * Team upload

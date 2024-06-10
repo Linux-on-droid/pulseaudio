@@ -5,7 +5,7 @@ etc/pulse/system.pa
 etc/pulse/daemon.conf
 etc/xdg/autostart/pulseaudio.desktop
 etc/xdg/Xwayland-session.d/00-pulseaudio-x11
-[linux-any] lib/udev/rules.d/90-pulseaudio.rules
+[linux-any] usr/lib/udev/rules.d/90-pulseaudio.rules
 usr/bin/pulseaudio
 usr/bin/start-pulseaudio-x11
 usr/lib/*/pulseaudio/libpulsecore-*.so

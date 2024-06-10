@@ -39,6 +39,7 @@ DEB_MESON_OPTIONS = \
   -Dstream-restore-clear-old-devices=true \
   -Dzshcompletiondir=/usr/share/zsh/vendor-completions \
   -Dsystemduserunitdir=/usr/lib/systemd/user \
+  -Dudevrulesdir=/usr/lib/udev/rules.d \
   -Dmodlibexecdir=/usr/lib/pulse-$(DEB_VERSION_UPSTREAM)/modules \
   -Dpulsedsp-location=/usr/\\'$$'LIB/pulseaudio \
   -Dgtk=enabled \

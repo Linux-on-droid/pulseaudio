@@ -41,7 +41,7 @@ Build-Depends: debhelper-compat (= 13),
     libxcb1-dev,
     libxml2-utils <!nocheck>,
     libxtst-dev,
-    systemd [linux-any]
+    systemd-dev [linux-any]
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
 Vcs-Browser: https://salsa.debian.org/pulseaudio-team/pulseaudio
